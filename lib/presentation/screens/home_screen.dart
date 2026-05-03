@@ -95,7 +95,7 @@ class OfflineStatusBanner extends StatelessWidget {
               Text(
                 'Guardando en el celular',
                 style: GoogleFonts.lexend(
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha: 0.9),
                   fontSize: 12,
                   fontWeight: FontWeight.w400,
                 ),
@@ -173,7 +173,8 @@ class LatestTaskCard extends StatelessWidget {
                       'APLICAR\nFERTILIZANTE',
                       style: GoogleFonts.lexend(
                         color: AppColors.primary,
-                        fontWeight: FontWeight.w800, // Un poco más grueso según la imagen
+                        fontWeight: FontWeight
+                            .w800, // Un poco más grueso según la imagen
                         fontSize: 14,
                         height: 1.2, // Interlineado más cerrado
                         letterSpacing: -0.5,
@@ -250,7 +251,7 @@ class QuickOperationsGrid extends StatelessWidget {
         _buildOperationButton(
           icon: Icons.bug_report_outlined,
           iconBgColor: const Color(0xFFFFDAD6), // Rojo suave/Alerta
-          iconColor: const Color(0xFF93000A),    // Rojo fuerte
+          iconColor: const Color(0xFF93000A), // Rojo fuerte
           label: 'Tratamiento Fitosanitario',
         ),
       ],
@@ -280,9 +281,11 @@ class QuickOperationsGrid extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: onTap ?? () {
-            // TODO: Navegar al módulo correspondiente
-          },
+          onTap:
+              onTap ??
+              () {
+                // TODO: Navegar al módulo correspondiente
+              },
           child: Row(
             children: [
               Container(
@@ -290,7 +293,9 @@ class QuickOperationsGrid extends StatelessWidget {
                 height: double.infinity,
                 decoration: BoxDecoration(
                   color: iconBgColor,
-                  border: const Border(right: BorderSide(color: AppColors.primary, width: 2)),
+                  border: const Border(
+                    right: BorderSide(color: AppColors.primary, width: 2),
+                  ),
                 ),
                 child: Icon(icon, color: iconColor, size: 36),
               ),
@@ -306,7 +311,11 @@ class QuickOperationsGrid extends StatelessWidget {
                   ),
                 ),
               ),
-              const Icon(Icons.chevron_right, color: Color(0xFF717973), size: 32),
+              const Icon(
+                Icons.chevron_right,
+                color: Color(0xFF717973),
+                size: 32,
+              ),
               const SizedBox(width: 24),
             ],
           ),

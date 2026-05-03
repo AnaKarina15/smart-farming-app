@@ -147,7 +147,7 @@ class LatestTaskCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -214,26 +214,37 @@ class QuickOperationsGrid extends StatelessWidget {
             letterSpacing: 1.5,
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
+        // 1. Riego
         _buildOperationButton(
           icon: Icons.water_drop,
-          iconBgColor: const Color(0xFF67BAFD), // secondary-container
-          iconColor: const Color(0xFF004972), // on-secondary-container
+          iconBgColor: const Color(0xFF67BAFD),
+          iconColor: const Color(0xFF004972),
           label: 'Riego',
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
+        // 2. Fertilización
         _buildOperationButton(
           icon: Icons.local_florist,
-          iconBgColor: const Color(0xFFC1ECD4), // primary-fixed
-          iconColor: const Color(0xFF002114), // on-primary-fixed
+          iconBgColor: const Color(0xFFC1ECD4),
+          iconColor: const Color(0xFF002114),
           label: 'Fertilización',
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
+        // 3. Siembra
         _buildOperationButton(
           icon: Icons.calendar_month,
-          iconBgColor: const Color(0xFFFFDAD4), // tertiary-fixed
-          iconColor: const Color(0xFF410000), // on-tertiary-fixed
+          iconBgColor: const Color(0xFFFFDAD4),
+          iconColor: const Color(0xFF410000),
           label: 'Siembra',
+        ),
+        const SizedBox(height: 12),
+        // 4. Fitosanitario
+        _buildOperationButton(
+          icon: Icons.bug_report_outlined,
+          iconBgColor: const Color(0xFFFFDAD6), // Rojo suave/Alerta
+          iconColor: const Color(0xFF93000A),    // Rojo fuerte
+          label: 'Fitosanitario',
         ),
       ],
     );
@@ -246,7 +257,7 @@ class QuickOperationsGrid extends StatelessWidget {
     required String label,
   }) {
     return Container(
-      height: 96,
+      height: 80,
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: AppColors.primary, width: 2),
@@ -261,7 +272,9 @@ class QuickOperationsGrid extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () {},
+          onTap: () {
+            // TODO: Navegar al módulo correspondiente
+          },
           child: Row(
             children: [
               Container(
@@ -269,9 +282,7 @@ class QuickOperationsGrid extends StatelessWidget {
                 height: double.infinity,
                 decoration: BoxDecoration(
                   color: iconBgColor,
-                  border: const Border(
-                    right: BorderSide(color: AppColors.primary, width: 2),
-                  ),
+                  border: const Border(right: BorderSide(color: AppColors.primary, width: 2)),
                 ),
                 child: Icon(icon, color: iconColor, size: 36),
               ),
@@ -281,17 +292,13 @@ class QuickOperationsGrid extends StatelessWidget {
                   label.toUpperCase(),
                   style: GoogleFonts.lexend(
                     color: AppColors.primary,
-                    fontSize: 24,
+                    fontSize: 18,
                     fontWeight: FontWeight.w700,
                     letterSpacing: -0.5,
                   ),
                 ),
               ),
-              const Icon(
-                Icons.chevron_right,
-                color: Color(0xFF717973),
-                size: 32,
-              ),
+              const Icon(Icons.chevron_right, color: Color(0xFF717973), size: 32),
               const SizedBox(width: 24),
             ],
           ),

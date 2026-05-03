@@ -71,7 +71,7 @@ class OfflineStatusBanner extends StatelessWidget {
           BoxShadow(color: Colors.black12, offset: Offset(0, 1), blurRadius: 2),
         ],
       ),
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(10.0),
       child: Row(
         children: [
           const Icon(
@@ -79,7 +79,7 @@ class OfflineStatusBanner extends StatelessWidget {
             color: Color(0xFFC1ECD4),
             size: 24,
           ), // primary-fixed
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -87,7 +87,7 @@ class OfflineStatusBanner extends StatelessWidget {
                 'MODO OFFLINE',
                 style: GoogleFonts.lexend(
                   color: Colors.white,
-                  fontSize: 14,
+                  fontSize: 12,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -95,7 +95,7 @@ class OfflineStatusBanner extends StatelessWidget {
                 'Guardando en el celular',
                 style: GoogleFonts.lexend(
                   color: Colors.white.withOpacity(0.9),
-                  fontSize: 16,
+                  fontSize: 12,
                   fontWeight: FontWeight.w400,
                 ),
               ),
@@ -124,7 +124,7 @@ class LatestTaskCard extends StatelessWidget {
           ),
         ],
       ),
-      padding: const EdgeInsets.all(20.0),
+      padding: const EdgeInsets.all(12.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -147,7 +147,7 @@ class LatestTaskCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -164,7 +164,7 @@ class LatestTaskCard extends StatelessWidget {
                   size: 24,
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -214,7 +214,7 @@ class QuickOperationsGrid extends StatelessWidget {
             letterSpacing: 1.5,
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         // 1. Riego
         _buildOperationButton(
           icon: Icons.water_drop,
@@ -222,7 +222,7 @@ class QuickOperationsGrid extends StatelessWidget {
           iconColor: const Color(0xFF004972),
           label: 'Riego',
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         // 2. Fertilización
         _buildOperationButton(
           icon: Icons.local_florist,
@@ -230,7 +230,7 @@ class QuickOperationsGrid extends StatelessWidget {
           iconColor: const Color(0xFF002114),
           label: 'Fertilización',
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         // 3. Siembra
         _buildOperationButton(
           icon: Icons.calendar_month,
@@ -238,13 +238,13 @@ class QuickOperationsGrid extends StatelessWidget {
           iconColor: const Color(0xFF410000),
           label: 'Siembra',
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         // 4. Fitosanitario
         _buildOperationButton(
           icon: Icons.bug_report_outlined,
           iconBgColor: const Color(0xFFFFDAD6), // Rojo suave/Alerta
           iconColor: const Color(0xFF93000A),    // Rojo fuerte
-          label: 'Fitosanitario',
+          label: 'Tratamiento Fitosanitario',
         ),
       ],
     );

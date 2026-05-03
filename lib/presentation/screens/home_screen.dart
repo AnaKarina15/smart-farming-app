@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:smart_farming/presentation/widgets/custom_app_bar.dart';
 import '../../core/theme/app_colors.dart';
+import 'irrigation_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -114,7 +115,7 @@ class LatestTaskCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFFC1ECD4), // Fondo mint light green
         border: Border.all(color: AppColors.primary, width: 2),
         boxShadow: const [
           BoxShadow(
@@ -124,7 +125,7 @@ class LatestTaskCard extends StatelessWidget {
           ),
         ],
       ),
-      padding: const EdgeInsets.all(12.0),
+      padding: const EdgeInsets.all(10.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -137,7 +138,7 @@ class LatestTaskCard extends StatelessWidget {
                   color: const Color(0xFF717973), // outline
                   fontWeight: FontWeight.w700,
                   fontSize: 12,
-                  letterSpacing: 1.0,
+                  letterSpacing: 1,
                 ),
               ),
               const Icon(
@@ -152,16 +153,15 @@ class LatestTaskCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFC1ECD4), // primary-fixed
-                  borderRadius: BorderRadius.circular(8.0),
-                  border: Border.all(color: AppColors.primary, width: 2),
+                width: 48,
+                height: 48,
+                decoration: const BoxDecoration(
+                  color: AppColors.primary, // Fondo verde oscuro
                 ),
                 child: const Icon(
                   Icons.local_florist,
-                  color: AppColors.primary,
-                  size: 24,
+                  color: Colors.white, // Ícono blanco
+                  size: 26,
                 ),
               ),
               const SizedBox(width: 14),
@@ -170,11 +170,12 @@ class LatestTaskCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Aplicar Fertilizante',
+                      'APLICAR\nFERTILIZANTE',
                       style: GoogleFonts.lexend(
                         color: AppColors.primary,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 18,
+                        fontWeight: FontWeight.w800, // Un poco más grueso según la imagen
+                        fontSize: 14,
+                        height: 1.2, // Interlineado más cerrado
                         letterSpacing: -0.5,
                       ),
                     ),
@@ -182,7 +183,7 @@ class LatestTaskCard extends StatelessWidget {
                     Text(
                       'Lote 1 • Hoy, 4:00 PM',
                       style: GoogleFonts.lexend(
-                        color: const Color(0xFF414844), // on-surface-variant
+                        color: const Color(0xFF717973), // outline text color
                         fontSize: 14,
                       ),
                     ),
@@ -211,7 +212,7 @@ class QuickOperationsGrid extends StatelessWidget {
             color: const Color(0xFF717973), // outline
             fontWeight: FontWeight.w700,
             fontSize: 14,
-            letterSpacing: 1.5,
+            letterSpacing: 1,
           ),
         ),
         const SizedBox(height: 10),
@@ -221,6 +222,12 @@ class QuickOperationsGrid extends StatelessWidget {
           iconBgColor: const Color(0xFF67BAFD),
           iconColor: const Color(0xFF004972),
           label: 'Riego',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const IrrigationScreen()),
+            );
+          },
         ),
         const SizedBox(height: 10),
         // 2. Fertilización
@@ -255,6 +262,7 @@ class QuickOperationsGrid extends StatelessWidget {
     required Color iconBgColor,
     required Color iconColor,
     required String label,
+    VoidCallback? onTap,
   }) {
     return Container(
       height: 80,
@@ -272,7 +280,7 @@ class QuickOperationsGrid extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () {
+          onTap: onTap ?? () {
             // TODO: Navegar al módulo correspondiente
           },
           child: Row(

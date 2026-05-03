@@ -35,7 +35,11 @@ class RegistrationSuccessScreen extends StatelessWidget {
                   color: const Color(0xFFC0EDD4), // primary-fixed
                   border: Border.all(color: AppColors.primary, width: 2),
                 ),
-                child: const Icon(Icons.person, color: AppColors.primary, size: 24),
+                child: const Icon(
+                  Icons.person,
+                  color: AppColors.primary,
+                  size: 24,
+                ),
               ),
             ),
           ),
@@ -66,14 +70,20 @@ class RegistrationSuccessScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: const Icon(Icons.check_circle, color: AppColors.primary, size: 48),
+                child: const Icon(
+                  Icons.check_circle,
+                  color: AppColors.primary,
+                  size: 48,
+                ),
               ),
               const SizedBox(height: 32),
-              
+
               // Titles & Copy
               Container(
                 decoration: const BoxDecoration(
-                  border: Border(bottom: BorderSide(color: AppColors.primary, width: 2)),
+                  border: Border(
+                    bottom: BorderSide(color: AppColors.primary, width: 2),
+                  ),
                 ),
                 padding: const EdgeInsets.only(bottom: 8.0),
                 child: Text(
@@ -82,7 +92,7 @@ class RegistrationSuccessScreen extends StatelessWidget {
                   style: GoogleFonts.lexend(
                     color: AppColors.primary,
                     fontWeight: FontWeight.w700,
-                    fontSize: 28,
+                    fontSize: 24,
                     height: 1.2,
                   ),
                 ),
@@ -119,7 +129,10 @@ class RegistrationSuccessScreen extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.badge_outlined, color: AppColors.primary),
+                        const Icon(
+                          Icons.badge_outlined,
+                          color: AppColors.primary,
+                        ),
                         const SizedBox(width: 16),
                         Text(
                           'USUARIO: JUAN PÉREZ',
@@ -134,7 +147,10 @@ class RegistrationSuccessScreen extends StatelessWidget {
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        const Icon(Icons.verified_outlined, color: AppColors.primary),
+                        const Icon(
+                          Icons.verified_outlined,
+                          color: AppColors.primary,
+                        ),
                         const SizedBox(width: 16),
                         Text(
                           'ESTADO: CUENTA ACTIVA',
@@ -166,12 +182,14 @@ class RegistrationSuccessScreen extends StatelessWidget {
                     ),
                   ],
                   image: const DecorationImage(
-                    image: NetworkImage('https://lh3.googleusercontent.com/aida-public/AB6AXuCTJGCEi16aUTDw3teJYYIG4o1sxhol2vxdeCDJd_xTonNe12Xf1kwbshQ25TtdlrWtlRcQjf1jwF9dTVqHu1tyjOt6u5S7TfEBN9pj9aRcwZZlN1gyXHmJZdWvkNY4gZj2fKmnxNlRKM9M2x--gjPXGDZOM4ROQ29HS6R_mNK7AM-xsv_0nRQcjbocYWRLFNyyNxlBsP3KuhDLKcX8mj7LaEVo1rnPVG4XYxIHCN3svc1Hz144HJM-1Nl4V5xfFKi41FQgiNCpX4p3'),
+                    image: NetworkImage(
+                      'https://lh3.googleusercontent.com/aida-public/AB6AXuCTJGCEi16aUTDw3teJYYIG4o1sxhol2vxdeCDJd_xTonNe12Xf1kwbshQ25TtdlrWtlRcQjf1jwF9dTVqHu1tyjOt6u5S7TfEBN9pj9aRcwZZlN1gyXHmJZdWvkNY4gZj2fKmnxNlRKM9M2x--gjPXGDZOM4ROQ29HS6R_mNK7AM-xsv_0nRQcjbocYWRLFNyyNxlBsP3KuhDLKcX8mj7LaEVo1rnPVG4XYxIHCN3svc1Hz144HJM-1Nl4V5xfFKi41FQgiNCpX4p3',
+                    ),
                     fit: BoxFit.cover,
                   ),
                 ),
               ),
-              const SizedBox(height: 48),
+              const SizedBox(height: 30),
 
               // Primary Action
               Container(
@@ -194,7 +212,9 @@ class RegistrationSuccessScreen extends StatelessWidget {
                     onTap: () {
                       Navigator.pushReplacement(
                         context,
-                        MaterialPageRoute(builder: (_) => const MapOnboardingScreen()),
+                        MaterialPageRoute(
+                          builder: (_) => const MapOnboardingScreen(),
+                        ),
                       );
                     },
                     child: Center(

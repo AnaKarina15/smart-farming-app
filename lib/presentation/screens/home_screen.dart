@@ -3,7 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:smart_farming/presentation/widgets/custom_app_bar.dart';
 import '../../core/theme/app_colors.dart';
 import 'irrigation_screen.dart';
-
+import 'fertilization_screen.dart';
+import 'sowing_screen.dart';
+import 'phytosanitary_screen.dart';
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
@@ -237,6 +239,12 @@ class QuickOperationsGrid extends StatelessWidget {
           iconBgColor: const Color(0xFFC1ECD4),
           iconColor: const Color(0xFF002114),
           label: 'Fertilización',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const FertilizationScreen()),
+            );
+          },
         ),
         const SizedBox(height: 10),
         // 3. Siembra
@@ -245,6 +253,12 @@ class QuickOperationsGrid extends StatelessWidget {
           iconBgColor: const Color(0xFFFFDAD4),
           iconColor: const Color(0xFF410000),
           label: 'Siembra',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SowingScreen()),
+            );
+          },
         ),
         const SizedBox(height: 10),
         // 4. Fitosanitario
@@ -252,7 +266,13 @@ class QuickOperationsGrid extends StatelessWidget {
           icon: Icons.bug_report_outlined,
           iconBgColor: const Color(0xFFFFDAD6), // Rojo suave/Alerta
           iconColor: const Color(0xFF93000A), // Rojo fuerte
-          label: 'Tratamiento Fitosanitario',
+          label: 'Gestión Fitosanitaria',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const PhytosanitaryScreen()),
+            );
+          },
         ),
       ],
     );

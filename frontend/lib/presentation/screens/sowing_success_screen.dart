@@ -77,7 +77,10 @@ class SowingSuccessScreen extends StatelessWidget {
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      border: Border.all(color: const Color(0xFF717973), width: 2), // outline
+                      border: Border.all(
+                        color: const Color(0xFF717973),
+                        width: 2,
+                      ), // outline
                       borderRadius: BorderRadius.circular(8),
                       boxShadow: const [
                         BoxShadow(
@@ -92,7 +95,10 @@ class SowingSuccessScreen extends StatelessWidget {
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.inventory_2, color: Color(0xFF006399)), // secondary
+                            const Icon(
+                              Icons.inventory_2,
+                              color: Color(0xFF006399),
+                            ), // secondary
                             const SizedBox(width: 12),
                             Text(
                               'RESUMEN DE REGISTRO',
@@ -130,7 +136,10 @@ class SowingSuccessScreen extends StatelessWidget {
                         ),
                         const Padding(
                           padding: EdgeInsets.symmetric(vertical: 16),
-                          child: Divider(color: Color(0xFFC1C8C2), thickness: 2),
+                          child: Divider(
+                            color: Color(0xFFC1C8C2),
+                            thickness: 2,
+                          ),
                         ),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -166,7 +175,10 @@ class SowingSuccessScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: Colors.grey[300],
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0xFF717973), width: 2),
+                      border: Border.all(
+                        color: const Color(0xFF717973),
+                        width: 2,
+                      ),
                     ),
                     child: const Center(
                       child: Icon(Icons.image, size: 48, color: Colors.grey),
@@ -177,13 +189,11 @@ class SowingSuccessScreen extends StatelessWidget {
               ),
             ),
           ),
-          
+
           // Action Button at Bottom
           Container(
             padding: const EdgeInsets.all(24),
-            decoration: const BoxDecoration(
-              color: AppColors.background,
-            ),
+            decoration: const BoxDecoration(color: AppColors.background),
             child: SizedBox(
               width: double.infinity,
               height: 48,
@@ -191,7 +201,9 @@ class SowingSuccessScreen extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                   elevation: 0,
                 ),
                 onPressed: () {
@@ -203,7 +215,9 @@ class SowingSuccessScreen extends StatelessWidget {
                 },
                 child: Container(
                   decoration: const BoxDecoration(
-                    border: Border(bottom: BorderSide(color: Color(0xFF0F172A), width: 4)),
+                    border: Border(
+                      bottom: BorderSide(color: Color(0xFF0F172A), width: 4),
+                    ),
                   ),
                   alignment: Alignment.center,
                   child: Row(

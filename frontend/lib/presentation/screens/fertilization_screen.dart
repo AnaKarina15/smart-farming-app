@@ -74,7 +74,8 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
                           icon: Icons.science,
                           label: 'Nitrógeno',
                           isActive: _selectedFertilizer == 'Nitrógeno',
-                          onTap: () => setState(() => _selectedFertilizer = 'Nitrógeno'),
+                          onTap: () =>
+                              setState(() => _selectedFertilizer = 'Nitrógeno'),
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -83,7 +84,8 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
                           icon: Icons.water_drop,
                           label: 'Fósforo',
                           isActive: _selectedFertilizer == 'Fósforo',
-                          onTap: () => setState(() => _selectedFertilizer = 'Fósforo'),
+                          onTap: () =>
+                              setState(() => _selectedFertilizer = 'Fósforo'),
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -92,7 +94,8 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
                           icon: Icons.eco,
                           label: 'Orgánico',
                           isActive: _selectedFertilizer == 'Orgánico',
-                          onTap: () => setState(() => _selectedFertilizer = 'Orgánico'),
+                          onTap: () =>
+                              setState(() => _selectedFertilizer = 'Orgánico'),
                         ),
                       ),
                     ],
@@ -133,7 +136,10 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
                           height: 72,
                           decoration: BoxDecoration(
                             color: Colors.white,
-                            border: Border.all(color: AppColors.primary, width: 2),
+                            border: Border.all(
+                              color: AppColors.primary,
+                              width: 2,
+                            ),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Row(
@@ -143,7 +149,11 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
                                 child: InkWell(
                                   onTap: _decrementAmount,
                                   child: const Center(
-                                    child: Icon(Icons.remove, color: AppColors.primary, size: 24),
+                                    child: Icon(
+                                      Icons.remove,
+                                      color: AppColors.primary,
+                                      size: 24,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -153,7 +163,8 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
                                 child: Center(
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
-                                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.baseline,
                                     textBaseline: TextBaseline.alphabetic,
                                     children: [
                                       Text(
@@ -168,7 +179,12 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
                                       Container(
                                         padding: const EdgeInsets.only(left: 8),
                                         decoration: const BoxDecoration(
-                                          border: Border(left: BorderSide(color: Color(0xFFE2E8F0), width: 2)),
+                                          border: Border(
+                                            left: BorderSide(
+                                              color: Color(0xFFE2E8F0),
+                                              width: 2,
+                                            ),
+                                          ),
                                         ),
                                         child: Text(
                                           'KG',
@@ -189,7 +205,11 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
                                 child: InkWell(
                                   onTap: _incrementAmount,
                                   child: const Center(
-                                    child: Icon(Icons.add, color: AppColors.primary, size: 24),
+                                    child: Icon(
+                                      Icons.add,
+                                      color: AppColors.primary,
+                                      size: 24,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -224,7 +244,10 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
                       child: DropdownButton<String>(
                         value: _selectedLote,
                         isExpanded: true,
-                        icon: const Icon(Icons.expand_more, color: AppColors.primary),
+                        icon: const Icon(
+                          Icons.expand_more,
+                          color: AppColors.primary,
+                        ),
                         style: GoogleFonts.lexend(
                           color: AppColors.primary,
                           fontSize: 18,
@@ -236,16 +259,17 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
                             });
                           }
                         },
-                        items: <String>[
-                          'Lote 1 - Sector Norte',
-                          'Lote 2 - Ladera Este',
-                          'Lote 3 - Valle Sur'
-                        ].map<DropdownMenuItem<String>>((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(value),
-                          );
-                        }).toList(),
+                        items:
+                            <String>[
+                              'Lote 1 - Sector Norte',
+                              'Lote 2 - Ladera Este',
+                              'Lote 3 - Valle Sur',
+                            ].map<DropdownMenuItem<String>>((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(value),
+                              );
+                            }).toList(),
                       ),
                     ),
                   ),
@@ -259,9 +283,14 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                         elevation: 0,
-                        side: const BorderSide(color: Color(0xFF0F172A), width: 0),
+                        side: const BorderSide(
+                          color: Color(0xFF0F172A),
+                          width: 0,
+                        ),
                       ),
                       onPressed: () {
                         Navigator.pushReplacement(
@@ -277,13 +306,22 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
                       },
                       child: Container(
                         decoration: const BoxDecoration(
-                           border: Border(bottom: BorderSide(color: Color(0xFF0F172A), width: 4)),
+                          border: Border(
+                            bottom: BorderSide(
+                              color: Color(0xFF0F172A),
+                              width: 4,
+                            ),
+                          ),
                         ),
                         alignment: Alignment.center,
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.save, size: 24, color: Colors.white),
+                            const Icon(
+                              Icons.save,
+                              size: 24,
+                              color: Colors.white,
+                            ),
                             const SizedBox(width: 12),
                             Text(
                               'GUARDAR REGISTRO',
@@ -322,7 +360,9 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
           decoration: BoxDecoration(
             color: isActive ? const Color(0xFFC1ECD4) : Colors.white,
             border: Border.all(
-              color: isActive ? const Color(0xFF1B4332) : const Color(0xFF717973),
+              color: isActive
+                  ? const Color(0xFF1B4332)
+                  : const Color(0xFF717973),
               width: isActive ? 4 : 2,
             ),
           ),

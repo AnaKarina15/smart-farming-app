@@ -74,7 +74,8 @@ class _SowingScreenState extends State<SowingScreen> {
                       const SizedBox(width: 16),
                       Expanded(
                         child: _buildCropOption(
-                          icon: Icons.grass, // Used grass instead of bakery_dining
+                          icon: Icons
+                              .grass, // Used grass instead of bakery_dining
                           label: 'Banano',
                           isActive: _selectedCrop == 'Banano',
                           onTap: () => setState(() => _selectedCrop = 'Banano'),
@@ -108,13 +109,19 @@ class _SowingScreenState extends State<SowingScreen> {
                     height: 56,
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      border: Border.all(color: const Color(0xFF717973), width: 2),
+                      border: Border.all(
+                        color: const Color(0xFF717973),
+                        width: 2,
+                      ),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Row(
                       children: [
                         const SizedBox(width: 16),
-                        const Icon(Icons.calendar_today, color: Color(0xFF717973)),
+                        const Icon(
+                          Icons.calendar_today,
+                          color: Color(0xFF717973),
+                        ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
@@ -146,7 +153,10 @@ class _SowingScreenState extends State<SowingScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      border: Border.all(color: const Color(0xFF717973), width: 2),
+                      border: Border.all(
+                        color: const Color(0xFF717973),
+                        width: 2,
+                      ),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Row(
@@ -158,7 +168,10 @@ class _SowingScreenState extends State<SowingScreen> {
                             child: DropdownButton<String>(
                               value: _selectedLote,
                               isExpanded: true,
-                              icon: const Icon(Icons.expand_more, color: Color(0xFF717973)),
+                              icon: const Icon(
+                                Icons.expand_more,
+                                color: Color(0xFF717973),
+                              ),
                               style: GoogleFonts.lexend(
                                 color: AppColors.primary,
                                 fontSize: 18,
@@ -170,16 +183,19 @@ class _SowingScreenState extends State<SowingScreen> {
                                   });
                                 }
                               },
-                              items: <String>[
-                                'Lote Norte - Sector A1',
-                                'Lote Sur - Sector B2',
-                                'Lote Este - Reserva'
-                              ].map<DropdownMenuItem<String>>((String value) {
-                                return DropdownMenuItem<String>(
-                                  value: value,
-                                  child: Text(value),
-                                );
-                              }).toList(),
+                              items:
+                                  <String>[
+                                    'Lote Norte - Sector A1',
+                                    'Lote Sur - Sector B2',
+                                    'Lote Este - Reserva',
+                                  ].map<DropdownMenuItem<String>>((
+                                    String value,
+                                  ) {
+                                    return DropdownMenuItem<String>(
+                                      value: value,
+                                      child: Text(value),
+                                    );
+                                  }).toList(),
                             ),
                           ),
                         ),
@@ -193,7 +209,10 @@ class _SowingScreenState extends State<SowingScreen> {
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       color: const Color(0xFFC1ECD4), // primary-fixed
-                      border: Border.all(color: const Color(0xFF717973), width: 2),
+                      border: Border.all(
+                        color: const Color(0xFF717973),
+                        width: 2,
+                      ),
                       boxShadow: const [
                         BoxShadow(
                           color: Color(0x1A000000),
@@ -250,7 +269,7 @@ class _SowingScreenState extends State<SowingScreen> {
                     ),
                   ),
                   const SizedBox(height: 48),
-                  
+
                   // Save Button
                   SizedBox(
                     width: double.infinity,
@@ -259,7 +278,9 @@ class _SowingScreenState extends State<SowingScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
-                        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.zero,
+                        ),
                         elevation: 0,
                       ),
                       onPressed: () {
@@ -275,13 +296,22 @@ class _SowingScreenState extends State<SowingScreen> {
                       },
                       child: Container(
                         decoration: const BoxDecoration(
-                          border: Border(bottom: BorderSide(color: Color(0xFF0F172A), width: 4)),
+                          border: Border(
+                            bottom: BorderSide(
+                              color: Color(0xFF0F172A),
+                              width: 4,
+                            ),
+                          ),
                         ),
                         alignment: Alignment.center,
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.save, size: 24, color: Colors.white),
+                            const Icon(
+                              Icons.save,
+                              size: 24,
+                              color: Colors.white,
+                            ),
                             const SizedBox(width: 12),
                             Text(
                               'GUARDAR SIEMBRA',

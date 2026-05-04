@@ -92,7 +92,7 @@ class PhytosanitaryScreen extends StatelessWidget {
                       // Navigate to history
                     },
                   ),
-                  
+
                   const SizedBox(height: 48), // Padding for bottom nav
                 ],
               ),

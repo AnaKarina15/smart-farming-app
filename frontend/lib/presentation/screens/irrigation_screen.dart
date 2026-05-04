@@ -101,7 +101,7 @@ class _IrrigationScreenState extends State<IrrigationScreen> {
                               Text(
                                 'Sugerencia calculada localmente',
                                 style: GoogleFonts.lexend(
-                                  color: const Color(0xFF001D32).withOpacity(0.8),
+                                  color: const Color(0xFF001D32).withValues(alpha: 0.8),
                                   fontSize: 12,
                                   fontStyle: FontStyle.italic,
                                 ),

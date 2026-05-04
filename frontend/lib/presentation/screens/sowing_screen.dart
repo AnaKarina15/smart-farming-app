@@ -244,7 +244,7 @@ class _SowingScreenState extends State<SowingScreen> {
                         Icon(
                           Icons.straighten,
                           size: 64,
-                          color: const Color(0xFF1B4332).withOpacity(0.2),
+                          color: const Color(0xFF1B4332).withValues(alpha: 0.2),
                         ),
                       ],
                     ),

@@ -1,0 +1,91 @@
+### AgroField API - Tests con HTTP Client de IntelliJ
+### Ejecutar cada bloque con el boton "play" verde junto a "###"
+
+@host = http://localhost:3000/api/v1
+
+### 1. Health check (publico)
+GET {{host}}/health
+
+### 2. Registro de un nuevo Pequeno Productor
+# @name register
+POST {{host}}/auth/register
+Content-Type: application/json
+
+{
+  "nombreCompleto": "Juan Perez",
+  "email": "juan.perez@ejemplo.com",
+  "telefono": "+573001234567",
+  "password": "Pass1234"
+}
+
+### 3. Login (guarda los tokens automaticamente)
+# @name login
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "juan.perez@ejemplo.com",
+  "password": "Pass1234"
+}
+
+> {%
+client.global.set("accessToken", response.body.data.accessToken);
+client.global.set("refreshToken", response.body.data.refreshToken);
+%}
+
+### 4. Obtener perfil del usuario autenticado
+GET {{host}}/users/me
+Authorization: Bearer {{accessToken}}
+
+### 5. Crear un lote (RF04)
+# @name crearLote
+POST {{host}}/lotes
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "nombre": "Lote Norte",
+  "descripcion": "Sector norte de la finca",
+  "superficieHectareas": 2.5,
+  "cultivoActual": "Maiz",
+  "latitud": 11.2408,
+  "longitud": -74.1990
+}
+
+> {%
+client.global.set("loteId", response.body.data.id);
+%}
+
+### 6. Listar todos mis lotes
+GET {{host}}/lotes
+Authorization: Bearer {{accessToken}}
+
+### 7. Detalle de un lote
+GET {{host}}/lotes/{{loteId}}
+Authorization: Bearer {{accessToken}}
+
+### 8. Actualizar lote
+PATCH {{host}}/lotes/{{loteId}}
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "estado": "afectado",
+  "cultivoActual": "Banano"
+}
+
+### 9. Refresh token
+POST {{host}}/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+### 10. Logout
+POST {{host}}/auth/logout
+Authorization: Bearer {{accessToken}}
+
+### 11. Eliminar lote
+DELETE {{host}}/lotes/{{loteId}}
+Authorization: Bearer {{accessToken}}

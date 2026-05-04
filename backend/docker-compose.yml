@@ -1,0 +1,67 @@
+# =============================================================================
+# AgroField Backend - Docker Compose
+# =============================================================================
+# Levanta el entorno de base de datos para desarrollo local.
+#
+# Uso:
+#   docker compose up -d           Levantar servicios en segundo plano
+#   docker compose down            Detener servicios
+#   docker compose logs -f         Ver logs en vivo
+#   docker compose ps              Ver estado de servicios
+#
+# Servicios:
+#   - postgres: Base de datos principal (puerto 5432)
+#   - pgadmin:  Interfaz web de administracion (puerto 5050)
+# =============================================================================
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: agrofield-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: agrofield_db
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - agrofield-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d agrofield_db']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: agrofield-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@agrofield.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+    ports:
+      - '5050:80'
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - agrofield-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+networks:
+  agrofield-network:
+    driver: bridge
+    name: agrofield-network
+
+volumes:
+  postgres_data:
+    name: agrofield-postgres-data
+  pgadmin_data:
+    name: agrofield-pgadmin-data

@@ -1,102 +1,200 @@
-# Smart Farming 🌾
+markdown# AgroField - Plataforma de Agricultura Inteligente
 
-**Smart Farming** es una solución tecnológica diseñada para la gestión eficiente de cultivos, permitiendo a los pequeños productores monitorear el estado del suelo y recibir alertas críticas, incluso en zonas con conectividad limitada. Este proyecto es desarrollado por estudiantes de Ingeniería de Sistemas de la **Universidad del Magdalena**.
+Plataforma digital para pequenos productores del Magdalena con backend NestJS y frontend Flutter.
 
-## 🚀 Características Principales
+## Estructura del proyecto
+agrofield/
+├── backend/        # API REST en NestJS + PostgreSQL
+└── frontend/       # App movil/web en Flutter
 
-- **Gestión Offline**: Capacidad de registrar datos y consultar tareas sin conexión a internet, sincronizando automáticamente al recuperar la señal.
-- **Dashboard de Control**: Visualización inmediata de la próxima tarea pendiente y alertas críticas de plagas.
-- **Mapeo de Lotes**: Registro geográfico de terrenos para recomendaciones personalizadas de riego y fertilización.
-- **Monitoreo del Suelo**: Seguimiento en tiempo real de niveles de humedad y nutrientes (Nitrógeno).
-- **Diseño Rugged/Neo-brutalista**: Interfaz de alta visibilidad y contraste, optimizada para el trabajo en campo.
+## Requisitos previos
 
-## 🛠️ Stack Tecnológico
+Antes de empezar, instala:
 
-- **Frontend**: Flutter & Dart (Arquitectura modular y componentes personalizados).
-- **Backend**: Node.js (API REST).
-- **Base de Datos**:
-  - **PostgreSQL**: Almacenamiento centralizado con soporte geoespacial.
-  - **SQLite**: Persistencia local en el dispositivo móvil para modo offline.
-- **Infraestructura**: AWS / Google Cloud Platform.
+| Software | Version | Descarga |
+|----------|---------|----------|
+| Node.js | v20+ | https://nodejs.org |
+| Docker Desktop | Reciente | https://www.docker.com/products/docker-desktop |
+| Flutter SDK | 3.27+ | https://docs.flutter.dev/get-started/install |
+| Git | Reciente | https://git-scm.com |
+| Java JDK | 17 | https://adoptium.net |
 
-## 📁 Estructura del Proyecto (Frontend)
+Verifica con:
 
-```text
-lib/
-├── core/
-│   └── theme/          # Definición de colores y estilos visuales (Rugged)
-├── presentation/
-│   ├── screens/        # Vistas principales (Login, Home, MapOnboarding)
-│   └── widgets/        # Componentes reutilizables (CustomAppBar, RuggedCards)
-└── main.dart           # Punto de entrada de la aplicación
+```bash
+node --version
+docker --version
+flutter --version
+java -version
 ```
 
-## 👥 Equipo de Desarrollo
+## Backend - Levantar la API
 
-Estudiante de Ingeniería de Sistemas - Universidad del Magdalena.
+### 1. Entrar al backend
 
-Ana Karina Rivera
-Andres Rivera
-Yuranis Botto
-Camila Castaño
-Jesus Capataz
-
-## 🔧 Instalación y Configuración
-
-1. Clonar el repositorio:
-    ```text
-    git clone https://github.com/AnaKarina15/smart-farming-app.git
-    ```
-
-2.  Instalar dependencias:
-    ```bash
-    flutter pub get
-    ```
-3.  Ejecutar la aplicación:
-    ```bash
-    flutter run
-    ```
-
-## 🗄️ Modelo de Base de Datos (MER)
-
-El sistema utiliza una arquitectura de base de datos híbrida: **PostgreSQL** para el almacenamiento centralizado en la nube y **SQLite** para la gestión de datos en modo offline dentro del dispositivo móvil.
-
-### Diagrama de Relaciones
-
-```mermaid
-erDiagram
-    USERS ||--o{ LOTS : posee
-    LOTS ||--|| CROPS : tiene
-    LOTS ||--o{ TASKS : registra
-
-    USERS {
-        uuid id_usuario PK
-        string nombre_completo
-        string correo UK
-        string password_hash
-    }
-    LOTS {
-        uuid id_lote PK
-        uuid id_usuario FK
-        string nombre_lote
-        string estado_humedad
-        jsonb poligono_geo
-    }
-    TASKS {
-        uuid id_tarea PK
-        uuid id_lote FK
-        string tipo_operacion "Siembra, Riego, Fertilización, Fitosanitario"
-        string prioridad "Baja, Media, Alta, CRÍTICA"
-        timestamp fecha_programada
-    }
+```bash
+cd backend
 ```
 
-## Descripción de Módulos
+### 2. Instalar dependencias
 
-Módulo de Siembra: Planificación de fechas de plantación y seguimiento del ciclo de vida inicial del cultivo.
+```bash
+npm install
+```
 
-Módulo de Riego: Monitoreo de niveles de humedad y programación de frecuencias de irrigación.
+### 3. Configurar variables de entorno
 
-Módulo de Fertilización: Seguimiento de nutrientes (Nitrógeno, Fósforo, Potasio) y planes de abonado.
+Copia `.env.example` a `.env`:
 
-Módulo Fitosanitario: Gestión de alertas de plagas, enfermedades y registro de tratamientos químicos o biológicos.
+```bash
+# Windows PowerShell
+Copy-Item .env.example .env
+
+# Linux/Mac
+cp .env.example .env
+```
+
+### 4. Levantar PostgreSQL en Docker
+
+```bash
+docker compose up -d
+```
+
+Esto levanta:
+- PostgreSQL en `localhost:5432`
+- pgAdmin en `localhost:5050` (admin@agrofield.local / admin)
+
+### 5. Correr migraciones de la base de datos
+
+```bash
+npm run migration:run
+```
+
+### 6. Arrancar el servidor
+
+```bash
+npm run start:dev
+```
+
+Quedara en: http://localhost:3000
+
+Swagger UI: http://localhost:3000/api/docs
+
+## Frontend - Levantar la app
+
+### 1. Entrar al frontend
+
+```bash
+cd frontend
+```
+
+### 2. Instalar dependencias
+
+```bash
+flutter pub get
+```
+
+### 3. Configurar URL del backend (si no es localhost:3000)
+
+Edita `lib/core/network/api_endpoints.dart`:
+
+```dart
+static const String baseUrl = 'http://TU_HOST:3000/api/v1';
+```
+
+### 4. Correr la app
+
+**En navegador (recomendado para desarrollo):**
+
+```bash
+flutter run -d chrome --web-port 8080
+```
+
+**En emulador Android:**
+
+```bash
+flutter run -d emulator-5554
+```
+
+Y cambia `baseUrl` a `http://10.0.2.2:3000/api/v1`
+
+**En celular fisico Android:**
+
+1. Conecta el celular por USB con depuracion activada
+2. Cambia `baseUrl` a `http://IP_LOCAL_DE_TU_PC:3000/api/v1`
+3. Corre `flutter run`
+
+## Probar el sistema
+
+### 1. Registrar un usuario
+
+Abre la app en Chrome y crea una cuenta nueva.
+
+### 2. Verificar en Swagger
+
+Ve a http://localhost:3000/api/docs y haz login con el mismo usuario.
+
+### 3. Verificar en pgAdmin
+
+Abre http://localhost:5050:
+- Email: admin@agrofield.local
+- Password: admin
+
+Conecta a:
+- Host: agrofield-postgres
+- Port: 5432
+- DB: agrofield_db
+- User: postgres
+- Password: postgres
+
+La tabla `users` mostrara los registros.
+
+## Apagar todo
+
+```bash
+# En backend
+Ctrl+C
+docker compose down
+
+# En frontend
+q
+```
+
+## Solucion de problemas
+
+### CORS error en navegador
+
+Verifica que el backend este corriendo en `http://localhost:3000`.
+
+### "Connection refused" desde celular
+
+- Asegurate de que el PC y el celular esten en la MISMA red WiFi
+- Cambia `baseUrl` con la IP local del PC (ej. 192.168.1.10)
+- Verifica que el firewall de Windows permita el puerto 3000
+
+### Docker no levanta
+
+```bash
+docker compose down -v
+docker compose up -d
+npm run migration:run
+```
+
+### Flutter pub get falla
+
+```bash
+flutter clean
+flutter pub get
+```
+
+## Equipo
+
+Universidad del Magdalena - Arquitectura de Software 2026
+
+- Botto Jimenez Yuranis
+- Capataz Gamarra Jesus
+- Castano Mazenett Camila
+- Rivera Garcia Andres
+- Rivera Julio Ana Karina
+
+Docente: Johan Alberto Robles Solano

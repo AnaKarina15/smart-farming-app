@@ -1,0 +1,82 @@
+import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { WinstonModule } from 'nest-winston';
+
+import appConfig from './config/app.config';
+import databaseConfig from './config/database.config';
+import jwtConfig from './config/jwt.config';
+import swaggerConfig from './config/swagger.config';
+import { validationSchema } from './config/validation.schema';
+import { typeOrmConfigFactory } from './database/typeorm.config';
+import { winstonConfig } from './common/utils/winston.config';
+
+import { AuthModule } from './modules/auth/auth.module';
+import { HealthModule } from './modules/health/health.module';
+import { LotesModule } from './modules/lotes/lotes.module';
+import { UsersModule } from './modules/users/users.module';
+
+/**
+ * Modulo raiz de AgroField API.
+ *
+ * Configura:
+ * - Configuracion tipada y validada (Joi)
+ * - Conexion a PostgreSQL via TypeORM
+ * - Logger estructurado (Winston)
+ * - Rate limiting global (Throttler) - protege contra abuso de endpoints
+ * - Modulos de negocio (Auth, Users, Lotes, Health)
+ */
+@Module({
+  imports: [
+    // Configuracion tipada y validada
+    ConfigModule.forRoot({
+      isGlobal: true,
+      cache: true,
+      load: [appConfig, databaseConfig, jwtConfig, swaggerConfig],
+      validationSchema,
+      validationOptions: {
+        allowUnknown: true,
+        abortEarly: false,
+      },
+    }),
+
+    // Logger
+    WinstonModule.forRootAsync({
+      useFactory: () => winstonConfig(),
+    }),
+
+    // Base de datos
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: typeOrmConfigFactory,
+      inject: [ConfigService],
+    }),
+
+    // Rate limiting global (proteccion contra abuso)
+    ThrottlerModule.forRootAsync({
+      useFactory: () => ({
+        throttlers: [
+          {
+            ttl: parseInt(process.env.THROTTLE_TTL || '60000', 10),
+            limit: parseInt(process.env.THROTTLE_LIMIT || '100', 10),
+          },
+        ],
+      }),
+    }),
+
+    // Modulos de negocio
+    AuthModule,
+    UsersModule,
+    LotesModule,
+    HealthModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
+})
+export class AppModule {}

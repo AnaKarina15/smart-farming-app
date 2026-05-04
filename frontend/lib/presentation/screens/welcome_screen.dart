@@ -18,7 +18,7 @@ class WelcomeScreen extends StatelessWidget {
           Image.network(
             'https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=1000', // Placeholder
             fit: BoxFit.cover,
-            color: Colors.black.withOpacity(0.5),
+            color: Colors.black.withValues(alpha: 0.5),
             colorBlendMode: BlendMode.darken,
           ),
           SafeArea(

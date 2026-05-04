@@ -57,7 +57,7 @@ class SmartFarmingApp extends StatelessWidget {
             primary: AppColors.primary,
             error: AppColors.error,
             surfaceTint: AppColors.surfaceTint,
-            background: AppColors.background,
+            surface: AppColors.background,
           ),
           useMaterial3: true,
           scaffoldBackgroundColor: AppColors.background,

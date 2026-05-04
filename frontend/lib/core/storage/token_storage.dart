@@ -12,7 +12,7 @@ class TokenStorage {
   static const _userIdKey = 'agrofield_user_id';
 
   final FlutterSecureStorage _storage = const FlutterSecureStorage(
-    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+    aOptions: AndroidOptions(),
   );
 
   Future<void> saveTokens({

@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 import '../widgets/rugged_button.dart';
 import 'home_screen.dart';
+import 'profile_screen.dart';
 
 class MapOnboardingScreen extends StatefulWidget {
   const MapOnboardingScreen({super.key});
@@ -23,7 +24,7 @@ class _MapOnboardingScreenState extends State<MapOnboardingScreen> {
       const HomeScreen(),
       const _MapOnboardingView(),
       const Center(child: Text('Tareas (Próximamente)')),
-      const Center(child: Text('Configuración (Próximamente)')),
+      const ProfileScreen(),
     ];
   }
 
@@ -71,9 +72,9 @@ class _MapOnboardingScreenState extends State<MapOnboardingScreen> {
               label: 'Tareas',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.settings_outlined), // Ícono de configuración (engranaje)
+              icon: Icon(Icons.settings_outlined),
               activeIcon: Icon(Icons.settings),
-              label: 'Configuración', // (O 'Ajustes', como prefieras llamarlo)
+              label: 'Ajustes',
             ),
           ],
         ),

@@ -91,7 +91,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 Center(
                   child: Text(
-                    'Agrofield',
+                    'Smart Farming',
                     style: GoogleFonts.lexend(
                       fontSize: 24,
                       fontWeight: FontWeight.w700,

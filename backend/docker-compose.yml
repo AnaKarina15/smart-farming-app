@@ -10,7 +10,7 @@
 #   docker compose ps              Ver estado de servicios
 #
 # Servicios:
-#   - postgres: Base de datos principal (puerto 5432)
+#   - postgres: Base de datos principal (puerto 5433 en host, 5432 en contenedor)
 #   - pgadmin:  Interfaz web de administracion (puerto 5050)
 # =============================================================================
 
@@ -25,7 +25,7 @@ services:
       POSTGRES_DB: agrofield_db
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
-      - '5432:5432'
+      - '5433:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:

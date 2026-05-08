@@ -12,7 +12,8 @@ class RegistrationSuccessScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     // Obtener el nombre del usuario actualmente logueado
     final currentUser = context.watch<AuthProvider>().currentUser;
-    final nombreUsuario = currentUser?.nombreCompleto.toUpperCase() ?? 'USUARIO';
+    final nombreUsuario =
+        currentUser?.nombreCompleto.toUpperCase() ?? 'USUARIO';
 
     return Scaffold(
       backgroundColor: AppColors.background,

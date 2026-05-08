@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 import '../widgets/custom_app_bar.dart';
-import 'home_screen.dart'; // For OfflineStatusBanner
+import '../widgets/offline_banner.dart';
+import 'home_screen.dart';
 
 class FertilizationSuccessScreen extends StatelessWidget {
   final int amount;
@@ -23,7 +24,7 @@ class FertilizationSuccessScreen extends StatelessWidget {
       appBar: const CustomAppBar(),
       body: Column(
         children: [
-          const OfflineStatusBanner(),
+          const OfflineBanner(style: OfflineBannerStyle.surface),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24.0),

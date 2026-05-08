@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_text.dart';
 
+/// Botón principal AgroField - píldora Material 3.
 class RuggedButton extends StatelessWidget {
   final String text;
   final VoidCallback onPressed;
@@ -9,56 +10,49 @@ class RuggedButton extends StatelessWidget {
   final Color textColor;
   final bool isOutlined;
   final IconData? icon;
+  final double height;
 
   const RuggedButton({
     super.key,
     required this.text,
     required this.onPressed,
     this.backgroundColor = AppColors.primary,
-    this.textColor = AppColors.white,
+    this.textColor = AppColors.onPrimary,
     this.isOutlined = false,
     this.icon,
+    this.height = 56,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onPressed,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: isOutlined ? Colors.transparent : backgroundColor,
-          borderRadius: BorderRadius.circular(4.0),
-          border: Border.all(
-            color: isOutlined ? AppColors.white : AppColors.primary,
-            width: 2,
+    final bg = isOutlined ? Colors.transparent : backgroundColor;
+    final fg = isOutlined ? AppColors.primary : textColor;
+
+    return SizedBox(
+      width: double.infinity,
+      height: height,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: bg,
+          foregroundColor: fg,
+          elevation: isOutlined ? 0 : 2,
+          shadowColor: AppColors.primary.withValues(alpha: 0.2),
+          shape: StadiumBorder(
+            side: isOutlined
+                ? const BorderSide(color: AppColors.primary, width: 1.5)
+                : BorderSide.none,
           ),
-          boxShadow: isOutlined 
-              ? [] 
-              : const [
-                  BoxShadow(
-                    color: AppColors.primary,
-                    offset: Offset(4, 4),
-                    blurRadius: 0,
-                  )
-                ],
+          padding: EdgeInsets.zero,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             if (icon != null) ...[
-              Icon(icon, color: textColor),
+              Icon(icon, color: fg, size: 20),
               const SizedBox(width: 8),
             ],
-            Text(
-              text,
-              style: GoogleFonts.lexend(
-                color: textColor,
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
+            Text(text.toUpperCase(), style: AppText.labelCapsLg(color: fg)),
           ],
         ),
       ),

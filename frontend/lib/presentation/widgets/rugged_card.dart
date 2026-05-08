@@ -1,16 +1,21 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 
+/// Card AgroField - estilo Material 3, esquinas suaves, sin sombras duras.
 class RuggedCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
   final Color backgroundColor;
+  final double borderRadius;
+  final bool border;
 
   const RuggedCard({
     super.key,
     required this.child,
-    this.padding = const EdgeInsets.all(16.0),
-    this.backgroundColor = AppColors.background,
+    this.padding = const EdgeInsets.all(24.0),
+    this.backgroundColor = AppColors.surfaceContainerLowest,
+    this.borderRadius = 16.0,
+    this.border = true,
   });
 
   @override
@@ -19,16 +24,15 @@ class RuggedCard extends StatelessWidget {
       padding: padding,
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(8.0),
-        border: Border.all(
-          color: AppColors.primary,
-          width: 2,
-        ),
-        boxShadow: const [
+        borderRadius: BorderRadius.circular(borderRadius),
+        border: border
+            ? Border.all(color: AppColors.outlineVariant, width: 1)
+            : null,
+        boxShadow: [
           BoxShadow(
-            color: AppColors.primary,
-            offset: Offset(4, 4),
-            blurRadius: 0,
+            color: AppColors.primary.withValues(alpha: 0.04),
+            offset: const Offset(0, 2),
+            blurRadius: 12,
           ),
         ],
       ),

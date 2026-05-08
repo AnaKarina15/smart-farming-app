@@ -106,7 +106,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   child: Align(
                     alignment: Alignment.topLeft,
                     child: IconButton(
-                      icon: const Icon(Icons.arrow_back, color: AppColors.white),
+                      icon: const Icon(
+                        Icons.arrow_back,
+                        color: AppColors.white,
+                      ),
                       onPressed: () => Navigator.pop(context),
                     ),
                   ),
@@ -179,7 +182,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             if (value == null || value.trim().isEmpty) {
                               return 'El correo es requerido';
                             }
-                            final emailRegExp = RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+");
+                            final emailRegExp = RegExp(
+                              r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+",
+                            );
                             if (!emailRegExp.hasMatch(value)) {
                               return 'Ingresa un correo válido';
                             }
@@ -222,7 +227,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 8),
                       isLoading
-                          ? const CircularProgressIndicator(color: AppColors.primary)
+                          ? const CircularProgressIndicator(
+                              color: AppColors.primary,
+                            )
                           : RuggedButton(
                               text: 'CREAR CUENTA',
                               onPressed: _handleRegister,
@@ -242,7 +249,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             onTap: () {
                               Navigator.pushReplacement(
                                 context,
-                                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                                MaterialPageRoute(
+                                  builder: (_) => const LoginScreen(),
+                                ),
                               );
                             },
                             child: Text(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 
+/// TextField AgroField - estilo Material 3 con bordes redondeados.
 class RuggedTextField extends StatelessWidget {
   final String hintText;
   final IconData? prefixIcon;
@@ -25,15 +26,15 @@ class RuggedTextField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final border = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(8.0),
-      borderSide: const BorderSide(color: AppColors.borderGrey, width: 1),
+      borderRadius: BorderRadius.circular(12.0),
+      borderSide: const BorderSide(color: AppColors.outlineVariant, width: 1),
     );
     final errorBorder = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(8.0),
-      borderSide: const BorderSide(color: AppColors.error, width: 2),
+      borderRadius: BorderRadius.circular(12.0),
+      borderSide: const BorderSide(color: AppColors.error, width: 1.5),
     );
     final focusedBorder = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(8.0),
+      borderRadius: BorderRadius.circular(12.0),
       borderSide: const BorderSide(color: AppColors.primary, width: 2),
     );
 
@@ -43,34 +44,34 @@ class RuggedTextField extends StatelessWidget {
       obscureText: obscureText,
       keyboardType: keyboardType,
       style: GoogleFonts.lexend(
-        color: AppColors.primary,
+        color: AppColors.onSurface,
         fontSize: 16,
         fontWeight: FontWeight.w400,
       ),
       decoration: InputDecoration(
-        fillColor: AppColors.white,
+        fillColor: AppColors.surfaceContainerLowest,
         filled: true,
         hintText: hintText,
         hintStyle: GoogleFonts.lexend(
-          color: AppColors.textGrey,
+          color: AppColors.outline,
           fontSize: 16,
           fontWeight: FontWeight.w400,
         ),
-        prefixIcon: prefixIcon != null 
-            ? Icon(prefixIcon, color: AppColors.primary)
+        prefixIcon: prefixIcon != null
+            ? Icon(prefixIcon, color: AppColors.onSurfaceVariant, size: 22)
             : null,
-        suffixIcon: suffixIcon != null 
-            ? Icon(suffixIcon, color: AppColors.primary)
+        suffixIcon: suffixIcon != null
+            ? Icon(suffixIcon, color: AppColors.onSurfaceVariant, size: 22)
             : null,
         border: border,
         enabledBorder: border,
         focusedBorder: focusedBorder,
         errorBorder: errorBorder,
         focusedErrorBorder: errorBorder,
-        errorStyle: GoogleFonts.lexend(color: AppColors.error),
+        errorStyle: GoogleFonts.lexend(color: AppColors.error, fontSize: 12),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
-          vertical: 16,
+          vertical: 18,
         ),
       ),
     );

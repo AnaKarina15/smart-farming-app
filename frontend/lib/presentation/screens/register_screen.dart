@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_text.dart';
 import '../../data/providers/auth_provider.dart';
 import '../widgets/rugged_button.dart';
 import '../widgets/rugged_text_field.dart';
@@ -34,32 +35,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void _handleRegister() async {
     if (_formKey.currentState!.validate()) {
       final authProvider = context.read<AuthProvider>();
-
       final success = await authProvider.register(
         nombreCompleto: _nameController.text.trim(),
         email: _emailController.text.trim(),
         telefono: _phoneController.text.trim(),
         password: _passwordController.text,
       );
-
       if (!mounted) return;
-
       if (success) {
-        // Registro exitoso → ir a pantalla de bienvenida
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const RegistrationSuccessScreen()),
         );
       } else {
-        // Mostrar error del backend
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
               authProvider.errorMessage ?? 'Error desconocido',
-              style: GoogleFonts.lexend(color: Colors.white),
+              style: GoogleFonts.lexend(color: AppColors.onError),
             ),
             backgroundColor: AppColors.error,
-            duration: const Duration(seconds: 4),
           ),
         );
         authProvider.clearError();
@@ -67,219 +62,133 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-  Widget _buildLabeledField(String label, Widget field) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.lexend(
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            color: AppColors.primary,
-          ),
-        ),
-        const SizedBox(height: 8),
-        field,
-        const SizedBox(height: 16),
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final isLoading = context.watch<AuthProvider>().isLoading;
-
     return Scaffold(
-      body: Column(
-        children: [
-          Expanded(
-            flex: 2,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                Image.network(
-                  'https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=1000',
-                  fit: BoxFit.cover,
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 8),
+              IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(
+                  Icons.arrow_back,
+                  color: AppColors.onSurface,
+                  size: 28,
                 ),
-                SafeArea(
-                  child: Align(
-                    alignment: Alignment.topLeft,
-                    child: IconButton(
-                      icon: const Icon(
-                        Icons.arrow_back,
-                        color: AppColors.white,
-                      ),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ),
-                ),
-                Center(
-                  child: Text(
-                    'Smart Farming',
-                    style: GoogleFonts.lexend(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.white,
-                      letterSpacing: 1.5,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            flex: 6,
-            child: Container(
-              width: double.infinity,
-              decoration: const BoxDecoration(
-                color: AppColors.background,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(24),
-                  topRight: Radius.circular(24),
-                ),
+                padding: EdgeInsets.zero,
               ),
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24.0),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      const SizedBox(height: 8),
-                      Text(
-                        'Bienvenido a Smart Farming.\nIngresa tus datos',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.lexend(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      _buildLabeledField(
-                        'NOMBRE COMPLETO',
-                        RuggedTextField(
-                          controller: _nameController,
-                          hintText: 'EJ: JUAN PÉREZ',
-                          prefixIcon: Icons.person_outline,
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'El nombre es requerido';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                      _buildLabeledField(
-                        'CORREO ELECTRÓNICO',
-                        RuggedTextField(
-                          controller: _emailController,
-                          hintText: 'CORREO@EJEMPLO.COM',
-                          prefixIcon: Icons.email_outlined,
-                          keyboardType: TextInputType.emailAddress,
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'El correo es requerido';
-                            }
-                            final emailRegExp = RegExp(
-                              r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+",
-                            );
-                            if (!emailRegExp.hasMatch(value)) {
-                              return 'Ingresa un correo válido';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                      _buildLabeledField(
-                        'TELÉFONO CELULAR',
-                        RuggedTextField(
-                          controller: _phoneController,
-                          hintText: '+573001234567',
-                          prefixIcon: Icons.phone_iphone_outlined,
-                          keyboardType: TextInputType.phone,
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'El teléfono es requerido';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                      _buildLabeledField(
-                        'CREAR CONTRASEÑA',
-                        RuggedTextField(
-                          controller: _passwordController,
-                          hintText: '........',
-                          prefixIcon: Icons.lock_outline,
-                          obscureText: true,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'La contraseña es requerida';
-                            }
-                            if (value.length < 6) {
-                              return 'La contraseña debe tener al menos 6 caracteres';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      isLoading
-                          ? const CircularProgressIndicator(
-                              color: AppColors.primary,
-                            )
-                          : RuggedButton(
-                              text: 'CREAR CUENTA',
-                              onPressed: _handleRegister,
-                            ),
-                      const SizedBox(height: 24),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            '¿Ya tienes una cuenta? ',
-                            style: GoogleFonts.lexend(
-                              fontSize: 14,
+              const SizedBox(height: 16),
+              Text('Crear cuenta', style: AppText.h2()),
+              const SizedBox(height: 8),
+              Text(
+                'Regístrate para empezar a gestionar tus cultivos',
+                style: AppText.bodyMd(color: AppColors.onSurfaceVariant),
+              ),
+              const SizedBox(height: 32),
+              Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('NOMBRE COMPLETO', style: AppText.labelCaps()),
+                    const SizedBox(height: 8),
+                    RuggedTextField(
+                      controller: _nameController,
+                      hintText: 'Ej: Juan Pérez',
+                      prefixIcon: Icons.person_outline,
+                      validator: (v) =>
+                          (v == null || v.isEmpty) ? 'Ingresa tu nombre' : null,
+                    ),
+                    const SizedBox(height: 20),
+                    Text('CORREO ELECTRÓNICO', style: AppText.labelCaps()),
+                    const SizedBox(height: 8),
+                    RuggedTextField(
+                      controller: _emailController,
+                      hintText: 'tu@correo.com',
+                      prefixIcon: Icons.email_outlined,
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (v) =>
+                          (v == null || v.isEmpty) ? 'Ingresa tu correo' : null,
+                    ),
+                    const SizedBox(height: 20),
+                    Text('TELÉFONO', style: AppText.labelCaps()),
+                    const SizedBox(height: 8),
+                    RuggedTextField(
+                      controller: _phoneController,
+                      hintText: '300 000 0000',
+                      prefixIcon: Icons.phone_outlined,
+                      keyboardType: TextInputType.phone,
+                      validator: (v) => (v == null || v.isEmpty)
+                          ? 'Ingresa tu teléfono'
+                          : null,
+                    ),
+                    const SizedBox(height: 20),
+                    Text('CONTRASEÑA', style: AppText.labelCaps()),
+                    const SizedBox(height: 8),
+                    RuggedTextField(
+                      controller: _passwordController,
+                      hintText: 'Mínimo 8 caracteres',
+                      prefixIcon: Icons.lock_outline,
+                      obscureText: true,
+                      validator: (v) {
+                        if (v == null || v.isEmpty) {
+                          return 'Ingresa una contraseña';
+                        }
+                        if (v.length < 8) return 'Mínimo 8 caracteres';
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 32),
+                    isLoading
+                        ? const Center(
+                            child: CircularProgressIndicator(
                               color: AppColors.primary,
                             ),
+                          )
+                        : RuggedButton(
+                            text: 'CREAR CUENTA',
+                            onPressed: _handleRegister,
                           ),
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const LoginScreen(),
-                                ),
-                              );
-                            },
-                            child: Text(
-                              'Inicia Sesión',
-                              style: GoogleFonts.lexend(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.primary,
+                    const SizedBox(height: 16),
+                    Center(
+                      child: TextButton(
+                        onPressed: () => Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const LoginScreen(),
+                          ),
+                        ),
+                        child: RichText(
+                          text: TextSpan(
+                            text: '¿Ya tienes cuenta? ',
+                            style: AppText.bodyMd(
+                              color: AppColors.onSurfaceVariant,
+                            ),
+                            children: [
+                              TextSpan(
+                                text: 'Inicia sesión',
+                                style: AppText.bodyMd(
+                                  color: AppColors.primary,
+                                ).copyWith(fontWeight: FontWeight.w600),
                               ),
-                            ),
+                            ],
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Al registrarte aceptas los términos y condiciones',
-                        style: GoogleFonts.lexend(
-                          fontSize: 12,
-                          color: AppColors.textGrey,
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
                 ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

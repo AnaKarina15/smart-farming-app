@@ -3,7 +3,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text.dart';
 import '../widgets/custom_app_bar.dart';
 import '../widgets/rugged_button.dart';
-import 'agro_bottom_nav.dart';
+import '../common/agro_bottom_nav.dart';
 import 'offline_banner.dart';
 
 /// Layout reusable para pantallas de éxito (riego, fertilización, siembra…).

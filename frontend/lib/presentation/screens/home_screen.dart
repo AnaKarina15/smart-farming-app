@@ -1,464 +1,269 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-
 import '../../core/theme/app_colors.dart';
-import 'irrigation_screen.dart';
+import '../../core/theme/app_text.dart';
+import '../common/agro_bottom_nav.dart';
+import '../common/offline_banner.dart';
+import '../widgets/custom_app_bar.dart';
 import 'fertilization_screen.dart';
-import 'sowing_screen.dart';
+import 'irrigation_screen.dart';
+import 'lotes_map_screen.dart';
 import 'phytosanitary_screen.dart';
+import 'profile_screen.dart';
+import 'soil_humidity_screen.dart';
+import 'sowing_screen.dart';
+import 'tasks_screen.dart';
+
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    const bool hasCriticalAlert = true;
-
     return Scaffold(
       backgroundColor: AppColors.background,
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(
-          bottom: 16.0,
-        ), // Margen sobre el bottom nav
-        child: FloatingActionButton(
-          onPressed: () {},
-          backgroundColor: const Color(0xFF006399), // secondary
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: const BorderSide(color: Colors.white, width: 4),
-          ),
-          elevation: 8,
-          child: const Icon(Icons.explore, color: Colors.white, size: 32),
-        ),
-      ),
+      appBar: const CustomAppBar(),
       body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const OfflineStatusBanner(),
-              const SizedBox(height: 32),
-              if (hasCriticalAlert) ...[
-                const LatestTaskCard(), // Nuestra nueva tarjeta de Próxima Tarea
-                const SizedBox(height: 32),
-              ],
-              const QuickOperationsGrid(),
-              const SizedBox(height: 32),
-              const SoilStatusCard(),
-              const SizedBox(
-                height: 80,
-              ), // Espacio extra al final para que el FAB no tape nada
-            ],
-          ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const OfflineBanner(),
+            const SizedBox(height: 24),
+
+            // ── Hero card ─────────────────────────────────────
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceContainerLowest,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.08),
+                    offset: const Offset(0, 4),
+                    blurRadius: 24,
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryFixed,
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Text(
+                                'RESUMEN GENERAL',
+                                style: AppText.labelCaps(
+                                  color: AppColors.onPrimaryFixed,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Text('Campo Norte, Lote B', style: AppText.h2()),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            'Humedad Suelo',
+                            style: AppText.bodyMd(
+                              color: AppColors.onSurfaceVariant,
+                            ),
+                          ),
+                          Text(
+                            '68%',
+                            style: AppText.h1(color: AppColors.primary),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 32),
+                  // Glass cards
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _glassCard(Icons.thermostat, 'Temperatura', '24°C'),
+                        const SizedBox(width: 12),
+                        _glassCard(Icons.water_drop, 'Prob. Lluvia', '15%'),
+                        const SizedBox(width: 12),
+                        _glassCard(Icons.air, 'Viento', '12 km/h'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 32),
+
+            // ── Quick Actions ─────────────────────────────────
+            Text('Acciones Rápidas'),
+            const SizedBox(height: 16),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _action(
+                    context,
+                    Icons.water_drop,
+                    'Riego',
+                    const IrrigationScreen(),
+                  ),
+                  const SizedBox(width: 16),
+                  _action(
+                    context,
+                    Icons.eco,
+                    'Fertilización',
+                    const FertilizationScreen(),
+                  ),
+                  const SizedBox(width: 16),
+                  _action(
+                    context,
+                    Icons.grass,
+                    'Siembra',
+                    const SowingScreen(),
+                  ),
+                  const SizedBox(width: 16),
+                  _action(
+                    context,
+                    Icons.sensors,
+                    'Humedad',
+                    const SoilHumidityScreen(),
+                  ),
+                  const SizedBox(width: 16),
+                  _action(
+                    context,
+                    Icons.bug_report,
+                    'Manejo Fito',
+                    const PhytosanitaryScreen(),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
         ),
       ),
-    );
-  }
-}
-
-class OfflineStatusBanner extends StatelessWidget {
-  const OfflineStatusBanner({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: AppColors.primary,
-        border: Border.all(
-          color: const Color(0xFF1B4332),
-          width: 2,
-        ), // primary-container
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, offset: Offset(0, 1), blurRadius: 2),
-        ],
-      ),
-      padding: const EdgeInsets.all(10.0),
-      child: Row(
-        children: [
-          const Icon(
-            Icons.cloud_off,
-            color: Color(0xFFC1ECD4),
-            size: 24,
-          ), // primary-fixed
-          const SizedBox(width: 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'MODO OFFLINE',
-                style: GoogleFonts.lexend(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              Text(
-                'Guardando en el celular',
-                style: GoogleFonts.lexend(
-                  color: Colors.white.withValues(alpha: 0.9),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-            ],
-          ),
-        ],
+      bottomNavigationBar: AgroBottomNav(
+        current: AgroTab.home,
+        onTap: (tab) {
+          switch (tab) {
+            case AgroTab.lotes:
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const LotesMapScreen()),
+              );
+              break;
+            case AgroTab.tareas:
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const TasksScreen()),
+              );
+              break;
+            case AgroTab.perfil:
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ProfileScreen()),
+              );
+              break;
+            case AgroTab.home:
+              break;
+          }
+        },
       ),
     );
   }
-}
 
-class LatestTaskCard extends StatelessWidget {
-  const LatestTaskCard({super.key});
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _glassCard(IconData icon, String label, String value) {
     return Container(
+      width: 140,
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFC1ECD4), // Fondo mint light green
-        border: Border.all(color: AppColors.primary, width: 2),
-        boxShadow: const [
-          BoxShadow(
-            color: AppColors.primary,
-            offset: Offset(4, 4),
-            blurRadius: 0,
-          ),
-        ],
+        color: Colors.white.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.outlineVariant, width: 1),
       ),
-      padding: const EdgeInsets.all(10.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'PRÓXIMA TAREA',
-                style: GoogleFonts.lexend(
-                  color: const Color(0xFF717973), // outline
-                  fontWeight: FontWeight.w700,
-                  fontSize: 12,
-                  letterSpacing: 1,
-                ),
-              ),
-              const Icon(
-                Icons.arrow_forward_ios,
-                size: 16,
-                color: AppColors.primary,
-              ),
-            ],
-          ),
+          Icon(icon, color: AppColors.primary, size: 22),
           const SizedBox(height: 8),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: const BoxDecoration(
-                  color: AppColors.primary, // Fondo verde oscuro
-                ),
-                child: const Icon(
-                  Icons.local_florist,
-                  color: Colors.white, // Ícono blanco
-                  size: 26,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'APLICAR\nFERTILIZANTE',
-                      style: GoogleFonts.lexend(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight
-                            .w800, // Un poco más grueso según la imagen
-                        fontSize: 14,
-                        height: 1.2, // Interlineado más cerrado
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Lote 1 • Hoy, 4:00 PM',
-                      style: GoogleFonts.lexend(
-                        color: const Color(0xFF717973), // outline text color
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class QuickOperationsGrid extends StatelessWidget {
-  const QuickOperationsGrid({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'OPERACIONES RÁPIDAS',
-          style: GoogleFonts.lexend(
-            color: const Color(0xFF717973), // outline
-            fontWeight: FontWeight.w700,
-            fontSize: 14,
-            letterSpacing: 1,
-          ),
-        ),
-        const SizedBox(height: 10),
-        // 1. Riego
-        _buildOperationButton(
-          icon: Icons.water_drop,
-          iconBgColor: const Color(0xFF67BAFD),
-          iconColor: const Color(0xFF004972),
-          label: 'Riego',
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const IrrigationScreen()),
-            );
-          },
-        ),
-        const SizedBox(height: 10),
-        // 2. Fertilización
-        _buildOperationButton(
-          icon: Icons.local_florist,
-          iconBgColor: const Color(0xFFC1ECD4),
-          iconColor: const Color(0xFF002114),
-          label: 'Fertilización',
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const FertilizationScreen()),
-            );
-          },
-        ),
-        const SizedBox(height: 10),
-        // 3. Siembra
-        _buildOperationButton(
-          icon: Icons.calendar_month,
-          iconBgColor: const Color(0xFFFFDAD4),
-          iconColor: const Color(0xFF410000),
-          label: 'Siembra',
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const SowingScreen()),
-            );
-          },
-        ),
-        const SizedBox(height: 10),
-        // 4. Fitosanitario
-        _buildOperationButton(
-          icon: Icons.bug_report_outlined,
-          iconBgColor: const Color(0xFFFFDAD6), // Rojo suave/Alerta
-          iconColor: const Color(0xFF93000A), // Rojo fuerte
-          label: 'Gestión Fitosanitaria',
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const PhytosanitaryScreen()),
-            );
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildOperationButton({
-    required IconData icon,
-    required Color iconBgColor,
-    required Color iconColor,
-    required String label,
-    VoidCallback? onTap,
-  }) {
-    return Container(
-      height: 80,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: AppColors.primary, width: 2),
-        boxShadow: const [
-          BoxShadow(
-            color: AppColors.primary,
-            offset: Offset(4, 4),
-            blurRadius: 0,
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap:
-              onTap ??
-              () {
-                // TODO: Navegar al módulo correspondiente
-              },
-          child: Row(
-            children: [
-              Container(
-                width: 80,
-                height: double.infinity,
-                decoration: BoxDecoration(
-                  color: iconBgColor,
-                  border: const Border(
-                    right: BorderSide(color: AppColors.primary, width: 2),
-                  ),
-                ),
-                child: Icon(icon, color: iconColor, size: 36),
-              ),
-              const SizedBox(width: 24),
-              Expanded(
-                child: Text(
-                  label.toUpperCase(),
-                  style: GoogleFonts.lexend(
-                    color: AppColors.primary,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-              ),
-              const Icon(
-                Icons.chevron_right,
-                color: Color(0xFF717973),
-                size: 32,
-              ),
-              const SizedBox(width: 24),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class SoilStatusCard extends StatelessWidget {
-  const SoilStatusCard({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFF4F2FF), // surface-container-low
-        border: Border.all(
-          color: const Color(0xFFC1C8C2),
-          width: 2,
-        ), // outline-variant
-      ),
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
           Text(
-            'ESTADO DEL SUELO',
-            style: GoogleFonts.lexend(
-              color: AppColors.primary,
-              fontWeight: FontWeight.w700,
-              fontSize: 14,
-              letterSpacing: 1.0,
-            ),
+            label,
+            style: AppText.bodyMd(
+              color: AppColors.onSurfaceVariant,
+            ).copyWith(fontSize: 14),
           ),
-          const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                'Humedad Lote 1',
-                style: GoogleFonts.lexend(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-              Text(
-                'SECO',
-                style: GoogleFonts.lexend(
-                  color: const Color(0xFF006399), // secondary
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.5,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                'Nutrientes (Nitrógeno)',
-                style: GoogleFonts.lexend(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-              Text(
-                'Óptimo',
-                style: GoogleFonts.lexend(
-                  color: AppColors.primary,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.5,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Container(
-            height: 16,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border.all(color: const Color(0xFFC1C8C2), width: 2),
-            ),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Container(
-                width:
-                    MediaQuery.of(context).size.width *
-                    0.6, // Simulating 85% width roughly
-                color: AppColors.primary,
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          const Divider(color: Color(0xFFC1C8C2), thickness: 2, height: 2),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Última inspección visual: Ayer',
-                style: GoogleFonts.lexend(
-                  color: const Color(0xFF717973),
-                  fontSize: 16,
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-              InkWell(
-                onTap: () {},
-                child: Container(
-                  color: AppColors.primary,
-                  padding: const EdgeInsets.all(8.0),
-                  child: const Icon(Icons.refresh, color: Colors.white),
-                ),
-              ),
-            ],
-          ),
+          Text(value, style: AppText.h3()),
         ],
+      ),
+    );
+  }
+
+  Widget _action(
+    BuildContext context,
+    IconData icon,
+    String label,
+    Widget destination,
+  ) {
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => destination),
+      ),
+      child: Container(
+        width: 130,
+        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 12),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: 0.06),
+              offset: const Offset(0, 4),
+              blurRadius: 16,
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.primaryFixed,
+              ),
+              child: Icon(icon, size: 28, color: AppColors.onPrimaryFixed),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: AppText.bodyMd().copyWith(
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
     );
   }

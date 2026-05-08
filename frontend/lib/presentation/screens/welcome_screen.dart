@@ -69,13 +69,16 @@ class WelcomeScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   RuggedButton(
                     text: 'CREAR CUENTA NUEVA',
-                    backgroundColor: Colors.black, // Darker or black based on design
+                    backgroundColor:
+                        Colors.black, // Darker or black based on design
                     textColor: AppColors.white,
                     isOutlined: true,
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                        MaterialPageRoute(
+                          builder: (_) => const RegisterScreen(),
+                        ),
                       );
                     },
                   ),

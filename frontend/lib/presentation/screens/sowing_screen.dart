@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_text.dart';
+import '../common/agro_bottom_nav.dart';
+import '../common/offline_banner.dart';
 import '../widgets/custom_app_bar.dart';
-import 'home_screen.dart'; // For OfflineStatusBanner
+import '../widgets/rugged_button.dart';
 import 'sowing_success_screen.dart';
+import 'terrain_status_screen.dart';
+import 'viability_screen.dart';
 
 class SowingScreen extends StatefulWidget {
   const SowingScreen({super.key});
@@ -13,8 +17,15 @@ class SowingScreen extends StatefulWidget {
 }
 
 class _SowingScreenState extends State<SowingScreen> {
-  String _selectedCrop = 'Maíz';
-  String _selectedLote = 'Lote Norte - Sector A1';
+  String _crop = 'Maíz';
+  String _lote = 'Lote Norte - Sector A1';
+  final _dateController = TextEditingController(text: '24/05/2026');
+
+  @override
+  void dispose() {
+    _dateController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,180 +34,239 @@ class _SowingScreenState extends State<SowingScreen> {
       appBar: const CustomAppBar(),
       body: Column(
         children: [
-          const OfflineStatusBanner(),
+          const OfflineBanner(style: OfflineBannerStyle.primary),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
+              padding: const EdgeInsets.all(24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'REGISTRAR NUEVA SIEMBRA',
-                    style: GoogleFonts.lexend(
-                      color: AppColors.primary,
-                      fontSize: 32,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.5,
-                      height: 1.1,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
+                  Text('Registrar Nueva Siembra', style: AppText.h1()),
+                  const SizedBox(height: 4),
                   Text(
                     'Complete los detalles técnicos del lote.',
-                    style: GoogleFonts.lexend(
-                      color: const Color(0xFF414844),
-                      fontSize: 16,
-                    ),
+                    style: AppText.bodyMd(color: AppColors.onSurfaceVariant),
                   ),
                   const SizedBox(height: 32),
 
-                  // Seleccionar Cultivo
-                  Text(
-                    'SELECCIONAR CULTIVO',
-                    style: GoogleFonts.lexend(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
-                      letterSpacing: 1.0,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
+                  Text('SELECCIONAR CULTIVO', style: AppText.labelCaps()),
+                  const SizedBox(height: 12),
                   Row(
                     children: [
+                      Expanded(child: _cropCard('Maíz', Icons.agriculture)),
+                      const SizedBox(width: 8),
+                      Expanded(child: _cropCard('Banano', Icons.bakery_dining)),
+                      const SizedBox(width: 8),
                       Expanded(
-                        child: _buildCropOption(
-                          icon: Icons.agriculture,
-                          label: 'Maíz',
-                          isActive: _selectedCrop == 'Maíz',
-                          onTap: () => setState(() => _selectedCrop = 'Maíz'),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _buildCropOption(
-                          icon: Icons
-                              .grass, // Used grass instead of bakery_dining
-                          label: 'Banano',
-                          isActive: _selectedCrop == 'Banano',
-                          onTap: () => setState(() => _selectedCrop = 'Banano'),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _buildCropOption(
-                          icon: Icons.energy_savings_leaf,
-                          label: 'Café',
-                          isActive: _selectedCrop == 'Café',
-                          onTap: () => setState(() => _selectedCrop = 'Café'),
-                        ),
+                        child: _cropCard('Café', Icons.energy_savings_leaf),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 24),
 
-                  // Fecha Field
-                  Text(
-                    'FECHA DE SIEMBRA',
-                    style: GoogleFonts.lexend(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    height: 56,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border.all(
-                        color: const Color(0xFF717973),
-                        width: 2,
+                  // Verificar viabilidad
+                  GestureDetector(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const ViabilityScreen(),
                       ),
-                      borderRadius: BorderRadius.circular(4),
                     ),
-                    child: Row(
-                      children: [
-                        const SizedBox(width: 16),
-                        const Icon(
-                          Icons.calendar_today,
-                          color: Color(0xFF717973),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            '24/05/2024',
-                            style: GoogleFonts.lexend(
-                              fontSize: 18,
-                              color: AppColors.primary,
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.secondaryContainer,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.verified_user,
+                            color: AppColors.onSecondaryContainer,
+                            size: 24,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Verificar Viabilidad',
+                              style: AppText.labelCaps(
+                                color: AppColors.onSecondaryContainer,
+                              ),
                             ),
                           ),
+                          const Icon(
+                            Icons.arrow_forward_ios,
+                            color: AppColors.onSecondaryContainer,
+                            size: 16,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '* Recomendado antes de registrar la siembra (RF03)',
+                    style: AppText.bodyMd(
+                      color: AppColors.onSurfaceVariant,
+                    ).copyWith(fontSize: 12, fontStyle: FontStyle.italic),
+                  ),
+                  const SizedBox(height: 24),
+
+                  Text('ESTADO PREVIO', style: AppText.labelCaps()),
+                  const SizedBox(height: 12),
+                  GestureDetector(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const TerrainStatusScreen(),
+                      ),
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceContainerLowest,
+                        border: Border.all(
+                          color: AppColors.outlineVariant,
+                          width: 1,
                         ),
-                      ],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 48,
+                            height: 48,
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: AppColors.surfaceContainer,
+                            ),
+                            child: const Icon(
+                              Icons.analytics,
+                              color: AppColors.onSurface,
+                              size: 22,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Estado del Terreno',
+                                  style: AppText.bodyMd().copyWith(
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Consultar condiciones actuales del suelo (RF04)',
+                                  style: AppText.bodyMd(
+                                    color: AppColors.onSurfaceVariant,
+                                  ).copyWith(fontSize: 13),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(
+                            Icons.open_in_new,
+                            color: AppColors.onSurfaceVariant,
+                            size: 20,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   const SizedBox(height: 24),
 
-                  // Lote Field
-                  Text(
-                    'SELECCIONAR LOTE',
-                    style: GoogleFonts.lexend(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
-                      letterSpacing: -0.5,
+                  Text('FECHA DE SIEMBRA', style: AppText.labelCaps()),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _dateController,
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(
+                        Icons.calendar_today,
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                      filled: true,
+                      fillColor: AppColors.surfaceContainerLowest,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: AppColors.outlineVariant,
+                          width: 1,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: AppColors.outlineVariant,
+                          width: 1,
+                        ),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 18,
+                      ),
                     ),
                   ),
+                  const SizedBox(height: 24),
+
+                  Text('SELECCIONAR LOTE', style: AppText.labelCaps()),
                   const SizedBox(height: 8),
+                  _selector(),
+                  const SizedBox(height: 24),
+
+                  // Area
                   Container(
-                    height: 56,
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppColors.primaryFixed,
+                      borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: const Color(0xFF717973),
-                        width: 2,
+                        color: AppColors.outlineVariant,
+                        width: 1,
                       ),
-                      borderRadius: BorderRadius.circular(4),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.map, color: Color(0xFF717973)),
-                        const SizedBox(width: 12),
                         Expanded(
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: _selectedLote,
-                              isExpanded: true,
-                              icon: const Icon(
-                                Icons.expand_more,
-                                color: Color(0xFF717973),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'ÁREA DISPONIBLE',
+                                style: AppText.labelCaps(
+                                  color: AppColors.onPrimaryFixedVariant,
+                                ),
                               ),
-                              style: GoogleFonts.lexend(
-                                color: AppColors.primary,
-                                fontSize: 18,
+                              const SizedBox(height: 8),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.baseline,
+                                textBaseline: TextBaseline.alphabetic,
+                                children: [
+                                  Text(
+                                    '12.5',
+                                    style: AppText.h1(
+                                      color: AppColors.onPrimaryFixed,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'ha',
+                                    style: AppText.bodyLg(
+                                      color: AppColors.onPrimaryFixed,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              onChanged: (String? newValue) {
-                                if (newValue != null) {
-                                  setState(() {
-                                    _selectedLote = newValue;
-                                  });
-                                }
-                              },
-                              items:
-                                  <String>[
-                                    'Lote Norte - Sector A1',
-                                    'Lote Sur - Sector B2',
-                                    'Lote Este - Reserva',
-                                  ].map<DropdownMenuItem<String>>((
-                                    String value,
-                                  ) {
-                                    return DropdownMenuItem<String>(
-                                      value: value,
-                                      child: Text(value),
-                                    );
-                                  }).toList(),
-                            ),
+                            ],
+                          ),
+                        ),
+                        Icon(
+                          Icons.straighten,
+                          size: 64,
+                          color: AppColors.primaryContainer.withValues(
+                            alpha: 0.3,
                           ),
                         ),
                       ],
@@ -204,174 +274,108 @@ class _SowingScreenState extends State<SowingScreen> {
                   ),
                   const SizedBox(height: 32),
 
-                  // Area Stats
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFC1ECD4), // primary-fixed
-                      border: Border.all(
-                        color: const Color(0xFF717973),
-                        width: 2,
-                      ),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x1A000000),
-                          offset: Offset(4, 4),
-                          blurRadius: 0,
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'ÁREA DISPONIBLE',
-                              style: GoogleFonts.lexend(
-                                color: const Color(0xFF274E3D),
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            RichText(
-                              text: TextSpan(
-                                children: [
-                                  TextSpan(
-                                    text: '2.5 ',
-                                    style: GoogleFonts.lexend(
-                                      color: AppColors.primary,
-                                      fontSize: 48,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                  TextSpan(
-                                    text: 'ha',
-                                    style: GoogleFonts.lexend(
-                                      color: AppColors.primary,
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        Icon(
-                          Icons.straighten,
-                          size: 64,
-                          color: const Color(0xFF1B4332).withValues(alpha: 0.2),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 48),
-
-                  // Save Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 64,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.zero,
-                        ),
-                        elevation: 0,
-                      ),
-                      onPressed: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => SowingSuccessScreen(
-                              crop: _selectedCrop,
-                              lote: _selectedLote.split(' - ')[0],
-                            ),
-                          ),
-                        );
-                      },
-                      child: Container(
-                        decoration: const BoxDecoration(
-                          border: Border(
-                            bottom: BorderSide(
-                              color: Color(0xFF0F172A),
-                              width: 4,
-                            ),
-                          ),
-                        ),
-                        alignment: Alignment.center,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.save,
-                              size: 24,
-                              color: Colors.white,
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              'GUARDAR SIEMBRA',
-                              style: GoogleFonts.lexend(
-                                fontSize: 24,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
-                        ),
+                  RuggedButton(
+                    text: 'GUARDAR CULTIVO',
+                    icon: Icons.save,
+                    onPressed: () => Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            SowingSuccessScreen(lote: _lote, crop: _crop),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 60), // padding for bottom nav
+                  const SizedBox(height: 24),
                 ],
               ),
             ),
           ),
         ],
       ),
+      bottomNavigationBar: const AgroBottomNav(current: AgroTab.tareas),
     );
   }
 
-  Widget _buildCropOption({
-    required IconData icon,
-    required String label,
-    required bool isActive,
-    required VoidCallback onTap,
-  }) {
+  Widget _cropCard(String name, IconData icon) {
+    final selected = _crop == name;
     return GestureDetector(
-      onTap: onTap,
+      onTap: () => setState(() => _crop = name),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 24),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isActive ? const Color(0xFFC1ECD4) : Colors.white,
+          color: selected
+              ? AppColors.primaryFixed
+              : AppColors.surfaceContainerLowest,
           border: Border.all(
-            color: isActive ? const Color(0xFF1B4332) : const Color(0xFF717973),
-            width: isActive ? 4 : 2,
+            color: selected ? AppColors.primary : AppColors.outlineVariant,
+            width: selected ? 2 : 1,
           ),
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icon,
-              color: isActive ? AppColors.primary : const Color(0xFF717973),
-              size: 36,
+              size: 32,
+              color: selected ? AppColors.primary : AppColors.onSurfaceVariant,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Text(
-              label,
-              style: GoogleFonts.lexend(
-                color: isActive ? AppColors.primary : const Color(0xFF717973),
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-              ),
-              textAlign: TextAlign.center,
+              name,
+              style: AppText.bodyMd(
+                color: selected
+                    ? AppColors.onSurface
+                    : AppColors.onSurfaceVariant,
+              ).copyWith(fontWeight: FontWeight.w500, fontSize: 14),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _selector() {
+    return Container(
+      height: 56,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLowest,
+        border: Border.all(color: AppColors.outlineVariant, width: 1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.map, color: AppColors.onSurfaceVariant),
+          const SizedBox(width: 12),
+          Expanded(
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: _lote,
+                isExpanded: true,
+                icon: const Icon(
+                  Icons.expand_more,
+                  color: AppColors.onSurfaceVariant,
+                ),
+                items: const [
+                  DropdownMenuItem(
+                    value: 'Lote Norte - Sector A1',
+                    child: Text('Lote Norte - Sector A1'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'Lote Sur - Sector B2',
+                    child: Text('Lote Sur - Sector B2'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'Lote Este - Reserva',
+                    child: Text('Lote Este - Reserva'),
+                  ),
+                ],
+                onChanged: (v) =>
+                    setState(() => _lote = v ?? 'Lote Norte - Sector A1'),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

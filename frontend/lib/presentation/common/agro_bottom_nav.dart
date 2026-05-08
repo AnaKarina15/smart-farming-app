@@ -9,11 +9,7 @@ class AgroBottomNav extends StatelessWidget {
   final AgroTab current;
   final ValueChanged<AgroTab>? onTap;
 
-  const AgroBottomNav({
-    super.key,
-    required this.current,
-    this.onTap,
-  });
+  const AgroBottomNav({super.key, required this.current, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -82,7 +78,9 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = active ? AppColors.onSecondaryContainer : AppColors.onSurfaceVariant;
+    final color = active
+        ? AppColors.onSecondaryContainer
+        : AppColors.onSurfaceVariant;
 
     return InkWell(
       onTap: onTap,
@@ -96,7 +94,9 @@ class _NavItem extends StatelessWidget {
               width: 64,
               height: 32,
               decoration: BoxDecoration(
-                color: active ? AppColors.secondaryContainer : Colors.transparent,
+                color: active
+                    ? AppColors.secondaryContainer
+                    : Colors.transparent,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Icon(active ? iconActive : icon, color: color, size: 22),

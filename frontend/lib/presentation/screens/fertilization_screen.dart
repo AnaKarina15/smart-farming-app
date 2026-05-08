@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_text.dart';
+import '../common/agro_bottom_nav.dart';
+import '../common/offline_banner.dart';
 import '../widgets/custom_app_bar.dart';
-import 'home_screen.dart'; // For OfflineStatusBanner
+import '../widgets/rugged_button.dart';
 import 'fertilization_success_screen.dart';
 
 class FertilizationScreen extends StatefulWidget {
@@ -13,23 +15,9 @@ class FertilizationScreen extends StatefulWidget {
 }
 
 class _FertilizationScreenState extends State<FertilizationScreen> {
-  String _selectedFertilizer = 'Nitrógeno';
-  int _amount = 450;
-  String _selectedLote = 'Lote 1 - Sector Norte';
-
-  void _incrementAmount() {
-    setState(() {
-      _amount += 10;
-    });
-  }
-
-  void _decrementAmount() {
-    if (_amount >= 10) {
-      setState(() {
-        _amount -= 10;
-      });
-    }
-  }
+  String _fertilizer = 'Nitrógeno';
+  int _kg = 450;
+  String _lote = 'Lote 1 - Sector Norte';
 
   @override
   Widget build(BuildContext context) {
@@ -38,354 +26,223 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
       appBar: const CustomAppBar(),
       body: Column(
         children: [
-          const OfflineStatusBanner(),
+          const OfflineBanner(style: OfflineBannerStyle.surface),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
+              padding: const EdgeInsets.all(24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'REGISTRAR FERTILIZACIÓN',
-                    style: GoogleFonts.lexend(
-                      color: AppColors.primary,
-                      fontSize: 32,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
+                  Text('Registro de Fertilización', style: AppText.h1()),
                   const SizedBox(height: 32),
 
-                  // Seleccionar Fertilizante
-                  Text(
-                    'SELECCIONAR FERTILIZANTE',
-                    style: GoogleFonts.lexend(
-                      color: const Color(0xFF717973), // outline
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
-                      letterSpacing: 1.0,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
+                  Text('SELECCIONAR FERTILIZANTE', style: AppText.labelCaps()),
+                  const SizedBox(height: 12),
                   Row(
                     children: [
-                      Expanded(
-                        child: _buildFertilizerOption(
-                          icon: Icons.science,
-                          label: 'Nitrógeno',
-                          isActive: _selectedFertilizer == 'Nitrógeno',
-                          onTap: () =>
-                              setState(() => _selectedFertilizer = 'Nitrógeno'),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _buildFertilizerOption(
-                          icon: Icons.water_drop,
-                          label: 'Fósforo',
-                          isActive: _selectedFertilizer == 'Fósforo',
-                          onTap: () =>
-                              setState(() => _selectedFertilizer = 'Fósforo'),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _buildFertilizerOption(
-                          icon: Icons.eco,
-                          label: 'Orgánico',
-                          isActive: _selectedFertilizer == 'Orgánico',
-                          onTap: () =>
-                              setState(() => _selectedFertilizer = 'Orgánico'),
-                        ),
-                      ),
+                      Expanded(child: _fertCard('Nitrógeno', Icons.science)),
+                      const SizedBox(width: 8),
+                      Expanded(child: _fertCard('Fósforo', Icons.water_drop)),
+                      const SizedBox(width: 8),
+                      Expanded(child: _fertCard('Orgánico', Icons.eco)),
                     ],
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 24),
 
-                  // Cantidad Aplicada
+                  // Tip
                   Row(
                     children: [
-                      const Text('💡'),
-                      const SizedBox(width: 4),
+                      const Icon(
+                        Icons.lightbulb,
+                        color: AppColors.secondary,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
                       Text(
                         'Dosis sugerida por el sistema: 400 KG',
-                        style: GoogleFonts.lexend(
-                          color: AppColors.primary,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          fontStyle: FontStyle.italic,
-                        ),
+                        style: AppText.bodyMd(color: AppColors.secondary),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'CANTIDAD APLICADA',
-                    style: GoogleFonts.lexend(
-                      color: const Color(0xFF717973),
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
-                      letterSpacing: 1.0,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 16),
+
+                  Text('CANTIDAD APLICADA', style: AppText.labelCaps()),
+                  const SizedBox(height: 12),
                   Row(
                     children: [
+                      _circleBtn(
+                        Icons.remove,
+                        () {
+                          setState(() {
+                            if (_kg >= 50) _kg -= 50;
+                          });
+                        },
+                        AppColors.surfaceContainer,
+                        AppColors.onSurface,
+                      ),
+                      const SizedBox(width: 16),
                       Expanded(
                         child: Container(
-                          height: 72,
+                          height: 64,
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: AppColors.surfaceContainerLowest,
                             border: Border.all(
-                              color: AppColors.primary,
-                              width: 2,
+                              color: AppColors.outlineVariant,
+                              width: 1,
                             ),
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(12),
                           ),
                           child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.baseline,
+                            textBaseline: TextBaseline.alphabetic,
                             children: [
-                              Expanded(
-                                flex: 1,
-                                child: InkWell(
-                                  onTap: _decrementAmount,
-                                  child: const Center(
-                                    child: Icon(
-                                      Icons.remove,
-                                      color: AppColors.primary,
-                                      size: 24,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Container(width: 2, color: AppColors.primary),
-                              Expanded(
-                                flex: 2,
-                                child: Center(
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.baseline,
-                                    textBaseline: TextBaseline.alphabetic,
-                                    children: [
-                                      Text(
-                                        '$_amount',
-                                        style: GoogleFonts.lexend(
-                                          color: AppColors.primary,
-                                          fontSize: 32,
-                                          fontWeight: FontWeight.w800,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Container(
-                                        padding: const EdgeInsets.only(left: 8),
-                                        decoration: const BoxDecoration(
-                                          border: Border(
-                                            left: BorderSide(
-                                              color: Color(0xFFE2E8F0),
-                                              width: 2,
-                                            ),
-                                          ),
-                                        ),
-                                        child: Text(
-                                          'KG',
-                                          style: GoogleFonts.lexend(
-                                            color: AppColors.primary,
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              Container(width: 2, color: AppColors.primary),
-                              Expanded(
-                                flex: 1,
-                                child: InkWell(
-                                  onTap: _incrementAmount,
-                                  child: const Center(
-                                    child: Icon(
-                                      Icons.add,
-                                      color: AppColors.primary,
-                                      size: 24,
-                                    ),
-                                  ),
+                              Text('$_kg', style: AppText.h1()),
+                              const SizedBox(width: 4),
+                              Text(
+                                'KG',
+                                style: AppText.bodyMd(
+                                  color: AppColors.onSurfaceVariant,
                                 ),
                               ),
                             ],
                           ),
                         ),
                       ),
+                      const SizedBox(width: 16),
+                      _circleBtn(
+                        Icons.add,
+                        () => setState(() => _kg += 50),
+                        AppColors.primaryContainer,
+                        AppColors.onPrimaryContainer,
+                      ),
                     ],
                   ),
+                  const SizedBox(height: 24),
+
+                  Text('SELECCIONAR LOTE', style: AppText.labelCaps()),
+                  const SizedBox(height: 12),
+                  _selector(),
                   const SizedBox(height: 32),
-
-                  // Seleccionar Lote
-                  Text(
-                    'SELECCIONAR LOTE',
-                    style: GoogleFonts.lexend(
-                      color: const Color(0xFF717973),
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
-                      letterSpacing: 1.0,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    height: 56,
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border.all(color: AppColors.primary, width: 2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: _selectedLote,
-                        isExpanded: true,
-                        icon: const Icon(
-                          Icons.expand_more,
-                          color: AppColors.primary,
-                        ),
-                        style: GoogleFonts.lexend(
-                          color: AppColors.primary,
-                          fontSize: 18,
-                        ),
-                        onChanged: (String? newValue) {
-                          if (newValue != null) {
-                            setState(() {
-                              _selectedLote = newValue;
-                            });
-                          }
-                        },
-                        items:
-                            <String>[
-                              'Lote 1 - Sector Norte',
-                              'Lote 2 - Ladera Este',
-                              'Lote 3 - Valle Sur',
-                            ].map<DropdownMenuItem<String>>((String value) {
-                              return DropdownMenuItem<String>(
-                                value: value,
-                                child: Text(value),
-                              );
-                            }).toList(),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 48),
-
-                  // Save Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 64,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        elevation: 0,
-                        side: const BorderSide(
-                          color: Color(0xFF0F172A),
-                          width: 0,
-                        ),
-                      ),
-                      onPressed: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => FertilizationSuccessScreen(
-                              amount: _amount,
-                              fertilizer: _selectedFertilizer,
-                              lote: _selectedLote.split(' - ')[0],
-                            ),
-                          ),
-                        );
-                      },
-                      child: Container(
-                        decoration: const BoxDecoration(
-                          border: Border(
-                            bottom: BorderSide(
-                              color: Color(0xFF0F172A),
-                              width: 4,
-                            ),
-                          ),
-                        ),
-                        alignment: Alignment.center,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.save,
-                              size: 24,
-                              color: Colors.white,
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              'GUARDAR REGISTRO',
-                              style: GoogleFonts.lexend(
-                                fontSize: 24,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
+                  RuggedButton(
+                    text: 'GUARDAR REGISTRO',
+                    icon: Icons.save,
+                    onPressed: () => Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => FertilizationSuccessScreen(
+                          lote: _lote,
+                          fertilizer: _fertilizer,
+                          kg: _kg,
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 100), // padding for bottom nav
+                  const SizedBox(height: 24),
                 ],
               ),
             ),
           ),
         ],
       ),
+      bottomNavigationBar: const AgroBottomNav(current: AgroTab.tareas),
     );
   }
 
-  Widget _buildFertilizerOption({
-    required IconData icon,
-    required String label,
-    required bool isActive,
-    required VoidCallback onTap,
-  }) {
+  Widget _fertCard(String name, IconData icon) {
+    final selected = _fertilizer == name;
     return GestureDetector(
-      onTap: onTap,
+      onTap: () => setState(() => _fertilizer = name),
       child: AspectRatio(
         aspectRatio: 1,
         child: Container(
-          padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: isActive ? const Color(0xFFC1ECD4) : Colors.white,
+            color: selected
+                ? AppColors.primaryFixed
+                : AppColors.surfaceContainerLowest,
             border: Border.all(
-              color: isActive
-                  ? const Color(0xFF1B4332)
-                  : const Color(0xFF717973),
-              width: isActive ? 4 : 2,
+              color: selected ? AppColors.primary : AppColors.outlineVariant,
+              width: selected ? 2 : 1,
             ),
+            borderRadius: BorderRadius.circular(12),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
                 icon,
-                color: isActive ? AppColors.primary : const Color(0xFF717973),
                 size: 32,
+                color: selected ? AppColors.primary : AppColors.outline,
               ),
               const SizedBox(height: 8),
               Text(
-                label.toUpperCase(),
-                style: GoogleFonts.lexend(
-                  color: isActive ? AppColors.primary : const Color(0xFF717973),
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
+                name.toUpperCase(),
+                style: AppText.labelCaps(
+                  color: selected ? AppColors.primary : AppColors.onSurface,
                 ),
-                textAlign: TextAlign.center,
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _circleBtn(IconData icon, VoidCallback onTap, Color bg, Color fg) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: bg,
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: 0.06),
+              offset: const Offset(0, 2),
+              blurRadius: 8,
+            ),
+          ],
+        ),
+        child: Icon(icon, color: fg, size: 24),
+      ),
+    );
+  }
+
+  Widget _selector() {
+    return Container(
+      height: 56,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLowest,
+        border: Border.all(color: AppColors.outlineVariant, width: 1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: _lote,
+          isExpanded: true,
+          icon: const Icon(
+            Icons.expand_more,
+            color: AppColors.onSurfaceVariant,
+          ),
+          items: const [
+            DropdownMenuItem(
+              value: 'Lote 1 - Sector Norte',
+              child: Text('Lote 1 - Sector Norte'),
+            ),
+            DropdownMenuItem(
+              value: 'Lote 2 - Ladera Este',
+              child: Text('Lote 2 - Ladera Este'),
+            ),
+            DropdownMenuItem(
+              value: 'Lote 3 - Valle Sur',
+              child: Text('Lote 3 - Valle Sur'),
+            ),
+          ],
+          onChanged: (v) =>
+              setState(() => _lote = v ?? 'Lote 1 - Sector Norte'),
         ),
       ),
     );

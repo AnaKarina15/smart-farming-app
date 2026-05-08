@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../common/success_scaffold.dart';
+import '../widgets/success_scaffold.dart';
 import 'lote_history_screen.dart';
 
 class IrrigationSuccessScreen extends StatelessWidget {

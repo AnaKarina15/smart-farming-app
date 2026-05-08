@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../common/offline_banner.dart';
-import '../common/success_scaffold.dart';
+import '../widgets/offline_banner.dart';
+import '../widgets/success_scaffold.dart';
 import 'lote_history_screen.dart';
 
 class SowingSuccessScreen extends StatelessWidget {

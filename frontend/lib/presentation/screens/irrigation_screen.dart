@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text.dart';
 import '../common/agro_bottom_nav.dart';
-import '../common/offline_banner.dart';
+import '../widgets/offline_banner.dart';
 import '../widgets/custom_app_bar.dart';
 import '../widgets/rugged_button.dart';
 import 'irrigation_success_screen.dart';

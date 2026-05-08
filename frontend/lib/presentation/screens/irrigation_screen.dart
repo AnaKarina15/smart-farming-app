@@ -33,7 +33,7 @@ class _IrrigationScreenState extends State<IrrigationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: const CustomAppBar(),
+      appBar: const CustomAppBar(showBackButton: true),
       body: Column(
         children: [
           const OfflineStatusBanner(),

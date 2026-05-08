@@ -81,14 +81,17 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Align(
                     alignment: Alignment.topLeft,
                     child: IconButton(
-                      icon: const Icon(Icons.arrow_back, color: AppColors.white),
+                      icon: const Icon(
+                        Icons.arrow_back,
+                        color: AppColors.white,
+                      ),
                       onPressed: () => Navigator.pop(context),
                     ),
                   ),
                 ),
                 Center(
                   child: Text(
-                    'Smart Farming',
+                    'Agrofield',
                     style: GoogleFonts.lexend(
                       fontSize: 24,
                       fontWeight: FontWeight.w700,
@@ -137,7 +140,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           if (value == null || value.trim().isEmpty) {
                             return 'El correo es requerido';
                           }
-                          final emailRegExp = RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+");
+                          final emailRegExp = RegExp(
+                            r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+",
+                          );
                           if (!emailRegExp.hasMatch(value)) {
                             return 'Ingresa un correo válido';
                           }
@@ -178,7 +183,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 24),
                       isLoading
-                          ? const CircularProgressIndicator(color: AppColors.primary)
+                          ? const CircularProgressIndicator(
+                              color: AppColors.primary,
+                            )
                           : RuggedButton(
                               text: 'INICIAR SESIÓN',
                               onPressed: _handleLogin,
@@ -198,7 +205,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             onTap: () {
                               Navigator.pushReplacement(
                                 context,
-                                MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                                MaterialPageRoute(
+                                  builder: (_) => const RegisterScreen(),
+                                ),
                               );
                             },
                             child: Text(

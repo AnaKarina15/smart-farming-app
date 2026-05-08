@@ -5,7 +5,7 @@
 /// - Emulador Android: 'http://10.0.2.2:3000/api/v1' (Android mapea localhost del PC)
 /// - Celular fisico: 'http://TU_IP_LOCAL:3000/api/v1' (ej. http://192.168.1.10:3000/api/v1)
 class ApiEndpoints {
-  static const String baseUrl = 'http://localhost:3000/api/v1';
+  static const String baseUrl = 'http://10.0.2.2:3000/api/v1';
 
   // ==================== AUTH ====================
   static const String register = '/auth/register';

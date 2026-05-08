@@ -67,7 +67,9 @@ class _MapOnboardingScreenState extends State<MapOnboardingScreen> {
               label: 'Lotes',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.assignment_outlined), // Ícono de tareas (libreta)
+              icon: Icon(
+                Icons.assignment_outlined,
+              ), // Ícono de tareas (libreta)
               activeIcon: Icon(Icons.assignment),
               label: 'Tareas',
             ),
@@ -107,7 +109,7 @@ class _MapOnboardingView extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.only(top: 16.0),
                     child: Text(
-                      'Smart Farming',
+                      'Agrofield',
                       style: GoogleFonts.lexend(
                         fontSize: 24,
                         fontWeight: FontWeight.w800,

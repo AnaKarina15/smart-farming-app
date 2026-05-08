@@ -68,7 +68,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: _buildAppBar(),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -141,51 +140,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      backgroundColor: AppColors.background,
-      elevation: 0,
-      leading: IconButton(
-        icon: const Icon(Icons.menu, color: AppColors.primary, size: 28),
-        onPressed: () {},
-      ),
-      title: Text(
-        'AGROFIELD',
-        style: GoogleFonts.lexend(
-          color: AppColors.primary,
-          fontWeight: FontWeight.w800,
-          fontSize: 18,
-          letterSpacing: 1.5,
-        ),
-      ),
-      actions: [
-        // Circular profile photo in header
-        Padding(
-          padding: const EdgeInsets.only(right: 16.0),
-          child: Center(
-            child: Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.primary, width: 2),
-                image: const DecorationImage(
-                  image: NetworkImage(
-                    'https://lh3.googleusercontent.com/aida-public/AB6AXuDSN3PC-r68fjYmxenSJhpeON5kYHq_FqUZAujP2XfNu3JJHwHWSgnCN9Mm79mUT-e6OebbOBqgIc99B8tup3iS0PJnmytuyZZktqjXVRIZLYy-ESL4kwGEoJAe-zbuBYr_xAOBApeI9dr99zxBRrgqOuruL2tbOPHRDxigBfNC744A0tG932QLdld5h7USNgZhYJ84JYhao2to2xVmuj7iaXDmBiqsY2uFfKiVOKnGAYGhCMl6sOASdn-0vA8-ceZz9ucme_xBy_B3',
-                  ),
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-      bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(2.0),
-        child: Container(color: const Color(0xFFE4E4E7), height: 2.0),
-      ),
-    );
-  }
 
   Widget _buildProfilePhoto() {
     return Stack(

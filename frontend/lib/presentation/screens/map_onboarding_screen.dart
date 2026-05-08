@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
+import '../widgets/custom_app_bar.dart';
 import '../widgets/rugged_button.dart';
 import 'home_screen.dart';
 import 'profile_screen.dart';
@@ -32,6 +33,7 @@ class _MapOnboardingScreenState extends State<MapOnboardingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
+      appBar: const CustomAppBar(),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           border: Border(top: BorderSide(color: AppColors.primary, width: 2)),
@@ -72,9 +74,9 @@ class _MapOnboardingScreenState extends State<MapOnboardingScreen> {
               label: 'Tareas',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.settings_outlined),
-              activeIcon: Icon(Icons.settings),
-              label: 'Ajustes',
+              icon: Icon(Icons.person_outline),
+              activeIcon: Icon(Icons.person),
+              label: 'Perfil',
             ),
           ],
         ),

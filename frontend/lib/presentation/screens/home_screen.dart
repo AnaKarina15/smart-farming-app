@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:smart_farming/presentation/widgets/custom_app_bar.dart';
+
 import '../../core/theme/app_colors.dart';
 import 'irrigation_screen.dart';
 import 'fertilization_screen.dart';
@@ -15,7 +15,6 @@ class HomeScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: const CustomAppBar(), //
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(
           bottom: 16.0,

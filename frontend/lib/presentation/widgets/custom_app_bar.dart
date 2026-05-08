@@ -3,7 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const CustomAppBar({super.key});
+  final bool showBackButton;
+
+  const CustomAppBar({super.key, this.showBackButton = false});
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight + 2.0); // +2 for the bottom border
@@ -13,12 +15,19 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       backgroundColor: AppColors.background,
       elevation: 0,
-      leading: IconButton(
-        icon: const Icon(Icons.menu, color: AppColors.primary, size: 28),
-        onPressed: () {
-          // TODO: Abrir menú lateral (Drawer) si tienes uno
-        },
-      ),
+      leading: showBackButton
+          ? IconButton(
+              icon: const Icon(Icons.arrow_back, color: AppColors.primary, size: 28),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            )
+          : IconButton(
+              icon: const Icon(Icons.menu, color: AppColors.primary, size: 28),
+              onPressed: () {
+                // TODO: Abrir menú lateral (Drawer) si tienes uno
+              },
+            ),
       title: Text(
         'Smart Farming',
         style: GoogleFonts.lexend(

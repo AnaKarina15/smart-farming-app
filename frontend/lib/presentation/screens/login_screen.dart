@@ -20,6 +20,9 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  String? _emailAuthError;
+  String? _passwordAuthError;
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
@@ -29,6 +32,11 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _handleLogin() async {
+    setState(() {
+      _emailAuthError = null;
+      _passwordAuthError = null;
+    });
+
     if (_formKey.currentState!.validate()) {
       final authProvider = context.read<AuthProvider>();
       final success = await authProvider.login(
@@ -42,16 +50,39 @@ class _LoginScreenState extends State<LoginScreen> {
           MaterialPageRoute(builder: (_) => const MapOnboardingScreen()),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              authProvider.errorMessage ?? 'Error desconocido',
-              style: GoogleFonts.lexend(color: AppColors.onError),
-            ),
-            backgroundColor: AppColors.error,
-            duration: const Duration(seconds: 4),
-          ),
-        );
+        setState(() {
+          final errorStr = (authProvider.errorMessage ?? '').toLowerCase();
+
+          if (errorStr.contains('conexi') ||
+              errorStr.contains('servidor') ||
+              errorStr.contains('internet') ||
+              errorStr.contains('tiempo') ||
+              errorStr.contains('timeout')) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Sin conexión al servidor. Verifica tu internet.',
+                  style: AppText.bodyMd(color: AppColors.onError),
+                ),
+                backgroundColor: AppColors.error,
+              ),
+            );
+          } else if (errorStr.contains('correo') ||
+              errorStr.contains('email') ||
+              errorStr.contains('usuario') ||
+              errorStr.contains('not found')) {
+            _emailAuthError = 'Correo no registrado';
+          } else if (errorStr.contains('contraseña') ||
+              errorStr.contains('password') ||
+              errorStr.contains('credencial') ||
+              errorStr.contains('invalid') ||
+              errorStr.contains('incorrect')) {
+            _passwordAuthError = 'Contraseña incorrecta';
+          } else {
+            _passwordAuthError = 'Correo o contraseña incorrectos';
+          }
+        });
+        _formKey.currentState!.validate();
         authProvider.clearError();
       }
     }
@@ -132,8 +163,23 @@ class _LoginScreenState extends State<LoginScreen> {
                       hintText: 'tu@correo.com',
                       prefixIcon: Icons.email_outlined,
                       keyboardType: TextInputType.emailAddress,
-                      validator: (v) =>
-                          (v == null || v.isEmpty) ? 'Ingresa tu correo' : null,
+                      onChanged: (_) {
+                        if (_emailAuthError != null || _passwordAuthError != null) {
+                          setState(() {
+                            _emailAuthError = null;
+                            _passwordAuthError = null;
+                          });
+                          _formKey.currentState!.validate();
+                        }
+                      },
+                      validator: (v) {
+                        if (v == null || v.isEmpty) return 'Ingresa tu correo';
+                        if (!RegExp(r'^[^@]+@[^@]+\.[^@]+$').hasMatch(v)) {
+                          return 'Formato de correo incorrecto';
+                        }
+                        if (_emailAuthError != null) return _emailAuthError;
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 20),
                     Text('CONTRASEÑA', style: AppText.labelCaps()),
@@ -142,10 +188,34 @@ class _LoginScreenState extends State<LoginScreen> {
                       controller: _passwordController,
                       hintText: '••••••••',
                       prefixIcon: Icons.lock_outline,
-                      obscureText: true,
-                      validator: (v) => (v == null || v.isEmpty)
-                          ? 'Ingresa tu contraseña'
-                          : null,
+                      obscureText: _obscurePassword,
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
+                      ),
+                      onChanged: (_) {
+                        if (_emailAuthError != null || _passwordAuthError != null) {
+                          setState(() {
+                            _emailAuthError = null;
+                            _passwordAuthError = null;
+                          });
+                          _formKey.currentState!.validate();
+                        }
+                      },
+                      validator: (v) {
+                        if (v == null || v.isEmpty) return 'Ingresa tu contraseña';
+                        if (_passwordAuthError != null) return _passwordAuthError;
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 32),
                     isLoading

@@ -22,6 +22,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
+  String? _emailAuthError;
+  String? _generalAuthError;
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
@@ -33,6 +36,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   void _handleRegister() async {
+    setState(() {
+      _emailAuthError = null;
+      _generalAuthError = null;
+    });
+
     if (_formKey.currentState!.validate()) {
       final authProvider = context.read<AuthProvider>();
       final success = await authProvider.register(
@@ -48,15 +56,36 @@ class _RegisterScreenState extends State<RegisterScreen> {
           MaterialPageRoute(builder: (_) => const RegistrationSuccessScreen()),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              authProvider.errorMessage ?? 'Error desconocido',
-              style: GoogleFonts.lexend(color: AppColors.onError),
-            ),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        setState(() {
+          final errorStr = (authProvider.errorMessage ?? '').toLowerCase();
+
+          if (errorStr.contains('conexi') ||
+              errorStr.contains('servidor') ||
+              errorStr.contains('internet')) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Sin conexión al servidor. Verifica tu internet.',
+                  style: AppText.bodyMd(color: AppColors.onError),
+                ),
+                backgroundColor: AppColors.error,
+              ),
+            );
+          } else if (errorStr.contains('correo') ||
+              errorStr.contains('email') ||
+              errorStr.contains('existe') ||
+              errorStr.contains('recurso') ||
+              errorStr.contains('uso') ||
+              errorStr.contains('already') ||
+              errorStr.contains('conflict') ||
+              errorStr.contains('duplicado') ||
+              errorStr.contains('registrado')) {
+            _emailAuthError = 'Este correo ya está registrado.';
+          } else {
+            _generalAuthError = 'Error al crear cuenta. Verifica tus datos.';
+          }
+        });
+        _formKey.currentState!.validate();
         authProvider.clearError();
       }
     }
@@ -114,8 +143,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       hintText: 'tu@correo.com',
                       prefixIcon: Icons.email_outlined,
                       keyboardType: TextInputType.emailAddress,
-                      validator: (v) =>
-                          (v == null || v.isEmpty) ? 'Ingresa tu correo' : null,
+                      onChanged: (_) {
+                        if (_emailAuthError != null ||
+                            _generalAuthError != null) {
+                          setState(() {
+                            _emailAuthError = null;
+                            _generalAuthError = null;
+                          });
+                          _formKey.currentState!.validate();
+                        }
+                      },
+                      validator: (v) {
+                        if (v == null || v.isEmpty) return 'Ingresa tu correo';
+                        if (!RegExp(r'^[^@]+@[^@]+\.[^@]+$').hasMatch(v)) {
+                          return 'Formato de correo incorrecto';
+                        }
+                        if (_emailAuthError != null) return _emailAuthError;
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 20),
                     Text('TELÉFONO', style: AppText.labelCaps()),
@@ -136,12 +181,36 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       controller: _passwordController,
                       hintText: 'Mínimo 8 caracteres',
                       prefixIcon: Icons.lock_outline,
-                      obscureText: true,
+                      obscureText: _obscurePassword,
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
+                      ),
+                      onChanged: (_) {
+                        if (_emailAuthError != null ||
+                            _generalAuthError != null) {
+                          setState(() {
+                            _emailAuthError = null;
+                            _generalAuthError = null;
+                          });
+                          _formKey.currentState!.validate();
+                        }
+                      },
                       validator: (v) {
                         if (v == null || v.isEmpty) {
                           return 'Ingresa una contraseña';
                         }
                         if (v.length < 8) return 'Mínimo 8 caracteres';
+                        if (_generalAuthError != null) return _generalAuthError;
                         return null;
                       },
                     ),

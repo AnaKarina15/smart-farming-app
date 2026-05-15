@@ -87,7 +87,7 @@ class HomeScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                            'Humedad Suelo',
+                            'Estado del suelo',
                             style: AppText.bodyMd(
                               color: AppColors.onSurfaceVariant,
                             ),
@@ -144,8 +144,6 @@ class HomeScreen extends StatelessWidget {
       ),
     );
   }
-
-
 }
 
 class _QuickActionsCarousel extends StatefulWidget {
@@ -371,7 +369,7 @@ class _WeatherSectionState extends State<_WeatherSection> {
         position.latitude,
         position.longitude,
       );
-      
+
       if (mounted) {
         setState(() {
           _temperature = data['temperature'] ?? '--°C';
@@ -398,9 +396,11 @@ class _WeatherSectionState extends State<_WeatherSection> {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Expanded(child: _buildCard(Icons.thermostat, 'Temperatura', _temperature)),
+        Expanded(
+            child: _buildCard(Icons.thermostat, 'Temperatura', _temperature)),
         const SizedBox(width: 8),
-        Expanded(child: _buildCard(Icons.water_drop, 'Prob. Lluvia', _rainProb)),
+        Expanded(
+            child: _buildCard(Icons.water_drop, 'Prob. Lluvia', _rainProb)),
       ],
     );
   }
@@ -424,16 +424,14 @@ class _WeatherSectionState extends State<_WeatherSection> {
               color: AppColors.onSurfaceVariant,
             ).copyWith(fontSize: 14),
           ),
-          _isLoading 
+          _isLoading
               ? const SizedBox(
-                  height: 24, 
-                  width: 24, 
-                  child: CircularProgressIndicator(strokeWidth: 2)
-                ) 
+                  height: 24,
+                  width: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2))
               : Text(value, style: AppText.h3()),
         ],
       ),
     );
   }
 }
-

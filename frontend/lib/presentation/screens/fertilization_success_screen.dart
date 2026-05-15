@@ -36,18 +36,18 @@ class FertilizationSuccessScreen extends StatelessWidget {
                     width: 96,
                     height: 96,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFC1ECD4), // primary-fixed
+                      color: AppColors.primaryFixedDim,
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: const Color(0xFF1B4332), // primary-container
-                        width: 4,
+                        color: AppColors.primary,
+                        width: 2,
                       ),
                     ),
                     child: const Center(
                       child: Icon(
-                        Icons.check_circle,
-                        color: Color(0xFF1B4332),
-                        size: 64,
+                        Icons.check,
+                        color: AppColors.primary,
+                        size: 48,
                       ),
                     ),
                   ),
@@ -178,23 +178,7 @@ class FertilizationSuccessScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 32),
 
-                  // Image Placeholder
-                  Container(
-                    height: 128,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: const Color(0xFF717973),
-                        width: 2,
-                      ),
-                    ),
-                    child: const Center(
-                      child: Icon(Icons.image, size: 48, color: Colors.grey),
-                    ),
-                  ),
-                  const SizedBox(height: 32),
+
                 ],
               ),
             ),

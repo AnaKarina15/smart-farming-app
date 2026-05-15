@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text.dart';
 import '../common/agro_bottom_nav.dart';
-import '../widgets/offline_banner.dart';
+
 import '../widgets/custom_app_bar.dart';
 import 'fertilization_screen.dart';
 import 'irrigation_screen.dart';
@@ -145,31 +145,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _glassCard(IconData icon, String label, String value) {
-    return Container(
-      width: 140,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.7),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.outlineVariant, width: 1),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: AppColors.primary, size: 22),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: AppText.bodyMd(
-              color: AppColors.onSurfaceVariant,
-            ).copyWith(fontSize: 14),
-          ),
-          Text(value, style: AppText.h3()),
-        ],
-      ),
-    );
-  }
+
 }
 
 class _QuickActionsCarousel extends StatefulWidget {

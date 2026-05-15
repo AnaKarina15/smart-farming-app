@@ -26,23 +26,20 @@ class TreatmentSuccessScreen extends StatelessWidget {
         child: Column(
           children: [
             Container(
-              width: 128,
-              height: 128,
+              width: 96,
+              height: 96,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.primaryContainer,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.16),
-                    offset: const Offset(0, 8),
-                    blurRadius: 24,
-                  ),
-                ],
+                color: AppColors.primaryFixedDim,
+                border: Border.all(
+                  color: AppColors.primary,
+                  width: 2,
+                ),
               ),
               child: const Icon(
                 Icons.check,
-                color: AppColors.onPrimaryContainer,
-                size: 80,
+                color: AppColors.primary,
+                size: 48,
               ),
             ),
             const SizedBox(height: 24),

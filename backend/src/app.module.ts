@@ -17,6 +17,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { HealthModule } from './modules/health/health.module';
 import { LotesModule } from './modules/lotes/lotes.module';
 import { UsersModule } from './modules/users/users.module';
+import { WeatherModule } from './modules/weather/weather.module';
 
 /**
  * Modulo raiz de AgroField API.
@@ -26,7 +27,7 @@ import { UsersModule } from './modules/users/users.module';
  * - Conexion a PostgreSQL via TypeORM
  * - Logger estructurado (Winston)
  * - Rate limiting global (Throttler) - protege contra abuso de endpoints
- * - Modulos de negocio (Auth, Users, Lotes, Health)
+ * - Modulos de negocio (Auth, Users, Lotes, Health, Weather)
  */
 @Module({
   imports: [
@@ -71,6 +72,7 @@ import { UsersModule } from './modules/users/users.module';
     UsersModule,
     LotesModule,
     HealthModule,
+    WeatherModule,
   ],
   providers: [
     {

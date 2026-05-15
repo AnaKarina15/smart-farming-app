@@ -28,4 +28,5 @@ class ApiEndpoints {
   static const String lotes = '/lotes';
   static String loteById(String id) => '/lotes/$id';
   static const String health = '/health';
+  static const String weather = '/weather/current';
 }

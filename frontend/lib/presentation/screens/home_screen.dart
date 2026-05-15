@@ -12,6 +12,8 @@ import 'soil_humidity_screen.dart';
 import 'sowing_screen.dart';
 import 'tasks_screen.dart';
 import 'map_onboarding_screen.dart';
+import 'package:geolocator/geolocator.dart';
+import '../../core/services/weather_service.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -105,8 +107,7 @@ class HomeScreen extends StatelessWidget {
                   Row(
                     children: [
                       Expanded(
-                          child: _glassCard(
-                              Icons.thermostat, 'Temperatura', '24°C')),
+                          child: const _WeatherGlassCard()),
                       const SizedBox(width: 8),
                       Expanded(
                           child: _glassCard(
@@ -356,3 +357,96 @@ class _QuickActionsCarouselState extends State<_QuickActionsCarousel> {
     );
   }
 }
+
+class _WeatherGlassCard extends StatefulWidget {
+  const _WeatherGlassCard();
+
+  @override
+  State<_WeatherGlassCard> createState() => _WeatherGlassCardState();
+}
+
+class _WeatherGlassCardState extends State<_WeatherGlassCard> {
+  final WeatherService _weatherService = WeatherService();
+  String _temperature = 'Calculando...';
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchTemperature();
+  }
+
+  Future<void> _fetchTemperature() async {
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        setState(() => _temperature = '--°C');
+        return;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          setState(() => _temperature = '--°C');
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        setState(() => _temperature = '--°C');
+        return;
+      }
+
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      final temp = await _weatherService.getCurrentTemperature(
+        position.latitude,
+        position.longitude,
+      );
+      
+      if (mounted) {
+        setState(() => _temperature = temp);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _temperature = '--°C');
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 140,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.outlineVariant, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.thermostat, color: AppColors.primary, size: 22),
+          const SizedBox(height: 8),
+          Text(
+            'Temperatura',
+            style: AppText.bodyMd(
+              color: AppColors.onSurfaceVariant,
+            ).copyWith(fontSize: 14),
+          ),
+          _temperature == 'Calculando...' 
+              ? const SizedBox(
+                  height: 24, 
+                  width: 24, 
+                  child: CircularProgressIndicator(strokeWidth: 2)
+                ) 
+              : Text(_temperature, style: AppText.h3()),
+        ],
+      ),
+    );
+  }
+}
+

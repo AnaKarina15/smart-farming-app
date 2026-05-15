@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text.dart';
 import '../common/agro_bottom_nav.dart';
-
 import '../widgets/custom_app_bar.dart';
 import 'fertilization_screen.dart';
 import 'irrigation_screen.dart';
@@ -12,6 +11,13 @@ import 'soil_humidity_screen.dart';
 import 'sowing_screen.dart';
 import 'tasks_screen.dart';
 import 'map_onboarding_screen.dart';
+import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:intl/intl.dart';
+import '../../core/network/api_endpoints.dart';
+import '../../core/storage/database_helper.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../core/services/weather_service.dart';
 
@@ -29,83 +35,8 @@ class HomeScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ── Hero card ─────────────────────────────────────
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceContainerLowest,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.08),
-                    offset: const Offset(0, 4),
-                    blurRadius: 24,
-                  ),
-                ],
-                image: DecorationImage(
-                  image: const NetworkImage(
-                      'https://lh3.googleusercontent.com/aida-public/AB6AXuDBmDkKnSQCK70HtUXXKIcLw8198ttM7upvlEajcpi_bPTJDL9N29_zkawXK2DP1jLHE1ADWglpUKqx9kynA2B9NjAQMRtCui9IYwNKOE6Nfb04yLVg2GtMMu3wLLWVJbf9am6zqumPhaWEUZToOXKCG69z4dyI7KH4kOl2YyRn9rcnq955Jx2wNRPxTuwaN8_pWeEbxIxhLisYEsV5b5c91affAz284Ob9NnMDTS2tH5xaWS9E_yQSBzZeqG_II1gEsPAtQM_Em9gu'),
-                  fit: BoxFit.cover,
-                  colorFilter: ColorFilter.mode(
-                    Colors.white.withValues(alpha: 0.8),
-                    BlendMode.lighten,
-                  ),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryFixed,
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: Text(
-                                'RESUMEN GENERAL',
-                                style: AppText.labelCaps(
-                                  color: AppColors.onPrimaryFixed,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            Text('Campo Norte, Lote B', style: AppText.h2()),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            'Estado del suelo',
-                            style: AppText.bodyMd(
-                              color: AppColors.onSurfaceVariant,
-                            ),
-                          ),
-                          Text(
-                            '68%',
-                            style: AppText.h1(color: AppColors.primary),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 28),
-                  const _WeatherSection(),
-                ],
-              ),
-            ),
-            const SizedBox(height: 28),
+            const _HeroSection(),
+            const SizedBox(height: 24),
 
             // ── Quick Actions ─────────────────────────────────
             Text('Acciones Rápidas', style: AppText.h3()),
@@ -141,6 +72,273 @@ class HomeScreen extends StatelessWidget {
               break;
           }
         },
+      ),
+    );
+  }
+}
+
+class _HeroSection extends StatefulWidget {
+  const _HeroSection();
+
+  @override
+  State<_HeroSection> createState() => _HeroSectionState();
+}
+
+class _HeroSectionState extends State<_HeroSection> {
+  String _loteName = 'Cargando...';
+  String _soilStatus = '--%';
+
+  bool _isOnline = true;
+  DateTime _lastSync = DateTime.now();
+  late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchData();
+    _checkConnectivity();
+    _connectivitySubscription =
+        Connectivity().onConnectivityChanged.listen((result) {
+      if (mounted) {
+        setState(() {
+          _isOnline = !result.contains(ConnectivityResult.none);
+          if (_isOnline) {
+            _lastSync = DateTime.now();
+          }
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _connectivitySubscription.cancel();
+    super.dispose();
+  }
+
+  Future<void> _checkConnectivity() async {
+    final result = await Connectivity().checkConnectivity();
+    if (mounted) {
+      setState(() {
+        _isOnline = !result.contains(ConnectivityResult.none);
+        if (_isOnline) {
+          _lastSync = DateTime.now();
+        }
+      });
+    }
+  }
+
+  Future<void> _fetchData() async {
+    try {
+      // 1. Fetch lotes locally
+      final lotes =
+          await DatabaseHelper.instance.queryAllRows(DatabaseHelper.tableLotes);
+          
+      // Obtener ubicación actual y Lote más cercano
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (serviceEnabled) {
+        LocationPermission permission = await Geolocator.checkPermission();
+        if (permission == LocationPermission.denied) {
+          permission = await Geolocator.requestPermission();
+        }
+        if (permission == LocationPermission.always || permission == LocationPermission.whileInUse) {
+           Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+           
+           if (lotes.isNotEmpty) {
+             double minDistance = double.infinity;
+             Map<String, dynamic>? closestLote;
+
+             for (var lote in lotes) {
+               if (lote['latitud'] != null && lote['longitud'] != null) {
+                 double distance = Geolocator.distanceBetween(
+                   position.latitude, 
+                   position.longitude, 
+                   (lote['latitud'] as num).toDouble(), 
+                   (lote['longitud'] as num).toDouble()
+                 );
+                 if (distance < minDistance) {
+                   minDistance = distance;
+                   closestLote = lote;
+                 }
+               }
+             }
+
+             if (mounted) {
+               setState(() {
+                 if (closestLote != null && minDistance < 1000) { // 1km radius
+                   _loteName = closestLote['nombre'];
+                 } else {
+                   _loteName = 'Ubicación Actual';
+                 }
+               });
+             }
+           } else {
+             if (mounted) {
+               setState(() {
+                 _loteName = 'Ubicación Actual';
+               });
+             }
+           }
+        } else {
+          if (mounted) {
+            setState(() {
+              _loteName = lotes.isNotEmpty ? lotes.first['nombre'] : 'Ubicación Desconocida';
+            });
+          }
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _loteName = lotes.isNotEmpty ? lotes.first['nombre'] : 'Ubicación Desconocida';
+          });
+        }
+      }
+
+      // 2. Fetch soil status
+      final url =
+          Uri.parse('${ApiEndpoints.baseUrl}/api/v1/weather/sensor/humidity');
+      final response = await http.get(url).timeout(const Duration(seconds: 5));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (mounted) {
+          setState(() {
+            _soilStatus = '${data['currentValue'] ?? 68}%';
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _soilStatus = '68%';
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _soilStatus = '68%';
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.08),
+            offset: const Offset(0, 4),
+            blurRadius: 24,
+          ),
+        ],
+        image: DecorationImage(
+          image: const NetworkImage(
+              'https://lh3.googleusercontent.com/aida-public/AB6AXuDBmDkKnSQCK70HtUXXKIcLw8198ttM7upvlEajcpi_bPTJDL9N29_zkawXK2DP1jLHE1ADWglpUKqx9kynA2B9NjAQMRtCui9IYwNKOE6Nfb04yLVg2GtMMu3wLLWVJbf9am6zqumPhaWEUZToOXKCG69z4dyI7KH4kOl2YyRn9rcnq955Jx2wNRPxTuwaN8_pWeEbxIxhLisYEsV5b5c91affAz284Ob9NnMDTS2tH5xaWS9E_yQSBzZeqG_II1gEsPAtQM_Em9gu'),
+          fit: BoxFit.cover,
+          colorFilter: ColorFilter.mode(
+            Colors.white.withValues(alpha: 0.8),
+            BlendMode.lighten,
+          ),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(
+              horizontal: 10,
+              vertical: 4,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.primaryFixed,
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              'RESUMEN GENERAL',
+              textAlign: TextAlign.center,
+              style: AppText.labelCaps(
+                color: AppColors.onPrimaryFixed,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(_loteName, style: AppText.h2()),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    'Estado del suelo',
+                    style: AppText.bodyMd(
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                  ),
+                  Text(
+                    _soilStatus,
+                    style: AppText.h1(color: AppColors.primary),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 15),
+          const _WeatherSection(),
+          const SizedBox(height: 16),
+          // Sync status
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+            decoration: BoxDecoration(
+              color: _isOnline
+                  ? Colors.white.withValues(alpha: 0.8)
+                  : const Color(0xFFFFF3E0)
+                      .withValues(alpha: 0.9), // Orange light for offline
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.outlineVariant, width: 1),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  _isOnline ? Icons.cloud_done : Icons.cloud_off,
+                  size: 18,
+                  color: _isOnline ? Colors.green[700] : Colors.orange[800],
+                ),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    _isOnline
+                        ? 'En línea - ${DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now())}'
+                        : 'Última sincronización: ${DateFormat('dd/MM/yyyy HH:mm').format(_lastSync)}',
+                    style: AppText.bodyMd(
+                      color:
+                          _isOnline ? Colors.green[800]! : Colors.orange[900]!,
+                    ).copyWith(fontSize: 12, fontWeight: FontWeight.w600),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (!_isOnline) ...[
+                  const SizedBox(width: 8),
+                  Icon(Icons.sync_problem, size: 18, color: Colors.orange[800]),
+                ]
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text.dart';
@@ -164,7 +163,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       prefixIcon: Icons.email_outlined,
                       keyboardType: TextInputType.emailAddress,
                       onChanged: (_) {
-                        if (_emailAuthError != null || _passwordAuthError != null) {
+                        if (_emailAuthError != null ||
+                            _passwordAuthError != null) {
                           setState(() {
                             _emailAuthError = null;
                             _passwordAuthError = null;
@@ -203,7 +203,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         },
                       ),
                       onChanged: (_) {
-                        if (_emailAuthError != null || _passwordAuthError != null) {
+                        if (_emailAuthError != null ||
+                            _passwordAuthError != null) {
                           setState(() {
                             _emailAuthError = null;
                             _passwordAuthError = null;
@@ -212,8 +213,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         }
                       },
                       validator: (v) {
-                        if (v == null || v.isEmpty) return 'Ingresa tu contraseña';
-                        if (_passwordAuthError != null) return _passwordAuthError;
+                        if (v == null || v.isEmpty)
+                          return 'Ingresa tu contraseña';
+                        if (_passwordAuthError != null)
+                          return _passwordAuthError;
                         return null;
                       },
                     ),

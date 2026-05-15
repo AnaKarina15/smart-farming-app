@@ -19,6 +19,7 @@ import 'package:intl/intl.dart';
 import '../../core/network/api_endpoints.dart';
 import '../../core/storage/database_helper.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 import '../../core/services/weather_service.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -164,19 +165,66 @@ class _HeroSectionState extends State<_HeroSection> {
              }
 
              if (mounted) {
-               setState(() {
-                 if (closestLote != null && minDistance < 1000) { // 1km radius
-                   _loteName = closestLote['nombre'];
-                 } else {
-                   _loteName = 'Ubicación Actual';
+               if (closestLote != null && minDistance < 1000) { // 1km radius
+                 setState(() {
+                   _loteName = closestLote!['nombre'];
+                 });
+               } else {
+                 // Si no hay lote cerca, buscar nombre de ubicación real
+                 try {
+                   List<Placemark> placemarks = await placemarkFromCoordinates(
+                       position.latitude, position.longitude);
+                   if (placemarks.isNotEmpty) {
+                     Placemark place = placemarks[0];
+                      setState(() {
+                        String locality = place.locality ?? '';
+                        String area = place.subAdministrativeArea ?? '';
+                        if (locality == area || area.isEmpty) {
+                          _loteName = locality;
+                        } else if (locality.isEmpty) {
+                          _loteName = area;
+                        } else {
+                          _loteName = "$locality, $area";
+                        }
+                        if (_loteName.trim().isEmpty) {
+                          _loteName = 'Ubicación Actual';
+                        }
+                      });
+                   } else {
+                     setState(() => _loteName = 'Ubicación Actual');
+                   }
+                 } catch (_) {
+                   setState(() => _loteName = 'Ubicación Actual');
                  }
-               });
+               }
              }
            } else {
              if (mounted) {
-               setState(() {
-                 _loteName = 'Ubicación Actual';
-               });
+               try {
+                 List<Placemark> placemarks = await placemarkFromCoordinates(
+                     position.latitude, position.longitude);
+                 if (placemarks.isNotEmpty) {
+                   Placemark place = placemarks[0];
+                    setState(() {
+                      String locality = place.locality ?? '';
+                      String area = place.subAdministrativeArea ?? '';
+                      if (locality == area || area.isEmpty) {
+                        _loteName = locality;
+                      } else if (locality.isEmpty) {
+                        _loteName = area;
+                      } else {
+                        _loteName = "$locality, $area";
+                      }
+                      if (_loteName.trim().isEmpty) {
+                        _loteName = 'Ubicación Actual';
+                      }
+                    });
+                 } else {
+                   setState(() => _loteName = 'Ubicación Actual');
+                 }
+               } catch (_) {
+                 setState(() => _loteName = 'Ubicación Actual');
+               }
              }
            }
         } else {
@@ -274,7 +322,7 @@ class _HeroSectionState extends State<_HeroSection> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(_loteName, style: AppText.h2()),
+                    Text(_loteName, style: AppText.h3()),
                   ],
                 ),
               ),

@@ -30,7 +30,7 @@ class SettingsScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Container(
-                  width: 140,
+                  width: 150,
                   height: 2,
                   color: AppColors.primary,
                 ),
@@ -44,7 +44,7 @@ class SettingsScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AppColors.surfaceContainerLowest,
                 border: Border.all(color: AppColors.outlineVariant, width: 1),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -82,9 +82,7 @@ class SettingsScreen extends StatelessWidget {
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+                        shape: const StadiumBorder(),
                       ),
                     ),
                   ),
@@ -118,13 +116,50 @@ class SettingsScreen extends StatelessWidget {
               width: double.infinity,
               height: 56,
               child: TextButton.icon(
-                onPressed: () async {
-                  await context.read<AuthProvider>().logout();
-                  if (!context.mounted) return;
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (_) => const WelcomeScreen()),
-                    (_) => false,
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext dialogContext) {
+                      return AlertDialog(
+                        backgroundColor: AppColors.surfaceContainerHigh,
+                        title: Text(
+                          'Cerrar Sesión',
+                          style: AppText.h3(color: AppColors.onSurface),
+                        ),
+                        content: Text(
+                          '¿Estás seguro de que deseas salir de tu cuenta?',
+                          style:
+                              AppText.bodyMd(color: AppColors.onSurfaceVariant),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(dialogContext),
+                            child: Text(
+                              'CANCELAR',
+                              style:
+                                  AppText.labelCaps(color: AppColors.primary),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () async {
+                              Navigator.pop(dialogContext);
+                              await context.read<AuthProvider>().logout();
+                              if (!context.mounted) return;
+                              Navigator.pushAndRemoveUntil(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) => const WelcomeScreen()),
+                                (_) => false,
+                              );
+                            },
+                            child: Text(
+                              'SALIR',
+                              style: AppText.labelCaps(color: AppColors.error),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   );
                 },
                 icon: const Icon(Icons.logout, color: AppColors.error),
@@ -134,9 +169,7 @@ class SettingsScreen extends StatelessWidget {
                 ),
                 style: TextButton.styleFrom(
                   backgroundColor: AppColors.errorContainer,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  shape: const StadiumBorder(),
                 ),
               ),
             ),
@@ -168,7 +201,7 @@ class _SettingsTile extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.surfaceContainerLowest,
           border: Border.all(color: AppColors.outlineVariant, width: 1),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
           children: [

@@ -153,14 +153,48 @@ class _ProfileScreenState extends State<ProfileScreen> {
             SizedBox(
               width: double.infinity,
               height: 56,
-              child: OutlinedButton.icon(
-                onPressed: () async {
-                  await context.read<AuthProvider>().logout();
-                  if (!context.mounted) return;
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (_) => const WelcomeScreen()),
-                    (_) => false,
+              child: TextButton.icon(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext dialogContext) {
+                      return AlertDialog(
+                        backgroundColor: AppColors.surfaceContainerHigh,
+                        title: Text(
+                          'Cerrar Sesión',
+                          style: AppText.h3(color: AppColors.onSurface),
+                        ),
+                        content: Text(
+                          '¿Estás seguro de que deseas salir de tu cuenta?',
+                          style: AppText.bodyMd(color: AppColors.onSurfaceVariant),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(dialogContext),
+                            child: Text(
+                              'CANCELAR',
+                              style: AppText.labelCaps(color: AppColors.primary),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () async {
+                              Navigator.pop(dialogContext);
+                              await context.read<AuthProvider>().logout();
+                              if (!context.mounted) return;
+                              Navigator.pushAndRemoveUntil(
+                                context,
+                                MaterialPageRoute(builder: (_) => const WelcomeScreen()),
+                                (_) => false,
+                              );
+                            },
+                            child: Text(
+                              'SALIR',
+                              style: AppText.labelCaps(color: AppColors.error),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   );
                 },
                 icon: const Icon(Icons.logout, color: AppColors.error),
@@ -168,8 +202,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   'CERRAR SESIÓN',
                   style: AppText.labelCapsLg(color: AppColors.error),
                 ),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: AppColors.error, width: 1.5),
+                style: TextButton.styleFrom(
+                  backgroundColor: AppColors.errorContainer,
                   shape: const StadiumBorder(),
                 ),
               ),
@@ -251,7 +285,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           decoration: BoxDecoration(
             color: AppColors.surface,
             border: Border.all(color: AppColors.outlineVariant, width: 1),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
             obscure && value.isNotEmpty

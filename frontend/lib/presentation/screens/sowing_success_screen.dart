@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../widgets/offline_banner.dart';
 import '../widgets/success_scaffold.dart';
 import 'lote_history_screen.dart';
 

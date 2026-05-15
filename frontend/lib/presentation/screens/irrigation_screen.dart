@@ -8,7 +8,12 @@ import '../widgets/rugged_button.dart';
 import 'irrigation_success_screen.dart';
 
 class IrrigationScreen extends StatefulWidget {
-  const IrrigationScreen({super.key});
+  final AgroTab currentTab;
+  
+  const IrrigationScreen({
+    super.key,
+    this.currentTab = AgroTab.tareas,
+  });
 
   @override
   State<IrrigationScreen> createState() => _IrrigationScreenState();
@@ -148,7 +153,7 @@ class _IrrigationScreenState extends State<IrrigationScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: const AgroBottomNav(current: AgroTab.tareas),
+      bottomNavigationBar: AgroBottomNav(current: widget.currentTab),
     );
   }
 

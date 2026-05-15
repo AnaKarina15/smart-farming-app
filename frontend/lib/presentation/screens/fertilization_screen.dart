@@ -8,7 +8,12 @@ import '../widgets/rugged_button.dart';
 import 'fertilization_success_screen.dart';
 
 class FertilizationScreen extends StatefulWidget {
-  const FertilizationScreen({super.key});
+  final AgroTab currentTab;
+  
+  const FertilizationScreen({
+    super.key,
+    this.currentTab = AgroTab.tareas,
+  });
 
   @override
   State<FertilizationScreen> createState() => _FertilizationScreenState();
@@ -145,7 +150,7 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: const AgroBottomNav(current: AgroTab.tareas),
+      bottomNavigationBar: AgroBottomNav(current: widget.currentTab),
     );
   }
 

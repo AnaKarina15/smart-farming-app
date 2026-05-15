@@ -8,9 +8,15 @@ import 'find_finding_screen.dart';
 import 'phyto_history_screen.dart';
 import 'treatment_apply_screen.dart';
 
-class PhytosanitaryScreen extends StatelessWidget {
-  const PhytosanitaryScreen({super.key});
+class PhytosanitaryScreen extends StatefulWidget {
+  final AgroTab currentTab;
+  const PhytosanitaryScreen({super.key, this.currentTab = AgroTab.tareas});
 
+  @override
+  State<PhytosanitaryScreen> createState() => _PhytosanitaryScreenState();
+}
+
+class _PhytosanitaryScreenState extends State<PhytosanitaryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -65,7 +71,7 @@ class PhytosanitaryScreen extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: const AgroBottomNav(current: AgroTab.tareas),
+      bottomNavigationBar: AgroBottomNav(current: widget.currentTab),
     );
   }
 

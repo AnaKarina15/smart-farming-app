@@ -10,7 +10,8 @@ import 'terrain_status_screen.dart';
 import 'viability_screen.dart';
 
 class SowingScreen extends StatefulWidget {
-  const SowingScreen({super.key});
+  final AgroTab currentTab;
+  const SowingScreen({super.key, this.currentTab = AgroTab.tareas});
 
   @override
   State<SowingScreen> createState() => _SowingScreenState();
@@ -292,7 +293,7 @@ class _SowingScreenState extends State<SowingScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: const AgroBottomNav(current: AgroTab.tareas),
+      bottomNavigationBar: AgroBottomNav(current: widget.currentTab),
     );
   }
 

@@ -32,13 +32,17 @@ class RegistrationSuccessScreen extends StatelessWidget {
               Container(
                 width: 96,
                 height: 96,
-                decoration: const BoxDecoration(
-                  color: AppColors.primaryContainer,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryFixedDim,
                   shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppColors.primary,
+                    width: 2,
+                  ),
                 ),
                 child: const Icon(
-                  Icons.check_circle,
-                  color: AppColors.onPrimaryContainer,
+                  Icons.check,
+                  color: AppColors.primary,
                   size: 48,
                 ),
               ),
@@ -102,7 +106,8 @@ class RegistrationSuccessScreen extends StatelessWidget {
                                 ),
                                 TextSpan(
                                   text: nombreUsuario,
-                                  style: const TextStyle(fontWeight: FontWeight.w400),
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w400),
                                 ),
                               ],
                             ),

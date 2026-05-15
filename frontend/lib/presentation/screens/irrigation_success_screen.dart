@@ -16,7 +16,9 @@ class IrrigationSuccessScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return SuccessScaffold(
       title: '¡Riego Registrado!',
-      subtitle:
+      onlineSubtitle:
+          'La información se ha registrado y sincronizado correctamente en tu cuenta.',
+      offlineSubtitle:
           'La información se guardó en el celular y se sincronizará cuando tengas internet.',
       location: lote,
       detailLabel: 'Agua Aplicada',

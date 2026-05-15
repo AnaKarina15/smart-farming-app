@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 
@@ -6,11 +7,14 @@ import '../../core/theme/app_colors.dart';
 class RuggedTextField extends StatelessWidget {
   final String hintText;
   final IconData? prefixIcon;
-  final IconData? suffixIcon;
+  final Widget? suffixIcon;
   final bool obscureText;
   final TextInputType keyboardType;
   final TextEditingController? controller;
   final String? Function(String?)? validator;
+  final void Function(String)? onChanged;
+  final List<TextInputFormatter>? inputFormatters;
+  final TextCapitalization textCapitalization;
 
   const RuggedTextField({
     super.key,
@@ -21,6 +25,9 @@ class RuggedTextField extends StatelessWidget {
     this.keyboardType = TextInputType.text,
     this.controller,
     this.validator,
+    this.onChanged,
+    this.inputFormatters,
+    this.textCapitalization = TextCapitalization.none,
   });
 
   @override
@@ -41,6 +48,9 @@ class RuggedTextField extends StatelessWidget {
     return TextFormField(
       controller: controller,
       validator: validator,
+      onChanged: onChanged,
+      inputFormatters: inputFormatters,
+      textCapitalization: textCapitalization,
       obscureText: obscureText,
       keyboardType: keyboardType,
       style: GoogleFonts.lexend(
@@ -60,9 +70,7 @@ class RuggedTextField extends StatelessWidget {
         prefixIcon: prefixIcon != null
             ? Icon(prefixIcon, color: AppColors.onSurfaceVariant, size: 22)
             : null,
-        suffixIcon: suffixIcon != null
-            ? Icon(suffixIcon, color: AppColors.onSurfaceVariant, size: 22)
-            : null,
+        suffixIcon: suffixIcon,
         border: border,
         enabledBorder: border,
         focusedBorder: focusedBorder,

@@ -9,7 +9,8 @@ import 'offline_banner.dart';
 /// Layout reusable para pantallas de éxito (riego, fertilización, siembra…).
 class SuccessScaffold extends StatelessWidget {
   final String title;
-  final String subtitle;
+  final String onlineSubtitle;
+  final String offlineSubtitle;
   final String location;
   final String detailLabel;
   final String detailValue;
@@ -22,7 +23,8 @@ class SuccessScaffold extends StatelessWidget {
   const SuccessScaffold({
     super.key,
     required this.title,
-    required this.subtitle,
+    required this.onlineSubtitle,
+    required this.offlineSubtitle,
     required this.location,
     required this.detailLabel,
     required this.detailValue,
@@ -81,8 +83,8 @@ class SuccessScaffold extends StatelessWidget {
                           builder: (context, isOffline, child) {
                             return Text(
                               isOffline
-                                  ? 'La información se guardó en el celular y se sincronizará cuando tengas internet.'
-                                  : 'La información se ha registrado y sincronizado correctamente en tu cuenta.',
+                                  ? offlineSubtitle
+                                  : onlineSubtitle,
                               textAlign: TextAlign.center,
                               style: AppText.bodyMd(
                                 color: AppColors.onSurfaceVariant,

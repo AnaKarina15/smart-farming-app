@@ -7,7 +7,7 @@ class RuggedButton extends StatelessWidget {
   final String text;
   final VoidCallback onPressed;
   final Color backgroundColor;
-  final Color textColor;
+  final Color? textColor;
   final bool isOutlined;
   final IconData? icon;
   final double height;
@@ -17,7 +17,7 @@ class RuggedButton extends StatelessWidget {
     required this.text,
     required this.onPressed,
     this.backgroundColor = AppColors.primary,
-    this.textColor = AppColors.onPrimary,
+    this.textColor,
     this.isOutlined = false,
     this.icon,
     this.height = 56,
@@ -26,7 +26,7 @@ class RuggedButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bg = isOutlined ? Colors.transparent : backgroundColor;
-    final fg = isOutlined ? AppColors.primary : textColor;
+    final fg = textColor ?? (isOutlined ? AppColors.primary : AppColors.onPrimary);
 
     return SizedBox(
       width: double.infinity,
@@ -40,7 +40,7 @@ class RuggedButton extends StatelessWidget {
           shadowColor: AppColors.primary.withValues(alpha: 0.2),
           shape: StadiumBorder(
             side: isOutlined
-                ? const BorderSide(color: AppColors.primary, width: 1.5)
+                ? BorderSide(color: fg, width: 1.5)
                 : BorderSide.none,
           ),
           padding: EdgeInsets.zero,

@@ -104,16 +104,20 @@ class _LoginScreenState extends State<LoginScreen> {
                   ).copyWith(letterSpacing: 2.4, fontWeight: FontWeight.w800),
                 ),
               ),
-              const SizedBox(height: 40),
-              Text(
-                'Iniciar sesión',
-                style: AppText.h2(color: AppColors.onSurface),
-                textAlign: TextAlign.center,
+              const SizedBox(height: 30),
+              Center(
+                child: Text(
+                  'Iniciar sesión',
+                  style: AppText.h2(color: AppColors.onSurface),
+                  textAlign: TextAlign.center,
+                ),
               ),
               const SizedBox(height: 8),
-              Text(
-                'Ingresa con tu correo y contraseña',
-                style: AppText.bodyMd(color: AppColors.onSurfaceVariant),
+              Center(
+                child: Text(
+                  'Ingresa con tu correo y contraseña',
+                  style: AppText.bodyMd(color: AppColors.onSurfaceVariant),
+                ),
               ),
               const SizedBox(height: 32),
               Form(

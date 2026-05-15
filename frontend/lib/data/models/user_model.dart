@@ -11,6 +11,8 @@ class UserModel {
   final DateTime? ultimoAcceso;
   final DateTime createdAt;
   final DateTime updatedAt;
+  /// Optional field indicating who created the user record in the backend.
+  final String? createdBy;
 
   UserModel({
     required this.id,
@@ -22,6 +24,8 @@ class UserModel {
     this.ultimoAcceso,
     required this.createdAt,
     required this.updatedAt,
+    this.createdBy,
+
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -37,6 +41,7 @@ class UserModel {
           : null,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
+      createdBy: json['createdBy'] as String?,
     );
   }
 
@@ -51,6 +56,8 @@ class UserModel {
       'ultimoAcceso': ultimoAcceso?.toIso8601String(),
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
+      if (createdBy != null) 'createdBy': createdBy,
+
     };
   }
 

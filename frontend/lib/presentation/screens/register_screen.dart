@@ -73,22 +73,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 8),
-              IconButton(
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(
-                  Icons.arrow_back,
-                  color: AppColors.onSurface,
-                  size: 28,
+              const SizedBox(
+                  height:
+                      24), // Ajustado para dar un buen margen superior sin la flecha
+              Center(
+                child: Text(
+                  'Bienvenido a Agrofield',
+                  style: AppText.h2(color: AppColors.onSurface),
+                  textAlign: TextAlign.center,
                 ),
-                padding: EdgeInsets.zero,
               ),
-              const SizedBox(height: 16),
-              Text('Crear cuenta', style: AppText.h2()),
-              const SizedBox(height: 8),
-              Text(
-                'Regístrate para empezar a gestionar tus cultivos',
-                style: AppText.bodyMd(color: AppColors.onSurfaceVariant),
+              const SizedBox(height: 10),
+              Center(
+                child: Text(
+                  'Regístrate para empezar a gestionar tus cultivos',
+                  style: AppText.bodyMd(color: AppColors.onSurfaceVariant),
+                  textAlign: TextAlign.center,
+                ),
               ),
               const SizedBox(height: 32),
               Form(
@@ -144,7 +145,37 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 32),
+                    Center(
+                      child: GestureDetector(
+                        onTap: () {
+                          // Aquí colocas la acción para abrir el link o una nueva pantalla
+                          print("Abriendo términos y condiciones...");
+                        },
+                        child: RichText(
+                          textAlign: TextAlign.center,
+                          text: TextSpan(
+                            style: AppText.bodyMd(
+                                    color: AppColors.onSurfaceVariant)
+                                .copyWith(fontSize: 12),
+                            children: [
+                              const TextSpan(
+                                  text: 'Al registrarte aceptas los '),
+                              TextSpan(
+                                text: 'términos y condiciones.',
+                                style: TextStyle(
+                                  color: AppColors
+                                      .primary, // Color diferente para el link
+                                  fontWeight: FontWeight.bold,
+                                  decoration: TextDecoration
+                                      .underline, // Subrayado opcional
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
                     isLoading
                         ? const Center(
                             child: CircularProgressIndicator(

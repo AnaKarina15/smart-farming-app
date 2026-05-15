@@ -28,9 +28,6 @@ class HomeScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const OfflineBanner(),
-            const SizedBox(height: 24),
-
             // ── Hero card ─────────────────────────────────────
             Container(
               padding: const EdgeInsets.all(24),

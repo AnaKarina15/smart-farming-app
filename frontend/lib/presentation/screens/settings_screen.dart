@@ -4,10 +4,32 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text.dart';
 import '../../data/providers/auth_provider.dart';
 import '../widgets/custom_app_bar.dart';
+import '../widgets/offline_banner.dart';
 import 'welcome_screen.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Ocultar banner global porque esta pantalla tiene su propio indicador de red
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      OfflineBanner.showGlobal.value = false;
+    });
+  }
+
+  @override
+  void dispose() {
+    // Restaurar banner global al salir
+    OfflineBanner.showGlobal.value = true;
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

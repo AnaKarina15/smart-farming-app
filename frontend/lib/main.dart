@@ -8,6 +8,7 @@ import 'data/providers/auth_provider.dart';
 import 'data/services/auth_service.dart';
 import 'data/services/lotes_service.dart';
 import 'presentation/screens/welcome_screen.dart';
+import 'presentation/widgets/offline_banner.dart';
 
 void main() {
   // Inicializacion de dependencias (poor man's DI)
@@ -66,6 +67,24 @@ class SmartFarmingApp extends StatelessWidget {
           ),
         ),
         home: const WelcomeScreen(),
+        builder: (context, child) {
+          return Stack(
+            children: [
+              if (child != null) child,
+              const Positioned(
+                bottom: 80, // Por encima de la barra de navegación inferior
+                left: 0,
+                right: 0,
+                // Ignorar punteros para que no bloquee los toques detrás del banner
+                child: IgnorePointer(
+                  child: SafeArea(
+                    child: OfflineBanner(),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

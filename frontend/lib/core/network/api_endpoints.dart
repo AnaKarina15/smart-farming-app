@@ -8,11 +8,12 @@ class ApiEndpoints {
       // Si es navegador (Chrome/Edge)
       return 'http://localhost:3000/api/v1';
     } else if (Platform.isAndroid) {
-      // Si es el emulador de Android
-      return 'http://10.0.2.2:3000/api/v1';
+      // Celular físico o emulador (comenta una u otra según necesites)
+      // return 'http://10.0.2.2:3000/api/v1'; // <-- Para Emulador
+      return 'http://192.168.0.11:3000/api/v1'; // <-- Para Celular Físico
     } else {
       // iOS, macOS o Windows Desktop
-      return 'http://192.168.0.11:3000/api/v1'; //Celular fisico(ej. http://DIR_IP_LOCAL_IV4:3000/api/v1)
+      return 'http://192.168.0.11:3000/api/v1'; 
     }
   }
 

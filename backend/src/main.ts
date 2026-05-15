@@ -119,7 +119,7 @@ async function bootstrap(): Promise<void> {
     });
   }
 
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
 
   const url = await app.getUrl();
   const logger = app.get(WINSTON_MODULE_NEST_PROVIDER);

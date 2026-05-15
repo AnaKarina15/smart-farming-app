@@ -9,9 +9,9 @@ class OfflineBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // TODO: Conectar esto al estado real de red (ConnectivityPlus / Backend)
-    bool isOffline = false;
+    bool isOffline = true;
 
-    if (!isOffline) return const SizedBox.shrink();
+    // if (!isOffline) return const SizedBox.shrink();
 
     return Center(
       child: Container(

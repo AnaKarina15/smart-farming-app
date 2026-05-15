@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 import { User } from '../entities/user.entity';
 import { UserRole } from '../entities/user-role.enum';
@@ -6,8 +6,7 @@ import { UserRole } from '../entities/user-role.enum';
 /**
  * DTO de respuesta para User.
  *
- * Excluye campos sensibles (password, refreshTokenHash) por construccion explicita,
- * en lugar de depender de class-transformer (mas seguro).
+ * Excluye campos sensibles (password, refreshTokenHash) por construccion explicita.
  */
 export class UserResponseDto {
   @ApiProperty({ format: 'uuid' })
@@ -19,7 +18,7 @@ export class UserResponseDto {
   @ApiProperty({ format: 'email' })
   email!: string;
 
-  @ApiProperty({ required: false, nullable: true })
+  @ApiPropertyOptional({ nullable: true })
   telefono!: string | null;
 
   @ApiProperty({ enum: UserRole })
@@ -28,8 +27,17 @@ export class UserResponseDto {
   @ApiProperty()
   activo!: boolean;
 
-  @ApiProperty({ required: false, nullable: true })
+  @ApiProperty()
+  mustChangePassword!: boolean;
+
+  @ApiPropertyOptional({ nullable: true })
   ultimoAcceso!: Date | null;
+
+  @ApiPropertyOptional({ nullable: true, description: 'Quien creo este usuario' })
+  createdBy!: string | null;
+
+  @ApiPropertyOptional({ nullable: true, description: 'Si esta soft-deleted' })
+  deletedAt!: Date | null;
 
   @ApiProperty()
   createdAt!: Date;
@@ -45,7 +53,10 @@ export class UserResponseDto {
     dto.telefono = user.telefono;
     dto.role = user.role;
     dto.activo = user.activo;
+    dto.mustChangePassword = user.mustChangePassword;
     dto.ultimoAcceso = user.ultimoAcceso;
+    dto.createdBy = user.createdBy;
+    dto.deletedAt = user.deletedAt;
     dto.createdAt = user.createdAt;
     dto.updatedAt = user.updatedAt;
     return dto;

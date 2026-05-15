@@ -48,4 +48,11 @@ export class LotesRepository {
     const result = await qb.getRawOne<{ total: string }>();
     return Number(result?.total ?? 0);
   }
+
+  async findAll(): Promise<Lote[]> {
+    return this.repo.find({
+      relations: ['propietario'],
+      order: { createdAt: 'DESC' },
+    });
+  }
 }

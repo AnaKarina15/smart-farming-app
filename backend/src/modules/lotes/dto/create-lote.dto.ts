@@ -51,7 +51,7 @@ export class CreateLoteDto {
   @IsLatitude()
   latitud?: number;
 
-  @ApiProperty({ example: -74.1990, required: false })
+  @ApiProperty({ example: -74.199, required: false })
   @IsOptional()
   @IsLongitude()
   longitud?: number;

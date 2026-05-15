@@ -1,15 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Brackets, Repository } from 'typeorm';
 
 import { User } from './entities/user.entity';
+import { UserRole } from './entities/user-role.enum';
 
-/**
- * Repositorio de Users.
- *
- * Encapsula el acceso a datos de la entidad User. Sigue el patron Repository de DDD.
- * Si en el futuro cambiamos el ORM o la fuente de datos, solo este archivo cambia.
- */
+export interface ListUsersFilters {
+  role?: UserRole;
+  activo?: boolean;
+  search?: string;
+  includeDeleted?: boolean;
+  limit?: number;
+  offset?: number;
+}
+
 @Injectable()
 export class UsersRepository {
   constructor(
@@ -17,23 +21,23 @@ export class UsersRepository {
     private readonly repo: Repository<User>,
   ) {}
 
-  async findById(id: string): Promise<User | null> {
-    return this.repo.findOne({ where: { id } });
+  async findById(id: string, includeDeleted = false): Promise<User | null> {
+    return this.repo.findOne({
+      where: { id },
+      withDeleted: includeDeleted,
+    });
   }
 
   async findByEmail(email: string): Promise<User | null> {
     return this.repo.findOne({ where: { email: email.toLowerCase() } });
   }
 
-  /**
-   * Busca por email incluyendo el campo password (excluido por defecto).
-   * Solo usar en el flujo de autenticacion.
-   */
   async findByEmailWithPassword(email: string): Promise<User | null> {
     return this.repo
       .createQueryBuilder('user')
       .addSelect('user.password')
       .where('user.email = :email', { email: email.toLowerCase() })
+      .andWhere('user.deletedAt IS NULL')
       .getOne();
   }
 
@@ -42,6 +46,7 @@ export class UsersRepository {
       .createQueryBuilder('user')
       .addSelect('user.refreshTokenHash')
       .where('user.id = :id', { id })
+      .andWhere('user.deletedAt IS NULL')
       .getOne();
   }
 
@@ -58,6 +63,10 @@ export class UsersRepository {
     return this.repo.save(user);
   }
 
+  async save(user: User): Promise<User> {
+    return this.repo.save(user);
+  }
+
   async update(id: string, data: Partial<User>): Promise<void> {
     await this.repo.update(id, data);
   }
@@ -68,5 +77,76 @@ export class UsersRepository {
 
   async updateUltimoAcceso(id: string): Promise<void> {
     await this.repo.update(id, { ultimoAcceso: new Date() });
+  }
+
+  async softDelete(id: string): Promise<void> {
+    await this.repo.softDelete(id);
+  }
+
+  async restore(id: string): Promise<void> {
+    await this.repo.restore(id);
+  }
+
+  /**
+   * Lista usuarios con filtros y paginacion.
+   */
+  async findAll(filters: ListUsersFilters): Promise<{ data: User[]; total: number }> {
+    const query = this.repo.createQueryBuilder('user').orderBy('user.createdAt', 'DESC');
+
+    if (filters.includeDeleted) {
+      query.withDeleted();
+    } else {
+      query.andWhere('user.deletedAt IS NULL');
+    }
+
+    if (filters.role) {
+      query.andWhere('user.role = :role', { role: filters.role });
+    }
+
+    if (filters.activo !== undefined) {
+      query.andWhere('user.activo = :activo', { activo: filters.activo });
+    }
+
+    if (filters.search) {
+      query.andWhere(
+        new Brackets((qb) => {
+          qb.where('user.nombreCompleto ILIKE :search', {
+            search: `%${filters.search}%`,
+          }).orWhere('user.email ILIKE :search', { search: `%${filters.search}%` });
+        }),
+      );
+    }
+
+    const limit = filters.limit ?? 20;
+    const offset = filters.offset ?? 0;
+    query.take(limit).skip(offset);
+
+    const [data, total] = await query.getManyAndCount();
+    return { data, total };
+  }
+
+  /**
+   * Cuenta usuarios por rol (para reportes admin).
+   */
+  async countByRole(): Promise<Record<UserRole, number>> {
+    const rows = await this.repo
+      .createQueryBuilder('user')
+      .select('user.role', 'role')
+      .addSelect('COUNT(*)::int', 'count')
+      .groupBy('user.role')
+      .getRawMany<{ role: UserRole; count: number }>();
+
+    const result: Record<string, number> = {
+      [UserRole.PEQUENO_PRODUCTOR]: 0,
+      [UserRole.TRABAJADOR]: 0,
+      [UserRole.GESTOR]: 0,
+      [UserRole.ADMINISTRADOR]: 0,
+    };
+
+    for (const row of rows) {
+      result[row.role] = row.count;
+    }
+
+    return result as Record<UserRole, number>;
   }
 }

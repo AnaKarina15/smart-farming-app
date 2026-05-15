@@ -10,9 +10,14 @@
  *
  * - GESTOR: Usuario administrativo (representante de asociaciones rurales).
  *   Accede a datos agregados y anonimizados para planificar apoyos.
+ *
+ * - ADMINISTRADOR: Super-usuario del sistema. Gestiona usuarios, recupera
+ *   cuentas, supervisa el sistema, gestiona catalogos y configuraciones.
+ *   Acceso completo de lectura/escritura sobre todos los recursos.
  */
 export enum UserRole {
   PEQUENO_PRODUCTOR = 'pequeno_productor',
   TRABAJADOR = 'trabajador',
   GESTOR = 'gestor',
+  ADMINISTRADOR = 'administrador',
 }

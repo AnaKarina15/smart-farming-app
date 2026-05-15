@@ -5,14 +5,14 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { WinstonModule } from 'nest-winston';
 
+import { winstonConfig } from './common/utils/winston.config';
 import appConfig from './config/app.config';
 import databaseConfig from './config/database.config';
 import jwtConfig from './config/jwt.config';
 import swaggerConfig from './config/swagger.config';
 import { validationSchema } from './config/validation.schema';
 import { typeOrmConfigFactory } from './database/typeorm.config';
-import { winstonConfig } from './common/utils/winston.config';
-
+import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { HealthModule } from './modules/health/health.module';
 import { LotesModule } from './modules/lotes/lotes.module';
@@ -27,7 +27,7 @@ import { WeatherModule } from './modules/weather/weather.module';
  * - Conexion a PostgreSQL via TypeORM
  * - Logger estructurado (Winston)
  * - Rate limiting global (Throttler) - protege contra abuso de endpoints
- * - Modulos de negocio (Auth, Users, Lotes, Health, Weather)
+ * - Modulos de negocio (Auth, Users, Lotes, Health, Audit, Weather)
  */
 @Module({
   imports: [
@@ -42,19 +42,16 @@ import { WeatherModule } from './modules/weather/weather.module';
         abortEarly: false,
       },
     }),
-
     // Logger
     WinstonModule.forRootAsync({
       useFactory: () => winstonConfig(),
     }),
-
     // Base de datos
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: typeOrmConfigFactory,
       inject: [ConfigService],
     }),
-
     // Rate limiting global (proteccion contra abuso)
     ThrottlerModule.forRootAsync({
       useFactory: () => ({
@@ -66,8 +63,8 @@ import { WeatherModule } from './modules/weather/weather.module';
         ],
       }),
     }),
-
     // Modulos de negocio
+    AuditModule,
     AuthModule,
     UsersModule,
     LotesModule,

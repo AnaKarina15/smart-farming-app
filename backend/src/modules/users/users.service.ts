@@ -1,45 +1,62 @@
 import {
+  BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import * as argon2 from 'argon2';
 
+import { AuditService } from '../audit/audit.service';
+
 import { CreateUserDto } from './dto/create-user.dto';
+import { ListUsersQueryDto } from './dto/list-users-query.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { AdminUpdateUserDto } from './dto/update-user.dto';
 import { UserResponseDto } from './dto/user-response.dto';
 import { User } from './entities/user.entity';
+import { UserRole } from './entities/user-role.enum';
 import { UsersRepository } from './users.repository';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly usersRepo: UsersRepository) {}
+  constructor(
+    private readonly usersRepo: UsersRepository,
+    private readonly auditService: AuditService,
+  ) {}
 
-  /**
-   * Crea un nuevo usuario.
-   *
-   * Hashea la contrasena con Argon2id (estandar OWASP 2026).
-   * Lanza ConflictException si el email ya existe.
-   */
-  async create(dto: CreateUserDto): Promise<User> {
+  // ──────────────────────────────────────────────────────────
+  // OPERACIONES BASICAS (existentes - mantienen compatibilidad)
+  // ──────────────────────────────────────────────────────────
+
+  async create(dto: CreateUserDto, createdByUserId?: string): Promise<User> {
     const exists = await this.usersRepo.existsByEmail(dto.email);
     if (exists) {
       throw new ConflictException('Ya existe un usuario con ese correo electronico');
     }
 
-    const passwordHash = await argon2.hash(dto.password, {
-      type: argon2.argon2id,
-      memoryCost: 19456, // 19 MB
-      timeCost: 2,
-      parallelism: 1,
-    });
+    const passwordHash = await this.hashPassword(dto.password);
 
-    return this.usersRepo.create({
+    const user = await this.usersRepo.create({
       nombreCompleto: dto.nombreCompleto,
       email: dto.email,
       telefono: dto.telefono ?? null,
       password: passwordHash,
-      role: dto.role,
+      role: dto.role ?? UserRole.PEQUENO_PRODUCTOR,
+      createdBy: createdByUserId ?? null,
+      passwordChangedAt: new Date(),
     });
+
+    // Audit: registro o creacion por admin
+    await this.auditService.log({
+      actorId: createdByUserId ?? user.id,
+      action: createdByUserId ? 'user.admin_create' : 'user.register',
+      targetType: 'user',
+      targetId: user.id,
+      details: { role: user.role, email: user.email },
+    });
+
+    return user;
   }
 
   async findById(id: string): Promise<User> {
@@ -72,5 +89,226 @@ export class UsersService {
 
   toResponseDto(user: User): UserResponseDto {
     return UserResponseDto.fromEntity(user);
+  }
+
+  // ──────────────────────────────────────────────────────────
+  // OPERACIONES ADMIN
+  // ──────────────────────────────────────────────────────────
+
+  /**
+   * Lista usuarios con filtros y paginacion. Solo accesible por admin.
+   */
+  async findAll(query: ListUsersQueryDto): Promise<{
+    data: UserResponseDto[];
+    total: number;
+    limit: number;
+    offset: number;
+  }> {
+    const limit = query.limit ?? 20;
+    const offset = query.offset ?? 0;
+
+    const { data, total } = await this.usersRepo.findAll({
+      role: query.role,
+      activo: query.activo,
+      search: query.search,
+      includeDeleted: query.includeDeleted ?? false,
+      limit,
+      offset,
+    });
+
+    return {
+      data: data.map((u) => UserResponseDto.fromEntity(u)),
+      total,
+      limit,
+      offset,
+    };
+  }
+
+  /**
+   * Admin actualiza datos de un usuario (nombre, telefono, rol, activo).
+   */
+  async adminUpdate(
+    targetUserId: string,
+    dto: AdminUpdateUserDto,
+    adminId: string,
+  ): Promise<UserResponseDto> {
+    const user = await this.usersRepo.findById(targetUserId);
+    if (!user) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    // Proteccion: no se puede degradar al ultimo admin del sistema
+    if (user.role === UserRole.ADMINISTRADOR && dto.role && dto.role !== UserRole.ADMINISTRADOR) {
+      const counts = await this.usersRepo.countByRole();
+      if (counts[UserRole.ADMINISTRADOR] <= 1) {
+        throw new BadRequestException('No se puede degradar al ultimo administrador del sistema');
+      }
+    }
+
+    const changes: Record<string, unknown> = {};
+    if (dto.nombreCompleto !== undefined && dto.nombreCompleto !== user.nombreCompleto) {
+      changes.nombreCompleto = { from: user.nombreCompleto, to: dto.nombreCompleto };
+      user.nombreCompleto = dto.nombreCompleto;
+    }
+    if (dto.telefono !== undefined && dto.telefono !== user.telefono) {
+      changes.telefono = { from: user.telefono, to: dto.telefono };
+      user.telefono = dto.telefono;
+    }
+    if (dto.role !== undefined && dto.role !== user.role) {
+      changes.role = { from: user.role, to: dto.role };
+      user.role = dto.role;
+    }
+    if (dto.activo !== undefined && dto.activo !== user.activo) {
+      changes.activo = { from: user.activo, to: dto.activo };
+      user.activo = dto.activo;
+    }
+
+    await this.usersRepo.save(user);
+
+    if (Object.keys(changes).length > 0) {
+      await this.auditService.log({
+        actorId: adminId,
+        action: 'user.admin_update',
+        targetType: 'user',
+        targetId: user.id,
+        details: changes,
+      });
+    }
+
+    return UserResponseDto.fromEntity(user);
+  }
+
+  /**
+   * Admin resetea la password de un usuario. Util para recuperacion de cuenta
+   * cuando el productor no puede acceder (bajo nivel de alfabetizacion digital).
+   *
+   * El usuario sera forzado a cambiar la password en su proximo login
+   * (campo mustChangePassword = true).
+   */
+  async adminResetPassword(
+    targetUserId: string,
+    dto: ResetPasswordDto,
+    adminId: string,
+  ): Promise<{ message: string; temporaryPassword: string }> {
+    const user = await this.usersRepo.findById(targetUserId);
+    if (!user) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    const passwordHash = await this.hashPassword(dto.newPassword);
+
+    user.password = passwordHash;
+    user.passwordChangedAt = new Date();
+    user.mustChangePassword = true;
+    user.refreshTokenHash = null; // invalida sesiones existentes
+
+    await this.usersRepo.save(user);
+
+    await this.auditService.log({
+      actorId: adminId,
+      action: 'user.password_reset',
+      targetType: 'user',
+      targetId: user.id,
+      details: { byAdmin: true },
+    });
+
+    return {
+      message: 'Password reseteada exitosamente. El usuario debera cambiarla en su proximo login.',
+      temporaryPassword: dto.newPassword,
+    };
+  }
+
+  /**
+   * Soft-delete: marca el usuario como eliminado pero conserva su historial.
+   */
+  async adminSoftDelete(targetUserId: string, adminId: string): Promise<void> {
+    const user = await this.usersRepo.findById(targetUserId);
+    if (!user) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    // Proteccion: no se puede eliminar al ultimo admin
+    if (user.role === UserRole.ADMINISTRADOR) {
+      const counts = await this.usersRepo.countByRole();
+      if (counts[UserRole.ADMINISTRADOR] <= 1) {
+        throw new BadRequestException('No se puede eliminar al ultimo administrador del sistema');
+      }
+    }
+
+    // No se puede auto-eliminar
+    if (user.id === adminId) {
+      throw new ForbiddenException('No puedes eliminar tu propia cuenta de administrador');
+    }
+
+    await this.usersRepo.softDelete(targetUserId);
+
+    await this.auditService.log({
+      actorId: adminId,
+      action: 'user.delete',
+      targetType: 'user',
+      targetId: user.id,
+      details: { email: user.email, role: user.role },
+    });
+  }
+
+  /**
+   * Restaura un usuario previamente soft-deleted.
+   */
+  async adminRestore(targetUserId: string, adminId: string): Promise<UserResponseDto> {
+    const user = await this.usersRepo.findById(targetUserId, true);
+    if (!user) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+    if (!user.deletedAt) {
+      throw new BadRequestException('El usuario no esta eliminado');
+    }
+
+    await this.usersRepo.restore(targetUserId);
+
+    await this.auditService.log({
+      actorId: adminId,
+      action: 'user.restore',
+      targetType: 'user',
+      targetId: user.id,
+      details: { email: user.email },
+    });
+
+    const restored = await this.findById(targetUserId);
+    return UserResponseDto.fromEntity(restored);
+  }
+
+  /**
+   * Estadisticas para el dashboard del admin.
+   */
+  async getStats(): Promise<{
+    totalUsuarios: number;
+    porRol: Record<UserRole, number>;
+    activos: number;
+    inactivos: number;
+  }> {
+    const porRol = await this.usersRepo.countByRole();
+    const totalUsuarios = Object.values(porRol).reduce((sum, n) => sum + n, 0);
+
+    const { total: activos } = await this.usersRepo.findAll({
+      activo: true,
+      limit: 1,
+      offset: 0,
+    });
+    const inactivos = totalUsuarios - activos;
+
+    return { totalUsuarios, porRol, activos, inactivos };
+  }
+
+  // ──────────────────────────────────────────────────────────
+  // UTILIDADES PRIVADAS
+  // ──────────────────────────────────────────────────────────
+
+  private async hashPassword(plain: string): Promise<string> {
+    return argon2.hash(plain, {
+      type: argon2.argon2id,
+      memoryCost: 19456,
+      timeCost: 2,
+      parallelism: 1,
+    });
   }
 }

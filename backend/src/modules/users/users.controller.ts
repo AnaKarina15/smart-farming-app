@@ -1,10 +1,37 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import { CurrentUser, JwtPayload } from '@/common/decorators/current-user.decorator';
+import { Roles } from '@/common/decorators/roles.decorator';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
+import { RolesGuard } from '@/common/guards/roles.guard';
 
+import { CreateUserDto } from './dto/create-user.dto';
+import { ListUsersQueryDto } from './dto/list-users-query.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { AdminUpdateUserDto } from './dto/update-user.dto';
 import { UserResponseDto } from './dto/user-response.dto';
+import { UserRole } from './entities/user-role.enum';
 import { UsersService } from './users.service';
 
 @ApiTags('Users')
@@ -13,6 +40,10 @@ import { UsersService } from './users.service';
 @ApiBearerAuth('JWT-auth')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  // ════════════════════════════════════════════════════════
+  // ENDPOINTS PARA TODOS LOS USUARIOS AUTENTICADOS
+  // ════════════════════════════════════════════════════════
 
   @Get('me')
   @ApiOperation({
@@ -24,5 +55,139 @@ export class UsersController {
   async getMe(@CurrentUser() jwtUser: JwtPayload): Promise<UserResponseDto> {
     const user = await this.usersService.findById(jwtUser.sub);
     return this.usersService.toResponseDto(user);
+  }
+
+  // ════════════════════════════════════════════════════════
+  // ENDPOINTS SOLO PARA ADMINISTRADOR
+  // ════════════════════════════════════════════════════════
+
+  @Get()
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMINISTRADOR)
+  @ApiOperation({
+    summary: '[ADMIN] Listar todos los usuarios con filtros',
+    description: 'Solo accesible por administradores. Soporta paginacion y filtros.',
+  })
+  @ApiResponse({ status: 200, description: 'Lista paginada de usuarios' })
+  @ApiResponse({ status: 403, description: 'Se requiere rol ADMINISTRADOR' })
+  async findAll(@Query() query: ListUsersQueryDto) {
+    return this.usersService.findAll(query);
+  }
+
+  @Get('stats')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMINISTRADOR)
+  @ApiOperation({
+    summary: '[ADMIN] Estadisticas globales de usuarios',
+    description: 'Total, distribucion por rol, activos vs inactivos.',
+  })
+  @ApiResponse({ status: 200, description: 'Estadisticas del sistema' })
+  async getStats() {
+    return this.usersService.getStats();
+  }
+
+  @Get(':id')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMINISTRADOR)
+  @ApiOperation({ summary: '[ADMIN] Ver detalle de un usuario por ID' })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiResponse({ status: 200, type: UserResponseDto })
+  @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
+  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<UserResponseDto> {
+    const user = await this.usersService.findById(id);
+    return this.usersService.toResponseDto(user);
+  }
+
+  @Post()
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMINISTRADOR)
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: '[ADMIN] Crear un usuario con rol especifico',
+    description:
+      'Permite al admin crear usuarios manualmente. Util para registrar Gestores, ' +
+      'Trabajadores u otros Admins. El productor estandar se auto-registra via /auth/register.',
+  })
+  @ApiBody({ type: CreateUserDto })
+  @ApiResponse({ status: 201, type: UserResponseDto })
+  @ApiResponse({ status: 409, description: 'Email ya registrado' })
+  async create(
+    @Body() dto: CreateUserDto,
+    @CurrentUser() admin: JwtPayload,
+  ): Promise<UserResponseDto> {
+    const user = await this.usersService.create(dto, admin.sub);
+    return this.usersService.toResponseDto(user);
+  }
+
+  @Patch(':id')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMINISTRADOR)
+  @ApiOperation({ summary: '[ADMIN] Actualizar datos de un usuario' })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiBody({ type: AdminUpdateUserDto })
+  @ApiResponse({ status: 200, type: UserResponseDto })
+  async update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: AdminUpdateUserDto,
+    @CurrentUser() admin: JwtPayload,
+  ): Promise<UserResponseDto> {
+    return this.usersService.adminUpdate(id, dto, admin.sub);
+  }
+
+  @Post(':id/reset-password')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMINISTRADOR)
+  @ApiOperation({
+    summary: '[ADMIN] Recuperar cuenta - Resetear password de un usuario',
+    description:
+      'Asigna una password temporal a un usuario que perdio acceso. ' +
+      'El usuario debera cambiarla en su proximo login (mustChangePassword = true). ' +
+      'Util para recuperacion de cuenta de productores con baja alfabetizacion digital. ' +
+      'Invalida tambien todas las sesiones activas (refreshToken).',
+  })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiBody({ type: ResetPasswordDto })
+  @ApiResponse({ status: 200, description: 'Password reseteada' })
+  async resetPassword(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ResetPasswordDto,
+    @CurrentUser() admin: JwtPayload,
+  ) {
+    return this.usersService.adminResetPassword(id, dto, admin.sub);
+  }
+
+  @Delete(':id')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMINISTRADOR)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: '[ADMIN] Eliminar usuario (soft-delete)',
+    description:
+      'Marca el usuario como eliminado. NO se borra fisicamente para mantener ' +
+      'integridad de historial. Puede restaurarse con POST /users/:id/restore.',
+  })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiResponse({ status: 204, description: 'Usuario eliminado' })
+  async remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() admin: JwtPayload,
+  ): Promise<void> {
+    await this.usersService.adminSoftDelete(id, admin.sub);
+  }
+
+  @Post(':id/restore')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMINISTRADOR)
+  @ApiOperation({
+    summary: '[ADMIN] Restaurar usuario eliminado',
+    description: 'Reactiva un usuario que fue soft-deleted.',
+  })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiResponse({ status: 200, type: UserResponseDto })
+  async restore(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() admin: JwtPayload,
+  ): Promise<UserResponseDto> {
+    return this.usersService.adminRestore(id, admin.sub);
   }
 }

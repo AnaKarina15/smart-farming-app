@@ -26,7 +26,7 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
       appBar: const CustomAppBar(),
       body: Column(
         children: [
-          const OfflineBanner(style: OfflineBannerStyle.surface),
+          const OfflineBanner(),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),

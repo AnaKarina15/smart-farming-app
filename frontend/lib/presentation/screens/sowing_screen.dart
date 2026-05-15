@@ -34,7 +34,7 @@ class _SowingScreenState extends State<SowingScreen> {
       appBar: const CustomAppBar(),
       body: Column(
         children: [
-          const OfflineBanner(style: OfflineBannerStyle.primary),
+          const OfflineBanner(),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),

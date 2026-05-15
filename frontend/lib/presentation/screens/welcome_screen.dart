@@ -36,7 +36,7 @@ class WelcomeScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Smart Farming',
+                    'AgroField',
                     style: GoogleFonts.lexend(
                       fontSize: 32,
                       fontWeight: FontWeight.w700,

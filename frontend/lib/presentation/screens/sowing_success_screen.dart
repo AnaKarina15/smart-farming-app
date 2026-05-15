@@ -24,7 +24,6 @@ class SowingSuccessScreen extends StatelessWidget {
       detailValue: '$crop (2.5 ha)',
       detailIcon: Icons.grass,
       fallbackIcon: Icons.agriculture,
-      bannerStyle: OfflineBannerStyle.surface,
       primaryButtonText: 'VER HISTORIAL DEL LOTE',
       onPrimaryPressed: () => Navigator.pushReplacement(
         context,

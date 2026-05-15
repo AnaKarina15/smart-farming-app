@@ -128,11 +128,13 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                             size: 22,
                           ),
                           const SizedBox(width: 12),
-                          Text(
-                            'ÁREA CALCULADA: 2.1 HECTÁREAS',
-                            style: AppText.labelCaps(
-                              color: AppColors.onSecondaryContainer,
-                            ).copyWith(fontSize: 13),
+                          Expanded(
+                            child: Text(
+                              'ÁREA CALCULADA: 2.1 HECTÁREAS',
+                              style: AppText.labelCaps(
+                                color: AppColors.onSecondaryContainer,
+                              ).copyWith(fontSize: 13),
+                            ),
                           ),
                         ],
                       ),

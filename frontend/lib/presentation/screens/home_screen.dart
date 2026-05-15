@@ -12,6 +12,7 @@ import 'profile_screen.dart';
 import 'soil_humidity_screen.dart';
 import 'sowing_screen.dart';
 import 'tasks_screen.dart';
+import 'map_onboarding_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -166,7 +167,7 @@ class HomeScreen extends StatelessWidget {
             case AgroTab.lotes:
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const LotesMapScreen()),
+                MaterialPageRoute(builder: (_) => const MapOnboardingScreen()),
               );
               break;
             case AgroTab.tareas:

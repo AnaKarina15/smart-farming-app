@@ -5,9 +5,20 @@ import '../common/agro_bottom_nav.dart';
 import '../widgets/custom_app_bar.dart';
 import 'lote_history_screen.dart';
 import 'treatment_apply_screen.dart';
+import 'home_screen.dart';
+import 'profile_screen.dart';
 
 class LotesMapScreen extends StatelessWidget {
-  const LotesMapScreen({super.key});
+  final String loteName;
+  final String loteArea;
+  final String loteCrop;
+
+  const LotesMapScreen({
+    super.key,
+    this.loteName = 'Lote 1',
+    this.loteArea = '3.5 Ha',
+    this.loteCrop = 'Maíz',
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -81,7 +92,7 @@ class LotesMapScreen extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Lote 1',
+                                  loteName,
                                   style: AppText.h2(color: AppColors.primary),
                                 ),
                                 const SizedBox(height: 4),
@@ -126,13 +137,13 @@ class LotesMapScreen extends StatelessWidget {
                           Expanded(
                             child: _statBox(
                               'SUPERFICIE',
-                              '3.5 Ha',
+                              loteArea,
                               Icons.straighten,
                             ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: _statBox('CULTIVO', 'Maíz', Icons.grass),
+                            child: _statBox('CULTIVO', loteCrop, Icons.grass),
                           ),
                         ],
                       ),
@@ -230,7 +241,7 @@ class LotesMapScreen extends StatelessWidget {
                             context,
                             MaterialPageRoute(
                               builder: (_) =>
-                                  const LoteHistoryScreen(loteName: 'Lote 1'),
+                                  LoteHistoryScreen(loteName: loteName),
                             ),
                           ),
                           icon: const Icon(
@@ -268,16 +279,31 @@ class LotesMapScreen extends StatelessWidget {
                 children: [
                   Text('OTROS LOTES CERCANOS', style: AppText.labelCaps()),
                   const SizedBox(height: 12),
-                  _otherLote('Lote 2', 'Saludable • 8 Ha • Trigo'),
+                  _otherLote(context, 'Lote 2', 'Saludable • 8 Ha • Trigo'),
                   const SizedBox(height: 8),
-                  _otherLote('Lote 3', 'Saludable • 15 Ha • Soja'),
+                  _otherLote(context, 'Lote 3', 'Saludable • 15 Ha • Soja'),
                 ],
               ),
             ),
           ],
         ),
       ),
-      bottomNavigationBar: const AgroBottomNav(current: AgroTab.lotes),
+      bottomNavigationBar: AgroBottomNav(
+        current: AgroTab.lotes,
+        onTap: (tab) {
+          if (tab == AgroTab.home) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const HomeScreen()),
+            );
+          } else if (tab == AgroTab.perfil) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const ProfileScreen()),
+            );
+          }
+        },
+      ),
     );
   }
 
@@ -341,43 +367,61 @@ class LotesMapScreen extends StatelessWidget {
     );
   }
 
-  Widget _otherLote(String name, String detail) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
-        border: Border.all(color: AppColors.outlineVariant, width: 1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 6,
-            height: 40,
-            decoration: BoxDecoration(
-              color: AppColors.secondary,
-              borderRadius: BorderRadius.circular(999),
+  Widget _otherLote(BuildContext context, String name, String detail) {
+    final parts = detail.split(' • ');
+    final area = parts.length > 1 ? parts[1] : '0 Ha';
+    final crop = parts.length > 2 ? parts[2] : 'Desconocido';
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => LotesMapScreen(
+              loteName: name,
+              loteArea: area,
+              loteCrop: crop,
             ),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: AppText.bodyMd().copyWith(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  detail.toUpperCase(),
-                  style: AppText.labelCaps().copyWith(fontSize: 11),
-                ),
-              ],
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainerLowest,
+          border: Border.all(color: AppColors.outlineVariant, width: 1),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 6,
+              height: 40,
+              decoration: BoxDecoration(
+                color: AppColors.secondary,
+                borderRadius: BorderRadius.circular(999),
+              ),
             ),
-          ),
-          const Icon(Icons.chevron_right, color: AppColors.outline),
-        ],
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: AppText.bodyMd().copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    detail.toUpperCase(),
+                    style: AppText.labelCaps().copyWith(fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: AppColors.outline),
+          ],
+        ),
       ),
     );
   }

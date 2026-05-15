@@ -4,6 +4,8 @@ import '../../core/theme/app_text.dart';
 import '../common/agro_bottom_nav.dart';
 import '../widgets/offline_banner.dart';
 import '../widgets/custom_app_bar.dart';
+import 'home_screen.dart';
+import 'profile_screen.dart';
 
 enum SyncStatus { syncing, local, completed }
 
@@ -16,13 +18,13 @@ class LoteHistoryScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: const CustomAppBar(),
+      appBar: const CustomAppBar(showBack: true),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const OfflineBanner(style: OfflineBannerStyle.error),
+            const OfflineBanner(),
             const SizedBox(height: 16),
             Text('Historial - $loteName', style: AppText.h2()),
             const SizedBox(height: 16),
@@ -55,7 +57,22 @@ class LoteHistoryScreen extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: const AgroBottomNav(current: AgroTab.lotes),
+      bottomNavigationBar: AgroBottomNav(
+        current: AgroTab.lotes,
+        onTap: (tab) {
+          if (tab == AgroTab.home) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const HomeScreen()),
+            );
+          } else if (tab == AgroTab.perfil) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const ProfileScreen()),
+            );
+          }
+        },
+      ),
     );
   }
 

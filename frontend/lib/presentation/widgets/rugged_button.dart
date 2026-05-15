@@ -26,7 +26,8 @@ class RuggedButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bg = isOutlined ? Colors.transparent : backgroundColor;
-    final fg = textColor ?? (isOutlined ? AppColors.primary : AppColors.onPrimary);
+    final fg =
+        textColor ?? (isOutlined ? AppColors.primary : AppColors.onPrimary);
 
     return SizedBox(
       width: double.infinity,

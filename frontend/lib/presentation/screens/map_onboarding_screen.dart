@@ -6,6 +6,8 @@ import '../widgets/custom_app_bar.dart';
 import '../widgets/rugged_button.dart';
 import 'home_screen.dart';
 import 'register_lote_screen.dart';
+import 'tasks_screen.dart';
+import 'profile_screen.dart';
 
 class MapOnboardingScreen extends StatelessWidget {
   const MapOnboardingScreen({super.key});
@@ -23,36 +25,35 @@ class MapOnboardingScreen extends StatelessWidget {
             child: Column(
               children: [
                 // Illustration
-                AspectRatio(
-                  aspectRatio: 1,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(32),
-                      color: AppColors.primary.withValues(alpha: 0.05),
-                    ),
-                    child: Center(
-                      child: Container(
-                        width: 200,
-                        height: 200,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: RadialGradient(
-                            colors: [
-                              AppColors.primary.withValues(alpha: 0.2),
-                              Colors.transparent,
-                            ],
-                          ),
+                Container(
+                  width: 200,
+                  height: 200,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(32),
+                    color: AppColors.primary.withValues(alpha: 0.05),
+                  ),
+                  child: Center(
+                    child: Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: RadialGradient(
+                          colors: [
+                            AppColors.primary.withValues(alpha: 0.2),
+                            Colors.transparent,
+                          ],
                         ),
-                        child: const Icon(
-                          Icons.eco,
-                          size: 140,
-                          color: AppColors.primary,
-                        ),
+                      ),
+                      child: const Icon(
+                        Icons.eco,
+                        size: 100,
+                        color: AppColors.primary,
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 48),
+                const SizedBox(height: 18),
                 Text(
                   '¡Comencemos a mapear tu cultivo!',
                   textAlign: TextAlign.center,
@@ -98,10 +99,11 @@ class MapOnboardingScreen extends StatelessWidget {
         current: AgroTab.lotes,
         onTap: (tab) {
           if (tab == AgroTab.home) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const HomeScreen()),
-            );
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+          } else if (tab == AgroTab.tareas) {
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const TasksScreen()));
+          } else if (tab == AgroTab.perfil) {
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
           }
         },
       ),

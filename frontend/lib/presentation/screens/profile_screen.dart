@@ -6,7 +6,10 @@ import '../../data/providers/auth_provider.dart';
 import '../common/agro_bottom_nav.dart';
 import '../widgets/custom_app_bar.dart';
 import '../widgets/rugged_button.dart';
+import 'home_screen.dart';
 import 'welcome_screen.dart';
+import 'map_onboarding_screen.dart';
+import 'tasks_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -175,7 +178,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: const AgroBottomNav(current: AgroTab.perfil),
+      bottomNavigationBar: AgroBottomNav(
+        current: AgroTab.perfil,
+        onTap: (tab) {
+          if (tab == AgroTab.home) {
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+          } else if (tab == AgroTab.lotes) {
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const MapOnboardingScreen()));
+          } else if (tab == AgroTab.tareas) {
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const TasksScreen()));
+          }
+        },
+      ),
     );
   }
 
@@ -205,7 +219,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               Icon(icon, color: AppColors.primary, size: 22),
               const SizedBox(width: 8),
-              Text(title, style: AppText.h3()),
+              Expanded(
+                child: Text(
+                  title,
+                  style: AppText.h3(),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 16),

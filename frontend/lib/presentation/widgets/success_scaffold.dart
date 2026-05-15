@@ -18,7 +18,6 @@ class SuccessScaffold extends StatelessWidget {
   final IconData? fallbackIcon;
   final String primaryButtonText;
   final VoidCallback onPrimaryPressed;
-  final OfflineBannerStyle bannerStyle;
 
   const SuccessScaffold({
     super.key,
@@ -32,7 +31,6 @@ class SuccessScaffold extends StatelessWidget {
     required this.onPrimaryPressed,
     this.imageUrl,
     this.fallbackIcon,
-    this.bannerStyle = OfflineBannerStyle.surface,
   });
 
   @override
@@ -42,7 +40,7 @@ class SuccessScaffold extends StatelessWidget {
       appBar: const CustomAppBar(),
       body: Column(
         children: [
-          OfflineBanner(style: bannerStyle),
+          const OfflineBanner(),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),

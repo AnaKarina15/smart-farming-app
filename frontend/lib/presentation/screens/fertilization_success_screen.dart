@@ -24,7 +24,7 @@ class FertilizationSuccessScreen extends StatelessWidget {
       appBar: const CustomAppBar(),
       body: Column(
         children: [
-          const OfflineBanner(style: OfflineBannerStyle.surface),
+          const OfflineBanner(),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24.0),

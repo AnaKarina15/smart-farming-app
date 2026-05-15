@@ -108,6 +108,7 @@ class _LoginScreenState extends State<LoginScreen> {
               Text(
                 'Iniciar sesión',
                 style: AppText.h2(color: AppColors.onSurface),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
               Text(

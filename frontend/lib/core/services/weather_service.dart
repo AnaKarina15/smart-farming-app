@@ -3,10 +3,8 @@ import 'package:http/http.dart' as http;
 import '../network/api_endpoints.dart';
 
 class WeatherService {
-  /// Fetches the current temperature for the given latitude and longitude via the backend.
-  /// Returns the temperature as a formatted string (e.g., "24°C").
-  /// If the request fails, it returns a fallback value or an error string.
-  Future<String> getCurrentTemperature(double lat, double lon) async {
+  /// Fetches weather data (temperature and rain probability) for the given coordinates via the backend.
+  Future<Map<String, String>> getWeatherData(double lat, double lon) async {
     try {
       final url = Uri.parse(
         '${ApiEndpoints.baseUrl}${ApiEndpoints.weather}?lat=$lat&lon=$lon',
@@ -15,17 +13,16 @@ class WeatherService {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        // The backend returns { "data": { "temperature": "28°C" } } because of TransformInterceptor
-        if (data['data'] != null && data['data']['temperature'] != null) {
-          return data['data']['temperature'];
+        if (data['data'] != null) {
+          return {
+            'temperature': data['data']['temperature'] ?? '--°C',
+            'rainProbability': data['data']['rainProbability'] ?? '--%',
+          };
         }
-        return '--°C';
-      } else {
-        return '--°C';
       }
+      return {'temperature': '--°C', 'rainProbability': '--%'};
     } catch (e) {
-      // In case of any error (e.g. no internet), return a placeholder
-      return '--°C';
+      return {'temperature': '--°C', 'rainProbability': '--%'};
     }
   }
 }

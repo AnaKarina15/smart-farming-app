@@ -15,6 +15,6 @@ export class WeatherController {
     @Query('lat') lat: number,
     @Query('lon') lon: number,
   ) {
-    return this.weatherService.getCurrentTemperature(lat, lon);
+    return this.weatherService.getWeatherData(lat, lon);
   }
 }

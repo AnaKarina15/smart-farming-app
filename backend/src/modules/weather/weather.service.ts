@@ -9,19 +9,30 @@ export class WeatherService {
 
   constructor(private readonly httpService: HttpService) {}
 
-  async getCurrentTemperature(lat: number, lon: number): Promise<{ temperature: string }> {
+  async getWeatherData(lat: number, lon: number): Promise<{ temperature: string; rainProbability: string }> {
     try {
-      const url = `${this.baseUrl}?latitude=${lat}&longitude=${lon}&current_weather=true`;
+      const url = `${this.baseUrl}?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=precipitation_probability&forecast_days=1`;
       const response = await firstValueFrom(this.httpService.get(url));
       
-      if (response.data && response.data.current_weather) {
-        const temp = response.data.current_weather.temperature;
-        return { temperature: `${Math.round(temp)}°C` };
+      let temperature = '--°C';
+      let rainProbability = '--%';
+
+      if (response.data) {
+        if (response.data.current_weather) {
+          temperature = `${Math.round(response.data.current_weather.temperature)}°C`;
+        }
+        
+        if (response.data.hourly && response.data.hourly.precipitation_probability) {
+          // Tomamos la probabilidad de la hora actual (índice 0 para el pronóstico de hoy)
+          const prob = response.data.hourly.precipitation_probability[0];
+          rainProbability = `${prob}%`;
+        }
       }
-      return { temperature: '--°C' };
+
+      return { temperature, rainProbability };
     } catch (error) {
-      this.logger.error(`Error fetching weather for lat:${lat}, lon:${lon}`, (error as any).stack);
-      return { temperature: '--°C' };
+      this.logger.error(`Error fetching weather data for lat:${lat}, lon:${lon}`, (error as any).stack);
+      return { temperature: '--°C', rainProbability: '--%' };
     }
   }
 }

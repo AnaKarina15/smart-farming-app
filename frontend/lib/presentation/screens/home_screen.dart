@@ -104,16 +104,7 @@ class HomeScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 28),
-                  Row(
-                    children: [
-                      Expanded(
-                          child: const _WeatherGlassCard()),
-                      const SizedBox(width: 8),
-                      Expanded(
-                          child: _glassCard(
-                              Icons.water_drop, 'Prob. Lluvia', '15%')),
-                    ],
-                  ),
+                  const _WeatherSection(),
                 ],
               ),
             ),
@@ -358,28 +349,30 @@ class _QuickActionsCarouselState extends State<_QuickActionsCarousel> {
   }
 }
 
-class _WeatherGlassCard extends StatefulWidget {
-  const _WeatherGlassCard();
+class _WeatherSection extends StatefulWidget {
+  const _WeatherSection();
 
   @override
-  State<_WeatherGlassCard> createState() => _WeatherGlassCardState();
+  State<_WeatherSection> createState() => _WeatherSectionState();
 }
 
-class _WeatherGlassCardState extends State<_WeatherGlassCard> {
+class _WeatherSectionState extends State<_WeatherSection> {
   final WeatherService _weatherService = WeatherService();
-  String _temperature = 'Calculando...';
+  String _temperature = '...';
+  String _rainProb = '...';
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _fetchTemperature();
+    _fetchWeather();
   }
 
-  Future<void> _fetchTemperature() async {
+  Future<void> _fetchWeather() async {
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        setState(() => _temperature = '--°C');
+        _setFallback();
         return;
       }
 
@@ -387,13 +380,13 @@ class _WeatherGlassCardState extends State<_WeatherGlassCard> {
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
-          setState(() => _temperature = '--°C');
+          _setFallback();
           return;
         }
       }
 
       if (permission == LocationPermission.deniedForever) {
-        setState(() => _temperature = '--°C');
+        _setFallback();
         return;
       }
 
@@ -401,25 +394,46 @@ class _WeatherGlassCardState extends State<_WeatherGlassCard> {
         desiredAccuracy: LocationAccuracy.high,
       );
 
-      final temp = await _weatherService.getCurrentTemperature(
+      final data = await _weatherService.getWeatherData(
         position.latitude,
         position.longitude,
       );
       
       if (mounted) {
-        setState(() => _temperature = temp);
+        setState(() {
+          _temperature = data['temperature'] ?? '--°C';
+          _rainProb = data['rainProbability'] ?? '--%';
+          _isLoading = false;
+        });
       }
     } catch (e) {
-      if (mounted) {
-        setState(() => _temperature = '--°C');
-      }
+      if (mounted) _setFallback();
+    }
+  }
+
+  void _setFallback() {
+    if (mounted) {
+      setState(() {
+        _temperature = '--°C';
+        _rainProb = '--%';
+        _isLoading = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(child: _buildCard(Icons.thermostat, 'Temperatura', _temperature)),
+        const SizedBox(width: 8),
+        Expanded(child: _buildCard(Icons.water_drop, 'Prob. Lluvia', _rainProb)),
+      ],
+    );
+  }
+
+  Widget _buildCard(IconData icon, String label, String value) {
     return Container(
-      width: 140,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.7),
@@ -429,21 +443,21 @@ class _WeatherGlassCardState extends State<_WeatherGlassCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.thermostat, color: AppColors.primary, size: 22),
+          Icon(icon, color: AppColors.primary, size: 22),
           const SizedBox(height: 8),
           Text(
-            'Temperatura',
+            label,
             style: AppText.bodyMd(
               color: AppColors.onSurfaceVariant,
             ).copyWith(fontSize: 14),
           ),
-          _temperature == 'Calculando...' 
+          _isLoading 
               ? const SizedBox(
                   height: 24, 
                   width: 24, 
                   child: CircularProgressIndicator(strokeWidth: 2)
                 ) 
-              : Text(_temperature, style: AppText.h3()),
+              : Text(value, style: AppText.h3()),
         ],
       ),
     );

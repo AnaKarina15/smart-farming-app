@@ -17,4 +17,15 @@ export class WeatherController {
   ) {
     return this.weatherService.getWeatherData(lat, lon);
   }
+
+  @Get('sensor/humidity')
+  async getSoilHumiditySensorData() {
+    // Simulamos lectura de sensor: 68% y tendencia de 24 horas
+    const history = Array.from({ length: 24 }, () => Math.floor(Math.random() * 20) + 50); // Valores entre 50 y 70
+    return {
+      connected: true,
+      currentValue: 68,
+      history24h: history,
+    };
+  }
 }

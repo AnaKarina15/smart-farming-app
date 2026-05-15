@@ -53,14 +53,18 @@ class SuccessScaffold extends StatelessWidget {
                       Container(
                         width: 96,
                         height: 96,
-                        decoration: const BoxDecoration(
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryFixedDim,
                           shape: BoxShape.circle,
-                          color: AppColors.primaryContainer,
+                          border: Border.all(
+                            color: AppColors.primary,
+                            width: 2,
+                          ),
                         ),
                         child: const Icon(
                           Icons.check,
-                          color: AppColors.onPrimaryContainer,
-                          size: 56,
+                          color: AppColors.primary,
+                          size: 48,
                         ),
                       ),
                       const SizedBox(height: 24),
@@ -72,12 +76,19 @@ class SuccessScaffold extends StatelessWidget {
                       const SizedBox(height: 16),
                       ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 320),
-                        child: Text(
-                          subtitle,
-                          textAlign: TextAlign.center,
-                          style: AppText.bodyMd(
-                            color: AppColors.onSurfaceVariant,
-                          ),
+                        child: ValueListenableBuilder<bool>(
+                          valueListenable: OfflineBanner.showGlobal,
+                          builder: (context, isOffline, child) {
+                            return Text(
+                              isOffline
+                                  ? 'La información se guardó en el celular y se sincronizará cuando tengas internet.'
+                                  : 'La información se ha registrado y sincronizado correctamente en tu cuenta.',
+                              textAlign: TextAlign.center,
+                              style: AppText.bodyMd(
+                                color: AppColors.onSurfaceVariant,
+                              ),
+                            );
+                          },
                         ),
                       ),
                       const SizedBox(height: 32),
@@ -85,7 +96,7 @@ class SuccessScaffold extends StatelessWidget {
                       // ── Summary Card ─────────────────────────
                       Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.all(24),
+                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: AppColors.surfaceContainerLowest,
                           borderRadius: BorderRadius.circular(16),
@@ -104,7 +115,7 @@ class SuccessScaffold extends StatelessWidget {
                                   color: AppColors.primary,
                                   size: 22,
                                 ),
-                                const SizedBox(width: 12),
+                                const SizedBox(width: 10),
                                 Text(
                                   'RESUMEN DE REGISTRO',
                                   style: AppText.labelCaps(),
@@ -113,13 +124,13 @@ class SuccessScaffold extends StatelessWidget {
                             ),
                             const SizedBox(height: 24),
                             _row('Ubicación', location, AppColors.onSurface),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 14),
                             const Divider(
                               color: AppColors.outlineVariant,
                               height: 1,
                               thickness: 1,
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 14),
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -128,7 +139,7 @@ class SuccessScaffold extends StatelessWidget {
                                   color: AppColors.primary,
                                   size: 22,
                                 ),
-                                const SizedBox(width: 12),
+                                const SizedBox(width: 10),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment:
@@ -138,7 +149,7 @@ class SuccessScaffold extends StatelessWidget {
                                         detailLabel.toUpperCase(),
                                         style: AppText.labelCaps(),
                                       ),
-                                      const SizedBox(height: 4),
+                                      const SizedBox(height: 2),
                                       Text(
                                         detailValue,
                                         style: AppText.h3(
@@ -153,38 +164,7 @@ class SuccessScaffold extends StatelessWidget {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 24),
-
-                      // ── Image / fallback ─────────────────────
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: SizedBox(
-                          width: double.infinity,
-                          height: 160,
-                          child: imageUrl != null
-                              ? Image.network(
-                                  imageUrl!,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => Container(
-                                    color: AppColors.primaryContainer,
-                                    child: Icon(
-                                      fallbackIcon ?? Icons.eco,
-                                      color: AppColors.onPrimaryContainer,
-                                      size: 56,
-                                    ),
-                                  ),
-                                )
-                              : Container(
-                                  color: AppColors.primaryContainer,
-                                  child: Icon(
-                                    fallbackIcon ?? Icons.eco,
-                                    color: AppColors.onPrimaryContainer,
-                                    size: 56,
-                                  ),
-                                ),
-                        ),
-                      ),
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 20),
                     ],
                   ),
                 ),

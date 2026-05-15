@@ -64,14 +64,21 @@ class FertilizationSuccessScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Text(
-                    'La información se guardó en el celular y se sincronizará cuando tengas internet.',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.lexend(
-                      color: const Color(0xFF414844), // on-surface-variant
-                      fontSize: 16,
-                      height: 1.5,
-                    ),
+                  ValueListenableBuilder<bool>(
+                    valueListenable: OfflineBanner.showGlobal,
+                    builder: (context, isOffline, child) {
+                      return Text(
+                        isOffline
+                            ? 'La información se guardó en el celular y se sincronizará cuando tengas internet.'
+                            : 'La información se ha registrado y sincronizado correctamente en tu cuenta.',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.lexend(
+                          color: const Color(0xFF414844), // on-surface-variant
+                          fontSize: 16,
+                          height: 1.5,
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 32),
 

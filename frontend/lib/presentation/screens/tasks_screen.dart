@@ -24,10 +24,11 @@ class TasksScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const OfflineBanner(),
-            const SizedBox(height: 16),
-            Text('Sugerencias y Alertas del Sistema', style: AppText.h2(color: AppColors.primary)),
-            const SizedBox(height: 24),
-            
+            const SizedBox(height: 2),
+            Text('Sugerencias y Alertas del Sistema',
+                style: AppText.h2(color: AppColors.primary)),
+            const SizedBox(height: 20),
+
             // Card 1: Riego
             _TaskCard(
               icon: Icons.water_drop,
@@ -40,9 +41,12 @@ class TasksScreen extends StatelessWidget {
                 children: [
                   RichText(
                     text: TextSpan(
-                      style: AppText.bodyMd(color: AppColors.onSecondaryContainer),
+                      style:
+                          AppText.bodyMd(color: AppColors.onSecondaryContainer),
                       children: [
-                        const TextSpan(text: 'Lote 1: ', style: TextStyle(fontWeight: FontWeight.bold)),
+                        const TextSpan(
+                            text: 'Lote 1: ',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
                         const TextSpan(text: 'Aplicar 20 Litros.'),
                       ],
                     ),
@@ -50,20 +54,26 @@ class TasksScreen extends StatelessWidget {
                   const SizedBox(height: 4),
                   RichText(
                     text: TextSpan(
-                      style: AppText.bodyMd(color: AppColors.onSecondaryContainer),
+                      style:
+                          AppText.bodyMd(color: AppColors.onSecondaryContainer),
                       children: [
-                        const TextSpan(text: 'Motivo: ', style: TextStyle(fontWeight: FontWeight.bold)),
-                        const TextSpan(text: 'Pronóstico de sequía extrema hoy'),
+                        const TextSpan(
+                            text: 'Motivo: ',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                        const TextSpan(
+                            text: 'Pronóstico de sequía extrema hoy'),
                       ],
                     ),
                   ),
                 ],
               ),
               actionLabel: 'EJECUTAR RIEGO',
-              onAction: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const IrrigationScreen())),
+              onAction: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const IrrigationScreen())),
               footer: Text(
                 'Calculado con datos de ayer',
-                style: AppText.bodyMd(color: AppColors.onSecondaryContainer).copyWith(fontSize: 14, fontStyle: FontStyle.italic),
+                style: AppText.bodyMd(color: AppColors.onSecondaryContainer)
+                    .copyWith(fontSize: 14, fontStyle: FontStyle.italic),
               ),
             ),
             const SizedBox(height: 16),
@@ -79,13 +89,20 @@ class TasksScreen extends StatelessWidget {
                 text: TextSpan(
                   style: AppText.bodyMd(color: AppColors.onErrorContainer),
                   children: [
-                    const TextSpan(text: 'Lote 1: ', style: TextStyle(fontWeight: FontWeight.bold)),
-                    const TextSpan(text: 'Han pasado 36 horas desde el tratamiento. Evalúe si la plaga disminuyó'),
+                    const TextSpan(
+                        text: 'Lote 1: ',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    const TextSpan(
+                        text:
+                            'Han pasado 36 horas desde el tratamiento. Evalúe si la plaga disminuyó'),
                   ],
                 ),
               ),
               actionLabel: 'REGISTRAR EVALUACIÓN',
-              onAction: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PhytosanitaryScreen())),
+              onAction: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const PhytosanitaryScreen())),
             ),
             const SizedBox(height: 16),
 
@@ -108,11 +125,14 @@ class TasksScreen extends StatelessWidget {
         current: AgroTab.tareas,
         onTap: (tab) {
           if (tab == AgroTab.home) {
-            Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+            Navigator.pushReplacement(
+                context, MaterialPageRoute(builder: (_) => const HomeScreen()));
           } else if (tab == AgroTab.lotes) {
-            Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const MapOnboardingScreen()));
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (_) => const MapOnboardingScreen()));
           } else if (tab == AgroTab.perfil) {
-            Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (_) => const ProfileScreen()));
           }
         },
       ),
@@ -170,7 +190,9 @@ class _TaskCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: AppText.h3(color: AppColors.primary).copyWith(fontSize: 22)),
+                    Text(title,
+                        style: AppText.h3(color: AppColors.primary)
+                            .copyWith(fontSize: 22)),
                     const SizedBox(height: 8),
                     content,
                   ],
@@ -187,7 +209,8 @@ class _TaskCard extends StatelessWidget {
                 onPressed: onAction,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(999)),
                 ),
                 child: Text(
                   actionLabel!,

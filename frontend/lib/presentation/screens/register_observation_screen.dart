@@ -8,6 +8,10 @@ import 'home_screen.dart';
 import 'map_onboarding_screen.dart';
 import 'profile_screen.dart';
 import 'tasks_screen.dart';
+import 'package:provider/provider.dart';
+import '../../core/storage/database_helper.dart';
+import '../../data/providers/auth_provider.dart';
+import '../../data/providers/lotes_provider.dart';
 import 'observation_success_screen.dart';
 
 class RegisterObservationScreen extends StatefulWidget {
@@ -28,6 +32,7 @@ class RegisterObservationScreen extends StatefulWidget {
 class _RegisterObservationScreenState extends State<RegisterObservationScreen> {
   String _estadoActual = 'Estable';
   final TextEditingController _notasController = TextEditingController();
+  bool _guardando = false;
 
   @override
   void dispose() {
@@ -143,9 +148,40 @@ class _RegisterObservationScreenState extends State<RegisterObservationScreen> {
             ),
             const SizedBox(height: 48),
             RuggedButton(
-              text: 'GUARDAR',
+              text: _guardando ? 'GUARDANDO...' : 'GUARDAR',
               icon: Icons.save,
-              onPressed: () {
+              onPressed: _guardando ? () {} : () async {
+                setState(() => _guardando = true);
+
+                final lotesProvider = context.read<LotesProvider>();
+                String loteId = 'unknown';
+                if (lotesProvider.lotes.isNotEmpty) {
+                  final found = lotesProvider.lotes.where((l) => l.nombre == widget.loteName).toList();
+                  if (found.isNotEmpty) {
+                    loteId = found.first.id;
+                  }
+                }
+
+                final user = context.read<AuthProvider>().currentUser;
+                final userId = user?.id ?? 'unknown';
+                final id = 'obs_${DateTime.now().millisecondsSinceEpoch}';
+                final now = DateTime.now().toIso8601String();
+
+                await DatabaseHelper.instance.insert(DatabaseHelper.tableObservaciones, {
+                  'id': id,
+                  'loteId': loteId,
+                  'loteNombre': widget.loteName,
+                  'descripcion': _notasController.text,
+                  'tipo': _estadoActual,
+                  'fecha': now,
+                  'userId': userId,
+                  'createdAt': now,
+                  'isPendingSync': 1,
+                });
+
+                if (!mounted) return;
+                setState(() => _guardando = false);
+
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(

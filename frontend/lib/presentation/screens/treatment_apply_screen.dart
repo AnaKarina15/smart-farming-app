@@ -9,6 +9,11 @@ import 'home_screen.dart';
 import 'map_onboarding_screen.dart';
 import 'profile_screen.dart';
 import 'tasks_screen.dart';
+import 'package:provider/provider.dart';
+import '../../core/storage/database_helper.dart';
+import '../../data/providers/auth_provider.dart';
+import '../../data/providers/lotes_provider.dart';
+import '../../data/models/lote_model.dart';
 
 class TreatmentApplyScreen extends StatefulWidget {
   final String? alertLoteName;
@@ -27,9 +32,11 @@ class TreatmentApplyScreen extends StatefulWidget {
 }
 
 class _TreatmentApplyScreenState extends State<TreatmentApplyScreen> {
-  late String _lote;
+  String? _loteId;
+  String? _loteNombre;
   String _unidad = 'L/ha';
   String _metodo = 'Mochila Pulverizadora';
+  bool _guardando = false;
   final _insumoCtrl = TextEditingController();
   final _dosisCtrl = TextEditingController();
   final _obsCtrl = TextEditingController();
@@ -37,7 +44,12 @@ class _TreatmentApplyScreenState extends State<TreatmentApplyScreen> {
   @override
   void initState() {
     super.initState();
-    _lote = widget.alertLoteName ?? 'Lote 1 — Sector Norte';
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = context.read<LotesProvider>();
+      if (!provider.hasLotes) {
+        provider.init();
+      }
+    });
   }
 
   @override
@@ -50,6 +62,31 @@ class _TreatmentApplyScreenState extends State<TreatmentApplyScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lotesProvider = context.watch<LotesProvider>();
+    final lotes = lotesProvider.lotes;
+
+    if (_loteId == null && lotes.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            if (widget.alertLoteName != null) {
+              final found = lotes.where((l) => l.nombre == widget.alertLoteName).toList();
+              if (found.isNotEmpty) {
+                _loteId = found.first.id;
+                _loteNombre = found.first.nombre;
+              } else {
+                _loteId = lotes.first.id;
+                _loteNombre = lotes.first.nombre;
+              }
+            } else {
+              _loteId = lotes.first.id;
+              _loteNombre = lotes.first.nombre;
+            }
+          });
+        }
+      });
+    }
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: const CustomAppBar(showBack: true),
@@ -94,15 +131,39 @@ class _TreatmentApplyScreenState extends State<TreatmentApplyScreen> {
               const SizedBox(height: 24),
             ] else ...[
               _label('LOTE'),
-              _dropdown(
-                value: _lote,
-                items: const [
-                  'Lote 1 — Sector Norte',
-                  'Lote 2 — Ladera Este',
-                  'Lote 3 — Valle Sur',
-                ],
-                onChanged: (v) => setState(() => _lote = v ?? _lote),
-              ),
+              if (lotesProvider.isLoading && lotes.isEmpty)
+                const Center(child: CircularProgressIndicator())
+              else if (lotes.isEmpty)
+                Text('Sin lotes', style: AppText.bodyMd())
+              else
+                Container(
+                  height: 56,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceContainerLowest,
+                    border: Border.all(color: AppColors.outlineVariant, width: 1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: _loteId,
+                      isExpanded: true,
+                      icon: const Icon(Icons.arrow_drop_down,
+                          color: AppColors.onSurfaceVariant),
+                      items: lotes
+                          .map((l) => DropdownMenuItem(value: l.id, child: Text(l.nombre)))
+                          .toList(),
+                      onChanged: (v) {
+                        if (v == null) return;
+                        final lote = lotes.firstWhere((l) => l.id == v);
+                        setState(() {
+                          _loteId = v;
+                          _loteNombre = lote.nombre;
+                        });
+                      },
+                    ),
+                  ),
+                ),
               const SizedBox(height: 16),
             ],
             _label('INSUMO QUÍMICO'),
@@ -172,18 +233,47 @@ class _TreatmentApplyScreenState extends State<TreatmentApplyScreen> {
             ),
             const SizedBox(height: 32),
             RuggedButton(
-              text: 'REGISTRAR',
+              text: _guardando ? 'GUARDANDO...' : 'REGISTRAR',
               icon: Icons.check_circle,
-              onPressed: () => Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => TreatmentSuccessScreen(
-                    lote: _lote,
-                    metodo: _metodo,
-                    currentTab: widget.currentTab,
+              onPressed: _guardando ? () {} : () async {
+                if (_loteId == null) return;
+                setState(() => _guardando = true);
+
+                final user = context.read<AuthProvider>().currentUser;
+                final userId = user?.id ?? 'unknown';
+                final id = 'trat_${DateTime.now().millisecondsSinceEpoch}';
+                final now = DateTime.now().toIso8601String();
+
+                await DatabaseHelper.instance.insert(DatabaseHelper.tableTratamientos, {
+                  'id': id,
+                  'hallazgoId': null,
+                  'loteId': _loteId,
+                  'loteNombre': _loteNombre,
+                  'producto': _insumoCtrl.text,
+                  'dosis': double.tryParse(_dosisCtrl.text) ?? 0.0,
+                  'unidad': _unidad,
+                  'metodoAplicacion': _metodo,
+                  'fecha': now,
+                  'observaciones': _obsCtrl.text,
+                  'userId': userId,
+                  'createdAt': now,
+                  'isPendingSync': 1,
+                });
+
+                if (!mounted) return;
+                setState(() => _guardando = false);
+
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => TreatmentSuccessScreen(
+                      lote: _loteNombre ?? '',
+                      metodo: _metodo,
+                      currentTab: widget.currentTab,
+                    ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
             const SizedBox(height: 24),
           ],

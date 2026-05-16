@@ -10,6 +10,11 @@ import 'map_onboarding_screen.dart';
 import 'profile_screen.dart';
 import 'tasks_screen.dart';
 import 'sowing_success_screen.dart';
+import 'package:provider/provider.dart';
+import '../../core/storage/database_helper.dart';
+import '../../data/providers/auth_provider.dart';
+import '../../data/providers/lotes_provider.dart';
+import '../../data/models/lote_model.dart';
 import 'terrain_status_screen.dart';
 
 class SowingScreen extends StatefulWidget {
@@ -28,17 +33,24 @@ class SowingScreen extends StatefulWidget {
 
 class _SowingScreenState extends State<SowingScreen> {
   String _crop = 'Maíz';
-  late String _lote;
+  String? _loteId;
+  String? _loteNombre;
   final TextEditingController _dateController = TextEditingController(
     text:
         "${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}",
   );
   final TextEditingController _otherCropController = TextEditingController();
+  bool _guardando = false;
 
   @override
   void initState() {
     super.initState();
-    _lote = widget.fixedLote ?? 'Lote 1 — Sector Norte';
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = context.read<LotesProvider>();
+      if (!provider.hasLotes) {
+        provider.init();
+      }
+    });
   }
 
   @override
@@ -50,6 +62,31 @@ class _SowingScreenState extends State<SowingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lotesProvider = context.watch<LotesProvider>();
+    final lotes = lotesProvider.lotes;
+
+    if (_loteId == null && lotes.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            if (widget.fixedLote != null) {
+              final found = lotes.where((l) => l.nombre == widget.fixedLote).toList();
+              if (found.isNotEmpty) {
+                _loteId = found.first.id;
+                _loteNombre = found.first.nombre;
+              } else {
+                _loteId = lotes.first.id;
+                _loteNombre = lotes.first.nombre;
+              }
+            } else {
+              _loteId = lotes.first.id;
+              _loteNombre = lotes.first.nombre;
+            }
+          });
+        }
+      });
+    }
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: const CustomAppBar(showBack: true),
@@ -156,18 +193,26 @@ class _SowingScreenState extends State<SowingScreen> {
                   const SizedBox(height: 24),
                   Text('LOTE ASIGNADO', style: AppText.labelCaps()),
                   const SizedBox(height: 8),
-                  _selector(),
+                  if (lotesProvider.isLoading && lotes.isEmpty)
+                    const Center(child: CircularProgressIndicator())
+                  else if (lotes.isEmpty)
+                    Text('Sin lotes', style: AppText.bodyMd())
+                  else
+                    _selector(lotes),
                   const SizedBox(height: 24),
                   Text('ESTADO PREVIO', style: AppText.labelCaps()),
                   const SizedBox(height: 12),
                   GestureDetector(
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => TerrainStatusScreen(
-                            lote: _lote, currentTab: widget.currentTab),
-                      ),
-                    ),
+                    onTap: () {
+                      if (_loteNombre == null) return;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => TerrainStatusScreen(
+                              lote: _loteNombre!, currentTab: widget.currentTab),
+                        ),
+                      );
+                    },
                     child: Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -216,18 +261,41 @@ class _SowingScreenState extends State<SowingScreen> {
                   ),
                   const SizedBox(height: 16),
                   RuggedButton(
-                    text: 'GUARDAR CULTIVO',
+                    text: _guardando ? 'GUARDANDO...' : 'GUARDAR CULTIVO',
                     icon: Icons.save,
-                    onPressed: () {
+                    onPressed: _guardando ? () {} : () async {
+                      if (_loteId == null) return;
+                      setState(() => _guardando = true);
+                      
                       final finalCrop = _crop == 'Otro' &&
                               _otherCropController.text.isNotEmpty
                           ? _otherCropController.text
                           : _crop;
+                          
+                      final user = context.read<AuthProvider>().currentUser;
+                      final userId = user?.id ?? 'unknown';
+                      final id = 'siembra_${DateTime.now().millisecondsSinceEpoch}';
+                      final now = DateTime.now().toIso8601String();
+
+                      await DatabaseHelper.instance.insert(DatabaseHelper.tableSiembras, {
+                        'id': id,
+                        'loteId': _loteId,
+                        'loteNombre': _loteNombre,
+                        'cultivo': finalCrop,
+                        'fecha': _dateController.text,
+                        'userId': userId,
+                        'createdAt': now,
+                        'isPendingSync': 1,
+                      });
+
+                      if (!mounted) return;
+                      setState(() => _guardando = false);
+                      
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
                           builder: (_) => SowingSuccessScreen(
-                              lote: _lote,
+                              lote: _loteNombre ?? '',
                               crop: finalCrop,
                               currentTab: widget.currentTab),
                         ),
@@ -262,7 +330,7 @@ class _SowingScreenState extends State<SowingScreen> {
     );
   }
 
-  Widget _selector() {
+  Widget _selector(List<LoteModel> lotes) {
     return Container(
       height: 56,
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -278,28 +346,26 @@ class _SowingScreenState extends State<SowingScreen> {
           Expanded(
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
-                value: _lote,
+                value: _loteId,
                 isExpanded: true,
                 icon: const Icon(
                   Icons.expand_more,
                   color: AppColors.onSurfaceVariant,
                 ),
-                items: const [
-                  DropdownMenuItem(
-                    value: 'Lote 1 — Sector Norte',
-                    child: Text('Lote 1 — Sector Norte'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'Lote 2 — Ladera Este',
-                    child: Text('Lote 2 — Ladera Este'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'Lote 3 — Valle Sur',
-                    child: Text('Lote 3 — Valle Sur'),
-                  ),
-                ],
-                onChanged: (v) =>
-                    setState(() => _lote = v ?? 'Lote 1 — Sector Norte'),
+                items: lotes
+                    .map((l) => DropdownMenuItem(
+                          value: l.id,
+                          child: Text(l.nombre),
+                        ))
+                    .toList(),
+                onChanged: (v) {
+                  if (v == null) return;
+                  final lote = lotes.firstWhere((l) => l.id == v);
+                  setState(() {
+                    _loteId = v;
+                    _loteNombre = lote.nombre;
+                  });
+                },
               ),
             ),
           ),

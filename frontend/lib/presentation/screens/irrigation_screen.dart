@@ -9,6 +9,11 @@ import 'home_screen.dart';
 import 'map_onboarding_screen.dart';
 import 'profile_screen.dart';
 import 'tasks_screen.dart';
+import 'package:provider/provider.dart';
+import '../../core/storage/database_helper.dart';
+import '../../data/providers/auth_provider.dart';
+import '../../data/providers/lotes_provider.dart';
+import '../../data/models/lote_model.dart';
 import 'irrigation_success_screen.dart';
 
 class IrrigationScreen extends StatefulWidget {
@@ -27,14 +32,21 @@ class IrrigationScreen extends StatefulWidget {
 
 class _IrrigationScreenState extends State<IrrigationScreen> {
   int _liters = 10;
-  late String _selectedLote;
+  String? _loteId;
+  String? _loteNombre;
   late TextEditingController _litersController;
+  bool _guardando = false;
 
   @override
   void initState() {
     super.initState();
-    _selectedLote = widget.fixedLote ?? 'Lote 1 — Sector Norte';
     _litersController = TextEditingController(text: _liters.toString());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = context.read<LotesProvider>();
+      if (!provider.hasLotes) {
+        provider.init();
+      }
+    });
   }
 
   @override
@@ -52,6 +64,31 @@ class _IrrigationScreenState extends State<IrrigationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lotesProvider = context.watch<LotesProvider>();
+    final lotes = lotesProvider.lotes;
+
+    if (_loteId == null && lotes.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            if (widget.fixedLote != null) {
+              final found = lotes.where((l) => l.nombre == widget.fixedLote).toList();
+              if (found.isNotEmpty) {
+                _loteId = found.first.id;
+                _loteNombre = found.first.nombre;
+              } else {
+                _loteId = lotes.first.id;
+                _loteNombre = lotes.first.nombre;
+              }
+            } else {
+              _loteId = lotes.first.id;
+              _loteNombre = lotes.first.nombre;
+            }
+          });
+        }
+      });
+    }
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: const CustomAppBar(showBack: true),
@@ -113,7 +150,11 @@ class _IrrigationScreenState extends State<IrrigationScreen> {
             // Lote selector
             Text('SELECCIONAR LOTE', style: AppText.labelCaps()),
             const SizedBox(height: 8),
-            if (widget.fixedLote != null)
+            if (lotesProvider.isLoading && lotes.isEmpty)
+              const Center(child: CircularProgressIndicator())
+            else if (lotes.isEmpty)
+              Text('Sin lotes', style: AppText.bodyMd())
+            else if (widget.fixedLote != null && _loteNombre != null)
               Container(
                 height: 56,
                 width: double.infinity,
@@ -124,10 +165,10 @@ class _IrrigationScreenState extends State<IrrigationScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 alignment: Alignment.centerLeft,
-                child: Text(widget.fixedLote!, style: AppText.bodyMd()),
+                child: Text(_loteNombre!, style: AppText.bodyMd()),
               )
             else
-              _selector(),
+              _selector(lotes),
             const SizedBox(height: 24),
 
             // Cantidad stepper
@@ -194,14 +235,40 @@ class _IrrigationScreenState extends State<IrrigationScreen> {
             ),
             const SizedBox(height: 32),
             RuggedButton(
-              text: 'CONFIRMAR RIEGO',
+              text: _guardando ? 'GUARDANDO...' : 'CONFIRMAR RIEGO',
               icon: Icons.check_circle,
-              onPressed: () {
+              onPressed: _guardando ? () {} : () async {
+                if (_loteId == null) return;
+                setState(() => _guardando = true);
+
+                final user = context.read<AuthProvider>().currentUser;
+                final userId = user?.id ?? 'unknown';
+                final id = 'riego_${DateTime.now().millisecondsSinceEpoch}';
+                final now = DateTime.now().toIso8601String();
+
+                await DatabaseHelper.instance.insert(DatabaseHelper.tableRiego, {
+                  'id': id,
+                  'loteId': _loteId,
+                  'loteNombre': _loteNombre,
+                  'tipo': 'Manual',
+                  'duracionMinutos': null,
+                  'cantidadLitros': _liters,
+                  'fecha': now,
+                  'humedad': null,
+                  'observaciones': null,
+                  'userId': userId,
+                  'createdAt': now,
+                  'isPendingSync': 1,
+                });
+
+                if (!mounted) return;
+                setState(() => _guardando = false);
+
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
                     builder: (_) => IrrigationSuccessScreen(
-                      lote: _selectedLote,
+                      lote: _loteNombre ?? '',
                       liters: _liters,
                       currentTab: widget.currentTab,
                     ),
@@ -234,7 +301,7 @@ class _IrrigationScreenState extends State<IrrigationScreen> {
     );
   }
 
-  Widget _selector() {
+  Widget _selector(List<LoteModel> lotes) {
     return Container(
       height: 56,
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -245,24 +312,26 @@ class _IrrigationScreenState extends State<IrrigationScreen> {
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
-          value: _selectedLote,
+          value: _loteId,
           isExpanded: true,
           icon: const Icon(
             Icons.expand_more,
             color: AppColors.onSurfaceVariant,
           ),
-          items: const [
-            DropdownMenuItem(
-                value: 'Lote 1 — Sector Norte',
-                child: Text('Lote 1 — Sector Norte')),
-            DropdownMenuItem(
-                value: 'Lote 2 — Ladera Este',
-                child: Text('Lote 2 — Ladera Este')),
-            DropdownMenuItem(
-                value: 'Lote 3 — Valle Sur',
-                child: Text('Lote 3 — Valle Sur')),
-          ],
-          onChanged: (v) => setState(() => _selectedLote = v ?? 'Lote 1 — Sector Norte'),
+          items: lotes
+              .map((l) => DropdownMenuItem(
+                    value: l.id,
+                    child: Text(l.nombre),
+                  ))
+              .toList(),
+          onChanged: (v) {
+            if (v == null) return;
+            final lote = lotes.firstWhere((l) => l.id == v);
+            setState(() {
+              _loteId = v;
+              _loteNombre = lote.nombre;
+            });
+          },
         ),
       ),
     );

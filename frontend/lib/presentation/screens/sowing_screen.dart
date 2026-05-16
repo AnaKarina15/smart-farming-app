@@ -5,6 +5,10 @@ import '../common/agro_bottom_nav.dart';
 import '../widgets/offline_banner.dart';
 import '../widgets/custom_app_bar.dart';
 import '../widgets/rugged_button.dart';
+import 'home_screen.dart';
+import 'map_onboarding_screen.dart';
+import 'profile_screen.dart';
+import 'tasks_screen.dart';
 import 'sowing_success_screen.dart';
 import 'terrain_status_screen.dart';
 import 'viability_screen.dart';
@@ -21,10 +25,12 @@ class _SowingScreenState extends State<SowingScreen> {
   String _crop = 'Maíz';
   String _lote = 'Lote Norte - Sector A1';
   final _dateController = TextEditingController(text: '24/05/2026');
+  final _otherCropController = TextEditingController();
 
   @override
   void dispose() {
     _dateController.dispose();
+    _otherCropController.dispose();
     super.dispose();
   }
 
@@ -43,7 +49,7 @@ class _SowingScreenState extends State<SowingScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Registrar Nueva Siembra', style: AppText.h1()),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 5),
                   Text(
                     'Complete los detalles técnicos del lote.',
                     style: AppText.bodyMd(color: AppColors.onSurfaceVariant),
@@ -51,18 +57,52 @@ class _SowingScreenState extends State<SowingScreen> {
                   const SizedBox(height: 32),
 
                   Text('SELECCIONAR CULTIVO', style: AppText.labelCaps()),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(child: _cropCard('Maíz', Icons.agriculture)),
-                      const SizedBox(width: 8),
-                      Expanded(child: _cropCard('Banano', Icons.bakery_dining)),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _cropCard('Café', Icons.energy_savings_leaf),
+                  const SizedBox(height: 8),
+                  Container(
+                    height: 56,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceContainerLowest,
+                      border: Border.all(color: AppColors.outlineVariant),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _crop,
+                        isExpanded: true,
+                        icon: const Icon(Icons.expand_more,
+                            color: AppColors.onSurfaceVariant),
+                        items: ['Maíz', 'Banano', 'Café', 'Otro']
+                            .map((e) =>
+                                DropdownMenuItem(value: e, child: Text(e)))
+                            .toList(),
+                        onChanged: (v) => setState(() => _crop = v ?? _crop),
                       ),
-                    ],
+                    ),
                   ),
+                  if (_crop == 'Otro') ...[
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _otherCropController,
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: AppColors.surfaceContainerLowest,
+                        hintText: 'Especifique el cultivo',
+                        hintStyle: AppText.bodyMd(color: AppColors.outline),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide:
+                              const BorderSide(color: AppColors.outlineVariant),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide:
+                              const BorderSide(color: AppColors.outlineVariant),
+                        ),
+                        contentPadding: const EdgeInsets.all(16),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 24),
 
                   // Verificar viabilidad
@@ -70,7 +110,8 @@ class _SowingScreenState extends State<SowingScreen> {
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const ViabilityScreen(),
+                        builder: (_) => ViabilityScreen(
+                            lote: _lote, currentTab: widget.currentTab),
                       ),
                     ),
                     child: Container(
@@ -106,7 +147,7 @@ class _SowingScreenState extends State<SowingScreen> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    '* Recomendado antes de registrar la siembra (RF03)',
+                    '* Recomendado antes de registrar la siembra *',
                     style: AppText.bodyMd(
                       color: AppColors.onSurfaceVariant,
                     ).copyWith(fontSize: 12, fontStyle: FontStyle.italic),
@@ -119,7 +160,8 @@ class _SowingScreenState extends State<SowingScreen> {
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const TerrainStatusScreen(),
+                        builder: (_) => TerrainStatusScreen(
+                            lote: _lote, currentTab: widget.currentTab),
                       ),
                     ),
                     child: Container(
@@ -158,13 +200,6 @@ class _SowingScreenState extends State<SowingScreen> {
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Consultar condiciones actuales del suelo (RF04)',
-                                  style: AppText.bodyMd(
-                                    color: AppColors.onSurfaceVariant,
-                                  ).copyWith(fontSize: 13),
-                                ),
                               ],
                             ),
                           ),
@@ -181,32 +216,50 @@ class _SowingScreenState extends State<SowingScreen> {
 
                   Text('FECHA DE SIEMBRA', style: AppText.labelCaps()),
                   const SizedBox(height: 8),
-                  TextField(
-                    controller: _dateController,
-                    decoration: InputDecoration(
-                      prefixIcon: const Icon(
-                        Icons.calendar_today,
-                        color: AppColors.onSurfaceVariant,
-                      ),
-                      filled: true,
-                      fillColor: AppColors.surfaceContainerLowest,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: AppColors.outlineVariant,
-                          width: 1,
+                  GestureDetector(
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: DateTime.now(),
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime(2030),
+                      );
+                      if (picked != null) {
+                        setState(() {
+                          _dateController.text =
+                              "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
+                        });
+                      }
+                    },
+                    child: AbsorbPointer(
+                      child: TextField(
+                        controller: _dateController,
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(
+                            Icons.calendar_today,
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                          filled: true,
+                          fillColor: AppColors.surfaceContainerLowest,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: AppColors.outlineVariant,
+                              width: 1,
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: AppColors.outlineVariant,
+                              width: 1,
+                            ),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 18,
+                          ),
                         ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: AppColors.outlineVariant,
-                          width: 1,
-                        ),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 18,
                       ),
                     ),
                   ),
@@ -246,7 +299,11 @@ class _SowingScreenState extends State<SowingScreen> {
                                 textBaseline: TextBaseline.alphabetic,
                                 children: [
                                   Text(
-                                    '12.5',
+                                    _lote.contains('A1')
+                                        ? '12.5'
+                                        : (_lote.contains('B2')
+                                            ? '8.0'
+                                            : '20.0'),
                                     style: AppText.h1(
                                       color: AppColors.onPrimaryFixed,
                                     ),
@@ -278,13 +335,19 @@ class _SowingScreenState extends State<SowingScreen> {
                   RuggedButton(
                     text: 'GUARDAR CULTIVO',
                     icon: Icons.save,
-                    onPressed: () => Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            SowingSuccessScreen(lote: _lote, crop: _crop),
-                      ),
-                    ),
+                    onPressed: () {
+                      final finalCrop = _crop == 'Otro' &&
+                              _otherCropController.text.isNotEmpty
+                          ? _otherCropController.text
+                          : _crop;
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              SowingSuccessScreen(lote: _lote, crop: finalCrop),
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 24),
                 ],
@@ -293,44 +356,23 @@ class _SowingScreenState extends State<SowingScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: AgroBottomNav(current: widget.currentTab),
-    );
-  }
-
-  Widget _cropCard(String name, IconData icon) {
-    final selected = _crop == name;
-    return GestureDetector(
-      onTap: () => setState(() => _crop = name),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: selected
-              ? AppColors.primaryFixed
-              : AppColors.surfaceContainerLowest,
-          border: Border.all(
-            color: selected ? AppColors.primary : AppColors.outlineVariant,
-            width: selected ? 2 : 1,
-          ),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              size: 32,
-              color: selected ? AppColors.primary : AppColors.onSurfaceVariant,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              name,
-              style: AppText.bodyMd(
-                color: selected
-                    ? AppColors.onSurface
-                    : AppColors.onSurfaceVariant,
-              ).copyWith(fontWeight: FontWeight.w500, fontSize: 14),
-            ),
-          ],
-        ),
+      bottomNavigationBar: AgroBottomNav(
+        current: widget.currentTab,
+        onTap: (tab) {
+          if (tab == AgroTab.home) {
+            Navigator.pushReplacement(
+                context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+          } else if (tab == AgroTab.lotes) {
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (_) => const MapOnboardingScreen()));
+          } else if (tab == AgroTab.perfil) {
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (_) => const ProfileScreen()));
+          } else if (tab == AgroTab.tareas) {
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (_) => const TasksScreen()));
+          }
+        },
       ),
     );
   }

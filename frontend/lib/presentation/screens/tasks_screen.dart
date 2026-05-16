@@ -9,6 +9,9 @@ import 'map_onboarding_screen.dart';
 import 'profile_screen.dart';
 import 'irrigation_screen.dart';
 import 'evaluation_screen.dart';
+import 'fertilization_screen.dart';
+import 'treatment_apply_screen.dart';
+import 'soil_humidity_screen.dart';
 
 class TasksScreen extends StatelessWidget {
   const TasksScreen({super.key});
@@ -27,7 +30,7 @@ class TasksScreen extends StatelessWidget {
             const SizedBox(height: 2),
             Text('Sugerencias y Alertas del Sistema',
                 style: AppText.h2(color: AppColors.primary)),
-            const SizedBox(height: 20),
+            const SizedBox(height: 5),
 
             // Card 1: Riego
             _TaskCard(
@@ -68,8 +71,11 @@ class TasksScreen extends StatelessWidget {
                 ],
               ),
               actionLabel: 'EJECUTAR RIEGO',
-              onAction: () => Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const IrrigationScreen())),
+              onAction: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) =>
+                          const IrrigationScreen(fixedLote: 'Lote 1'))),
               footer: Text(
                 'Calculado con datos de ayer',
                 style: AppText.bodyMd(color: AppColors.onSecondaryContainer)
@@ -111,7 +117,99 @@ class TasksScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // Card 3: Clima
+            // Card 3: Fertilización
+            _TaskCard(
+              icon: Icons.science,
+              iconColor: AppColors.onPrimary,
+              iconBgColor: AppColors.primary,
+              cardColor: const Color(0xFFE8F5E9),
+              title: 'Fertilización Pendiente',
+              content: RichText(
+                text: TextSpan(
+                  style: AppText.bodyMd(color: const Color(0xFF1B5E20)),
+                  children: const [
+                    TextSpan(
+                        text: 'Lote 2: ',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    TextSpan(
+                        text:
+                            'El análisis indica deficiencia de Nitrógeno. Se recomienda aplicar 400 KG.'),
+                  ],
+                ),
+              ),
+              actionLabel: 'REGISTRAR FERTILIZACIÓN',
+              onAction: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const FertilizationScreen(
+                          fixedLote: 'Lote 2 - Ladera Este'))),
+            ),
+            const SizedBox(height: 16),
+
+            // Card 4: Aplicar Tratamiento
+            _TaskCard(
+              icon: Icons.healing,
+              iconColor: AppColors.onPrimary,
+              iconBgColor: AppColors.primary,
+              cardColor: const Color(0xFFFFF3E0),
+              title: 'Aplicar Tratamiento',
+              content: RichText(
+                text: TextSpan(
+                  style: AppText.bodyMd(color: const Color(0xFFE65100)),
+                  children: const [
+                    TextSpan(
+                        text: 'Lote 3: ',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    TextSpan(
+                        text:
+                            'Se detectó presencia de Roya. Se recomienda aplicar fungicida preventivo.'),
+                  ],
+                ),
+              ),
+              actionLabel: 'APLICAR TRATAMIENTO',
+              onAction: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const TreatmentApplyScreen(
+                            alertLoteName: 'Lote 3',
+                            alertPlagueName: 'Roya',
+                            currentTab: AgroTab.tareas,
+                          ))),
+            ),
+            const SizedBox(height: 16),
+
+            // Card 5: Estado del Suelo
+            _TaskCard(
+              icon: Icons.terrain,
+              iconColor: AppColors.onPrimary,
+              iconBgColor: AppColors.primary,
+              cardColor: const Color(0xFFEFEBE9),
+              title: 'Registrar Estado del Suelo',
+              content: RichText(
+                text: TextSpan(
+                  style: AppText.bodyMd(color: const Color(0xFF4E342E)),
+                  children: const [
+                    TextSpan(
+                        text: 'Lote 1: ',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    TextSpan(
+                        text:
+                            'No se ha registrado humedad del suelo en 5 días. Verifique el estado actual.'),
+                  ],
+                ),
+              ),
+              actionLabel: 'REGISTRAR ESTADO',
+              onAction: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const SoilHumidityScreen(
+                            fixedLote: 'Lote 1',
+                            currentTab: AgroTab.tareas,
+                          ))),
+            ),
+            const SizedBox(height: 16),
+
+            // Card 6: Clima
             _TaskCard(
               icon: Icons.cloud,
               iconColor: AppColors.onPrimary,

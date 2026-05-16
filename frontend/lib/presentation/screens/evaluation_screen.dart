@@ -54,7 +54,7 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
               style: AppText.h2(color: AppColors.primary),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 5),
             Text(
               '${widget.loteName} - ${widget.plagueName}',
               style: AppText.bodyLg(color: AppColors.onSurfaceVariant),

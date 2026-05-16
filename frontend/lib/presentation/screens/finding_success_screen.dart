@@ -1,34 +1,35 @@
 import 'package:flutter/material.dart';
 import '../widgets/success_scaffold.dart';
 import '../common/agro_bottom_nav.dart';
+import 'home_screen.dart';
 
-class FertilizationSuccessScreen extends StatelessWidget {
-  final int amount;
-  final String fertilizer;
+class FindingSuccessScreen extends StatelessWidget {
   final String lote;
-  final String unit;
+  final String findingType;
   final AgroTab currentTab;
 
-  const FertilizationSuccessScreen({
+  const FindingSuccessScreen({
     super.key,
-    required this.amount,
-    required this.fertilizer,
     required this.lote,
-    this.unit = 'KG',
+    required this.findingType,
     this.currentTab = AgroTab.home,
   });
 
   @override
   Widget build(BuildContext context) {
     return SuccessScaffold(
-      title: '¡Fertilización Registrada!',
+      title: '¡Hallazgo Registrado!',
       onlineSubtitle: 'La información se ha registrado y sincronizado correctamente en tu cuenta.',
       offlineSubtitle: 'La información se guardó en el celular y se sincronizará cuando tengas internet.',
       location: lote,
-      detailLabel: 'Insumo',
-      detailValue: '$fertilizer ($amount $unit)',
-      detailIcon: Icons.science,
-      currentTab: currentTab,
+      detailLabel: 'Tipo de Hallazgo',
+      detailValue: findingType,
+      detailIcon: Icons.bug_report,
+      primaryButtonText: 'VOLVER AL INICIO',
+      onPrimaryPressed: () => Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+      ),
     );
   }
 }

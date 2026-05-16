@@ -2,32 +2,30 @@ import 'package:flutter/material.dart';
 import '../widgets/success_scaffold.dart';
 import '../common/agro_bottom_nav.dart';
 
-class FertilizationSuccessScreen extends StatelessWidget {
-  final int amount;
-  final String fertilizer;
+class ViabilitySuccessScreen extends StatelessWidget {
   final String lote;
-  final String unit;
+  final int viability;
+  final String quality;
   final AgroTab currentTab;
 
-  const FertilizationSuccessScreen({
+  const ViabilitySuccessScreen({
     super.key,
-    required this.amount,
-    required this.fertilizer,
     required this.lote,
-    this.unit = 'KG',
+    required this.viability,
+    required this.quality,
     this.currentTab = AgroTab.home,
   });
 
   @override
   Widget build(BuildContext context) {
     return SuccessScaffold(
-      title: '¡Fertilización Registrada!',
+      title: '¡Viabilidad Registrada!',
       onlineSubtitle: 'La información se ha registrado y sincronizado correctamente en tu cuenta.',
       offlineSubtitle: 'La información se guardó en el celular y se sincronizará cuando tengas internet.',
       location: lote,
-      detailLabel: 'Insumo',
-      detailValue: '$fertilizer ($amount $unit)',
-      detailIcon: Icons.science,
+      detailLabel: 'Porcentaje y Calidad',
+      detailValue: '$viability% - $quality',
+      detailIcon: Icons.verified,
       currentTab: currentTab,
     );
   }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text.dart';
+import '../../data/providers/profile_image_provider.dart';
 import '../screens/settings_screen.dart';
 
 /// AppBar AgroField - 80px alto, branding "AGROFIELD", avatar derecho.
@@ -29,6 +31,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final profileImage = context.watch<ProfileImageProvider>();
+
     return Container(
       height: 80,
       decoration: const BoxDecoration(
@@ -59,7 +63,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                 )
               else if (showAvatar)
                 GestureDetector(
-                  onTap: onAvatarTap,
+                  onTap: onAvatarTap ?? () => profileImage.pickImage(context),
                   child: Container(
                     width: 45,
                     height: 45,
@@ -70,12 +74,17 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                         color: AppColors.outlineVariant,
                         width: 1,
                       ),
-                      image: const DecorationImage(
-                        image: NetworkImage(
-                          'https://lh3.googleusercontent.com/aida-public/AB6AXuCTJGCEi16aUTDw3teJYYIG4o1sxhol2vxdeCDJd_xTonNe12Xf1kwbshQ25TtdlrWtlRcQjf1jwF9dTVqHu1tyjOt6u5S7TfEBN9pj9aRcwZZlN1gyXHmJZdWvkNY4gZj2fKmnxNlRKM9M2x--gjPXGDZOM4ROQ29HS6R_mNK7AM-xsv_0nRQcjbocYWRLFNyyNxlBsP3KuhDLKcX8mj7LaEVo1rnPVG4XYxIHCN3svc1Hz144HJM-1Nl4V5xfFKi41FQgiNCpX4p3',
-                        ),
-                        fit: BoxFit.cover,
-                      ),
+                      image: profileImage.imageFile != null
+                          ? DecorationImage(
+                              image: FileImage(profileImage.imageFile!),
+                              fit: BoxFit.cover,
+                            )
+                          : const DecorationImage(
+                              image: NetworkImage(
+                                'https://lh3.googleusercontent.com/aida-public/AB6AXuCTJGCEi16aUTDw3teJYYIG4o1sxhol2vxdeCDJd_xTonNe12Xf1kwbshQ25TtdlrWtlRcQjf1jwF9dTVqHu1tyjOt6u5S7TfEBN9pj9aRcwZZlN1gyXHmJZdWvkNY4gZj2fKmnxNlRKM9M2x--gjPXGDZOM4ROQ29HS6R_mNK7AM-xsv_0nRQcjbocYWRLFNyyNxlBsP3KuhDLKcX8mj7LaEVo1rnPVG4XYxIHCN3svc1Hz144HJM-1Nl4V5xfFKi41FQgiNCpX4p3',
+                              ),
+                              fit: BoxFit.cover,
+                            ),
                     ),
                   ),
                 )

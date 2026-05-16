@@ -5,14 +5,20 @@ import '../common/agro_bottom_nav.dart';
 import '../widgets/offline_banner.dart';
 import '../widgets/custom_app_bar.dart';
 import '../widgets/rugged_button.dart';
+import 'home_screen.dart';
+import 'map_onboarding_screen.dart';
+import 'profile_screen.dart';
+import 'tasks_screen.dart';
 import 'irrigation_success_screen.dart';
 
 class IrrigationScreen extends StatefulWidget {
   final AgroTab currentTab;
-  
+  final String? fixedLote;
+
   const IrrigationScreen({
     super.key,
     this.currentTab = AgroTab.tareas,
+    this.fixedLote,
   });
 
   @override
@@ -20,8 +26,29 @@ class IrrigationScreen extends StatefulWidget {
 }
 
 class _IrrigationScreenState extends State<IrrigationScreen> {
-  int _liters = 20;
-  String _selectedLote = 'Lote 1';
+  int _liters = 10;
+  late String _selectedLote;
+  late TextEditingController _litersController;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedLote = widget.fixedLote ?? 'Lote 1';
+    _litersController = TextEditingController(text: _liters.toString());
+  }
+
+  @override
+  void dispose() {
+    _litersController.dispose();
+    super.dispose();
+  }
+
+  void _updateLitersFromText() {
+    final parsed = int.tryParse(_litersController.text);
+    if (parsed != null && parsed >= 0) {
+      setState(() => _liters = parsed);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,14 +56,14 @@ class _IrrigationScreenState extends State<IrrigationScreen> {
       backgroundColor: AppColors.background,
       appBar: const CustomAppBar(),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Center(child: OfflineBanner()),
-            const SizedBox(height: 24),
+            const SizedBox(height: 5),
             Text('Registrar Riego', style: AppText.h2()),
-            const SizedBox(height: 24),
+            const SizedBox(height: 5),
 
             // Suggestion
             Container(
@@ -86,7 +113,21 @@ class _IrrigationScreenState extends State<IrrigationScreen> {
             // Lote selector
             Text('SELECCIONAR LOTE', style: AppText.labelCaps()),
             const SizedBox(height: 8),
-            _selector(),
+            if (widget.fixedLote != null)
+              Container(
+                height: 56,
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainerLowest,
+                  border: Border.all(color: AppColors.outlineVariant, width: 1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                alignment: Alignment.centerLeft,
+                child: Text(widget.fixedLote!, style: AppText.bodyMd()),
+              )
+            else
+              _selector(),
             const SizedBox(height: 24),
 
             // Cantidad stepper
@@ -96,7 +137,10 @@ class _IrrigationScreenState extends State<IrrigationScreen> {
               children: [
                 _stepBtn(Icons.remove, () {
                   setState(() {
-                    if (_liters >= 5) _liters -= 5;
+                    if (_liters >= 1) {
+                      _liters -= 1;
+                      _litersController.text = _liters.toString();
+                    }
                   });
                 }),
                 const SizedBox(width: 12),
@@ -112,15 +156,30 @@ class _IrrigationScreenState extends State<IrrigationScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Center(
-                      child: Text(
-                        '$_liters',
-                        style: AppText.h2(color: AppColors.primary),
+                      child: SizedBox(
+                        width: 80,
+                        child: TextField(
+                          controller: _litersController,
+                          keyboardType: TextInputType.number,
+                          textAlign: TextAlign.center,
+                          style: AppText.h2(color: AppColors.primary),
+                          decoration: const InputDecoration(
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                          onChanged: (_) => _updateLitersFromText(),
+                        ),
                       ),
                     ),
                   ),
                 ),
                 const SizedBox(width: 12),
-                _stepBtn(Icons.add, () => setState(() => _liters += 5)),
+                _stepBtn(Icons.add, () {
+                  setState(() {
+                    _liters += 1;
+                    _litersController.text = _liters.toString();
+                  });
+                }),
               ],
             ),
             const SizedBox(height: 24),
@@ -153,7 +212,24 @@ class _IrrigationScreenState extends State<IrrigationScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: AgroBottomNav(current: widget.currentTab),
+      bottomNavigationBar: AgroBottomNav(
+        current: widget.currentTab,
+        onTap: (tab) {
+          if (tab == AgroTab.home) {
+            Navigator.pushReplacement(
+                context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+          } else if (tab == AgroTab.lotes) {
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (_) => const MapOnboardingScreen()));
+          } else if (tab == AgroTab.perfil) {
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (_) => const ProfileScreen()));
+          } else if (tab == AgroTab.tareas) {
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (_) => const TasksScreen()));
+          }
+        },
+      ),
     );
   }
 

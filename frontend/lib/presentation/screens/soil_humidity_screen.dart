@@ -8,10 +8,17 @@ import '../../core/theme/app_text.dart';
 import '../widgets/custom_app_bar.dart';
 
 import '../common/agro_bottom_nav.dart';
+import 'home_screen.dart';
+import 'map_onboarding_screen.dart';
+import 'profile_screen.dart';
+import 'tasks_screen.dart';
+import 'soil_success_screen.dart';
 
 class SoilHumidityScreen extends StatefulWidget {
   final AgroTab currentTab;
-  const SoilHumidityScreen({super.key, this.currentTab = AgroTab.home});
+  final String? fixedLote;
+  const SoilHumidityScreen(
+      {super.key, this.currentTab = AgroTab.home, this.fixedLote});
 
   @override
   State<SoilHumidityScreen> createState() => _SoilHumidityScreenState();
@@ -103,10 +110,18 @@ class _SoilHumidityScreenState extends State<SoilHumidityScreen> {
   String _selectedLote = 'Lote A (Norte)';
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.fixedLote != null) {
+      _selectedLote = widget.fixedLote!;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: const CustomAppBar(showBack: true, title: 'AgroField'),
+      appBar: const CustomAppBar(),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Column(
@@ -117,7 +132,7 @@ class _SoilHumidityScreenState extends State<SoilHumidityScreen> {
               'Estado del Suelo',
               style: AppText.h2(color: AppColors.primary),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 5),
 
             // Selector de Lote
             Text(
@@ -125,38 +140,51 @@ class _SoilHumidityScreenState extends State<SoilHumidityScreen> {
               style: AppText.labelCaps(color: AppColors.onSurfaceVariant),
             ),
             const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.outlineVariant),
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: _selectedLote,
-                  isExpanded: true,
-                  icon: const Icon(Icons.arrow_drop_down,
-                      color: AppColors.primary),
-                  items: _lotes.map((lote) {
-                    return DropdownMenuItem(
-                      value: lote,
-                      child: Text(lote, style: AppText.bodyMd()),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() {
-                        _selectedLote = value;
-                        // Al cambiar de lote, desconectamos el sensor simulado
-                        _isSensorConnected = false;
-                        _isConnecting = false;
-                      });
-                    }
-                  },
+            if (widget.fixedLote != null)
+              Container(
+                height: 56,
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.outlineVariant),
+                ),
+                alignment: Alignment.centerLeft,
+                child: Text(widget.fixedLote!, style: AppText.bodyMd()),
+              )
+            else
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.outlineVariant),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _selectedLote,
+                    isExpanded: true,
+                    icon: const Icon(Icons.arrow_drop_down,
+                        color: AppColors.primary),
+                    items: _lotes.map((lote) {
+                      return DropdownMenuItem(
+                        value: lote,
+                        child: Text(lote, style: AppText.bodyMd()),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() {
+                          _selectedLote = value;
+                          _isSensorConnected = false;
+                          _isConnecting = false;
+                        });
+                      }
+                    },
+                  ),
                 ),
               ),
-            ),
             const SizedBox(height: 24),
 
             // Toggle Manual / Sensor
@@ -225,35 +253,58 @@ class _SoilHumidityScreenState extends State<SoilHumidityScreen> {
               duration: const Duration(milliseconds: 300),
               child: _isSensorMode ? _buildSensorMode() : _buildManualMode(),
             ),
+            const SizedBox(height: 32),
+            // Save Button
+            ElevatedButton.icon(
+              onPressed: () {
+                final perceptionValue = _isSensorMode
+                    ? '$_sensorValue% (Sensor)'
+                    : _selectedPerception!;
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => SoilSuccessScreen(
+                      lote: _selectedLote,
+                      perception: perceptionValue,
+                      currentTab: widget.currentTab,
+                    ),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.save, color: AppColors.onPrimary),
+              label: Text(
+                'GUARDAR REGISTRO',
+                style: AppText.labelCaps(color: AppColors.onPrimary),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                minimumSize: const Size(double.infinity, 56),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+            ),
           ],
         ),
       ),
-      bottomNavigationBar: !_isSensorMode
-          ? Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text('Percepción guardada exitosamente')),
-                  );
-                  Navigator.pop(context);
-                },
-                icon: const Icon(Icons.save, color: AppColors.onPrimary),
-                label: Text(
-                  'GUARDAR PERCEPCIÓN',
-                  style: AppText.labelCaps(color: AppColors.onPrimary),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  minimumSize: const Size(double.infinity, 56),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                ),
-              ),
-            )
-          : null,
+      bottomNavigationBar: AgroBottomNav(
+        current: widget.currentTab,
+        onTap: (tab) {
+          if (tab == AgroTab.home) {
+            Navigator.pushReplacement(
+                context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+          } else if (tab == AgroTab.lotes) {
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (_) => const MapOnboardingScreen()));
+          } else if (tab == AgroTab.perfil) {
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (_) => const ProfileScreen()));
+          } else if (tab == AgroTab.tareas) {
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (_) => const TasksScreen()));
+          }
+        },
+      ),
     );
   }
 

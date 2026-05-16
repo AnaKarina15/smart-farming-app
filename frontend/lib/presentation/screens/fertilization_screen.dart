@@ -5,14 +5,20 @@ import '../common/agro_bottom_nav.dart';
 import '../widgets/offline_banner.dart';
 import '../widgets/custom_app_bar.dart';
 import '../widgets/rugged_button.dart';
+import 'home_screen.dart';
+import 'map_onboarding_screen.dart';
+import 'profile_screen.dart';
+import 'tasks_screen.dart';
 import 'fertilization_success_screen.dart';
 
 class FertilizationScreen extends StatefulWidget {
   final AgroTab currentTab;
-  
+  final String? fixedLote;
+
   const FertilizationScreen({
     super.key,
     this.currentTab = AgroTab.tareas,
+    this.fixedLote,
   });
 
   @override
@@ -21,8 +27,32 @@ class FertilizationScreen extends StatefulWidget {
 
 class _FertilizationScreenState extends State<FertilizationScreen> {
   String _fertilizer = 'Nitrógeno';
-  int _kg = 450;
-  String _lote = 'Lote 1 - Sector Norte';
+  int _amount = 50;
+  String _unit = 'KG';
+  late String _lote;
+  final _otherFertController = TextEditingController();
+  final _amountController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _lote = widget.fixedLote ?? 'Lote 1 - Sector Norte';
+    _amountController.text = _amount.toString();
+  }
+
+  @override
+  void dispose() {
+    _otherFertController.dispose();
+    _amountController.dispose();
+    super.dispose();
+  }
+
+  void _updateAmountFromText() {
+    final parsed = int.tryParse(_amountController.text);
+    if (parsed != null && parsed >= 0) {
+      setState(() => _amount = parsed);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,37 +69,107 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Registro de Fertilización', style: AppText.h1()),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 5),
 
                   Text('SELECCIONAR FERTILIZANTE', style: AppText.labelCaps()),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(child: _fertCard('Nitrógeno', Icons.science)),
-                      const SizedBox(width: 8),
-                      Expanded(child: _fertCard('Fósforo', Icons.water_drop)),
-                      const SizedBox(width: 8),
-                      Expanded(child: _fertCard('Orgánico', Icons.eco)),
-                    ],
+                  const SizedBox(height: 8),
+                  Container(
+                    height: 56,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceContainerLowest,
+                      border: Border.all(color: AppColors.outlineVariant),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _fertilizer,
+                        isExpanded: true,
+                        icon: const Icon(Icons.expand_more,
+                            color: AppColors.onSurfaceVariant),
+                        items: ['Nitrógeno', 'Fósforo', 'Orgánico', 'Otro']
+                            .map((e) =>
+                                DropdownMenuItem(value: e, child: Text(e)))
+                            .toList(),
+                        onChanged: (v) =>
+                            setState(() => _fertilizer = v ?? _fertilizer),
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 24),
+                  if (_fertilizer == 'Otro') ...[
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _otherFertController,
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: AppColors.surfaceContainerLowest,
+                        hintText: 'Especifique el fertilizante...',
+                        hintStyle: AppText.bodyMd(color: AppColors.outline),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide:
+                              const BorderSide(color: AppColors.outlineVariant),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide:
+                              const BorderSide(color: AppColors.outlineVariant),
+                        ),
+                        contentPadding: const EdgeInsets.all(16),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 15),
 
                   // Tip
                   Row(
                     children: [
-                      const Icon(
-                        Icons.lightbulb,
-                        color: AppColors.secondary,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
+                      const Icon(Icons.lightbulb,
+                          color: AppColors.secondary, size: 20),
+                      const SizedBox(width: 6),
                       Text(
-                        'Dosis sugerida por el sistema: 400 KG',
+                        'Dosis sugerida: 400 KG',
                         style: AppText.bodyMd(color: AppColors.secondary),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 18),
+
+                  Text('UNIDAD DE MEDIDA', style: AppText.labelCaps()),
+                  const SizedBox(height: 8),
+                  Container(
+                    height: 56,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceContainerLowest,
+                      border: Border.all(color: AppColors.outlineVariant),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _unit,
+                        isExpanded: true,
+                        icon: const Icon(Icons.expand_more,
+                            color: AppColors.onSurfaceVariant),
+                        items: [
+                          const DropdownMenuItem(
+                              value: 'KG',
+                              child:
+                                  Text('Kilogramos (kg) — Sólido/Granulado')),
+                          const DropdownMenuItem(
+                              value: 'L', child: Text('Litros (L) — Líquido')),
+                          const DropdownMenuItem(
+                              value: 'g',
+                              child: Text('Gramos (g) — Concentrado')),
+                          const DropdownMenuItem(
+                              value: 'ml',
+                              child: Text('Mililitros (ml) — Soluble')),
+                        ],
+                        onChanged: (v) => setState(() => _unit = v ?? _unit),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
 
                   Text('CANTIDAD APLICADA', style: AppText.labelCaps()),
                   const SizedBox(height: 12),
@@ -79,7 +179,10 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
                         Icons.remove,
                         () {
                           setState(() {
-                            if (_kg >= 50) _kg -= 50;
+                            if (_amount >= 1) {
+                              _amount -= 1;
+                              _amountController.text = _amount.toString();
+                            }
                           });
                         },
                         AppColors.surfaceContainer,
@@ -92,23 +195,33 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
                           decoration: BoxDecoration(
                             color: AppColors.surfaceContainerLowest,
                             border: Border.all(
-                              color: AppColors.outlineVariant,
-                              width: 1,
-                            ),
+                                color: AppColors.outlineVariant, width: 1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.baseline,
-                            textBaseline: TextBaseline.alphabetic,
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              Text('$_kg', style: AppText.h1()),
+                              SizedBox(
+                                width: 80,
+                                child: TextField(
+                                  controller: _amountController,
+                                  keyboardType: TextInputType.number,
+                                  textAlign: TextAlign.center,
+                                  style: AppText.h1(),
+                                  decoration: const InputDecoration(
+                                    border: InputBorder.none,
+                                    contentPadding: EdgeInsets.zero,
+                                    isDense: true,
+                                  ),
+                                  onChanged: (_) => _updateAmountFromText(),
+                                ),
+                              ),
                               const SizedBox(width: 4),
                               Text(
-                                'KG',
+                                _unit,
                                 style: AppText.bodyMd(
-                                  color: AppColors.onSurfaceVariant,
-                                ),
+                                    color: AppColors.onSurfaceVariant),
                               ),
                             ],
                           ),
@@ -117,7 +230,12 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
                       const SizedBox(width: 16),
                       _circleBtn(
                         Icons.add,
-                        () => setState(() => _kg += 50),
+                        () {
+                          setState(() {
+                            _amount += 1;
+                            _amountController.text = _amount.toString();
+                          });
+                        },
                         AppColors.primaryContainer,
                         AppColors.onPrimaryContainer,
                       ),
@@ -127,21 +245,44 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
 
                   Text('SELECCIONAR LOTE', style: AppText.labelCaps()),
                   const SizedBox(height: 12),
-                  _selector(),
-                  const SizedBox(height: 32),
+                  if (widget.fixedLote != null)
+                    Container(
+                      height: 56,
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceContainerLowest,
+                        border: Border.all(
+                            color: AppColors.outlineVariant, width: 1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      alignment: Alignment.centerLeft,
+                      child: Text(widget.fixedLote!, style: AppText.bodyMd()),
+                    )
+                  else
+                    _selector(),
+                  const SizedBox(height: 12),
                   RuggedButton(
                     text: 'GUARDAR REGISTRO',
                     icon: Icons.save,
-                    onPressed: () => Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => FertilizationSuccessScreen(
-                          lote: _lote,
-                          fertilizer: _fertilizer,
-                          amount: _kg,
+                    onPressed: () {
+                      final finalFert = _fertilizer == 'Otro' &&
+                              _otherFertController.text.isNotEmpty
+                          ? _otherFertController.text
+                          : _fertilizer;
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => FertilizationSuccessScreen(
+                            lote: _lote,
+                            fertilizer: finalFert,
+                            amount: _amount,
+                            unit: _unit,
+                            currentTab: widget.currentTab,
+                          ),
                         ),
-                      ),
-                    ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 24),
                 ],
@@ -150,45 +291,23 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: AgroBottomNav(current: widget.currentTab),
-    );
-  }
-
-  Widget _fertCard(String name, IconData icon) {
-    final selected = _fertilizer == name;
-    return GestureDetector(
-      onTap: () => setState(() => _fertilizer = name),
-      child: AspectRatio(
-        aspectRatio: 1,
-        child: Container(
-          decoration: BoxDecoration(
-            color: selected
-                ? AppColors.primaryFixed
-                : AppColors.surfaceContainerLowest,
-            border: Border.all(
-              color: selected ? AppColors.primary : AppColors.outlineVariant,
-              width: selected ? 2 : 1,
-            ),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                size: 32,
-                color: selected ? AppColors.primary : AppColors.outline,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                name.toUpperCase(),
-                style: AppText.labelCaps(
-                  color: selected ? AppColors.primary : AppColors.onSurface,
-                ),
-              ),
-            ],
-          ),
-        ),
+      bottomNavigationBar: AgroBottomNav(
+        current: widget.currentTab,
+        onTap: (tab) {
+          if (tab == AgroTab.home) {
+            Navigator.pushReplacement(
+                context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+          } else if (tab == AgroTab.lotes) {
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (_) => const MapOnboardingScreen()));
+          } else if (tab == AgroTab.perfil) {
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (_) => const ProfileScreen()));
+          } else if (tab == AgroTab.tareas) {
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (_) => const TasksScreen()));
+          }
+        },
       ),
     );
   }
@@ -228,23 +347,17 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
         child: DropdownButton<String>(
           value: _lote,
           isExpanded: true,
-          icon: const Icon(
-            Icons.expand_more,
-            color: AppColors.onSurfaceVariant,
-          ),
+          icon:
+              const Icon(Icons.expand_more, color: AppColors.onSurfaceVariant),
           items: const [
             DropdownMenuItem(
-              value: 'Lote 1 - Sector Norte',
-              child: Text('Lote 1 - Sector Norte'),
-            ),
+                value: 'Lote 1 - Sector Norte',
+                child: Text('Lote 1 - Sector Norte')),
             DropdownMenuItem(
-              value: 'Lote 2 - Ladera Este',
-              child: Text('Lote 2 - Ladera Este'),
-            ),
+                value: 'Lote 2 - Ladera Este',
+                child: Text('Lote 2 - Ladera Este')),
             DropdownMenuItem(
-              value: 'Lote 3 - Valle Sur',
-              child: Text('Lote 3 - Valle Sur'),
-            ),
+                value: 'Lote 3 - Valle Sur', child: Text('Lote 3 - Valle Sur')),
           ],
           onChanged: (v) =>
               setState(() => _lote = v ?? 'Lote 1 - Sector Norte'),

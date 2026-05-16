@@ -50,7 +50,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   style: AppText.labelCaps(color: AppColors.onSurface)
                       .copyWith(fontSize: 14, letterSpacing: 1.2),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 5),
                 Container(
                   width: 150,
                   height: 2,

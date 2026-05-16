@@ -65,7 +65,7 @@ class _TreatmentApplyScreenState extends State<TreatmentApplyScreen> {
                 style: AppText.h1(),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 5),
             if (widget.alertLoteName != null) ...[
               // Yellow alert banner
               Container(

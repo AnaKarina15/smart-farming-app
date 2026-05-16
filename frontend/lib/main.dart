@@ -5,6 +5,7 @@ import 'core/network/dio_client.dart';
 import 'core/storage/token_storage.dart';
 import 'core/theme/app_colors.dart';
 import 'data/providers/auth_provider.dart';
+import 'data/providers/profile_image_provider.dart';
 import 'data/services/auth_service.dart';
 import 'data/services/lotes_service.dart';
 import 'presentation/screens/welcome_screen.dart';
@@ -47,6 +48,11 @@ class SmartFarmingApp extends StatelessWidget {
         // Provider de autenticacion (state management)
         ChangeNotifierProvider<AuthProvider>(
           create: (_) => AuthProvider(authService, tokenStorage),
+        ),
+
+        // Provider de imagen de perfil
+        ChangeNotifierProvider<ProfileImageProvider>(
+          create: (_) => ProfileImageProvider(),
         ),
       ],
       child: MaterialApp(

@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text.dart';
 import '../widgets/custom_app_bar.dart';
-import '../widgets/rugged_button.dart';
 import '../common/agro_bottom_nav.dart';
 import 'offline_banner.dart';
+import '../screens/home_screen.dart';
+import '../screens/map_onboarding_screen.dart';
+import '../screens/profile_screen.dart';
+import '../screens/tasks_screen.dart';
 
 /// Layout reusable para pantallas de éxito (riego, fertilización, siembra…).
 class SuccessScaffold extends StatelessWidget {
@@ -17,8 +20,9 @@ class SuccessScaffold extends StatelessWidget {
   final IconData detailIcon;
   final String? imageUrl;
   final IconData? fallbackIcon;
-  final String primaryButtonText;
-  final VoidCallback onPrimaryPressed;
+  final String? primaryButtonText;
+  final VoidCallback? onPrimaryPressed;
+  final AgroTab currentTab;
 
   const SuccessScaffold({
     super.key,
@@ -29,10 +33,11 @@ class SuccessScaffold extends StatelessWidget {
     required this.detailLabel,
     required this.detailValue,
     required this.detailIcon,
-    required this.primaryButtonText,
-    required this.onPrimaryPressed,
+    this.primaryButtonText,
+    this.onPrimaryPressed,
     this.imageUrl,
     this.fallbackIcon,
+    this.currentTab = AgroTab.home,
   });
 
   @override
@@ -172,22 +177,27 @@ class SuccessScaffold extends StatelessWidget {
             ),
           ),
 
-          // ── Bottom Actions ──────────────────────────────────
-          Container(
-            color: AppColors.surfaceContainerLowest,
-            padding: const EdgeInsets.all(24),
-            child: SafeArea(
-              top: false,
-              child: RuggedButton(
-                text: primaryButtonText,
-                onPressed: onPrimaryPressed,
-                icon: Icons.history,
-              ),
-            ),
-          ),
+          // ── Bottom Actions Removed ────────────────────────
         ],
       ),
-      bottomNavigationBar: const AgroBottomNav(current: AgroTab.lotes),
+      bottomNavigationBar: AgroBottomNav(
+        current: currentTab,
+        onTap: (tab) {
+          if (tab == AgroTab.home) {
+            Navigator.pushReplacement(
+                context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+          } else if (tab == AgroTab.lotes) {
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (_) => const MapOnboardingScreen()));
+          } else if (tab == AgroTab.perfil) {
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (_) => const ProfileScreen()));
+          } else if (tab == AgroTab.tareas) {
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (_) => const TasksScreen()));
+          }
+        },
+      ),
     );
   }
 

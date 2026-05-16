@@ -27,8 +27,8 @@ class RegisterLoteScreen extends StatefulWidget {
 }
 
 class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
-  final _nameController = TextEditingController(text: 'Lote Sur');
-  final _areaController = TextEditingController(text: '2.1');
+  final _nameController = TextEditingController(text: ' ');
+  final _areaController = TextEditingController(text: ' ');
 
   double? _lat;
   double? _lng;
@@ -167,7 +167,7 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
     await prefs.setBool('has_lotes', true);
 
     // Show success dialog
-    await showDialog(
+    showDialog(
         context: context,
         barrierDismissible: false,
         builder: (ctx) => BackdropFilter(
@@ -205,28 +205,17 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                         style:
                             AppText.bodyMd(color: AppColors.onSurfaceVariant),
                       ),
-                      const SizedBox(height: 24),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.pop(ctx); // Close dialog
-                            Navigator.pop(context); // Back to list
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            foregroundColor: AppColors.onPrimary,
-                            shape: const StadiumBorder(),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                          ),
-                          child: const Text('VER MIS LOTES'),
-                        ),
-                      ),
                     ],
                   ),
                 ),
               ),
             ));
+
+    // Wait 3 seconds, then pop dialog and screen
+    await Future.delayed(const Duration(seconds: 3));
+    if (!mounted) return;
+    Navigator.pop(context); // Close dialog
+    Navigator.pop(context); // Back to list
   }
 
   void _showSnack(String msg) {
@@ -477,14 +466,16 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                       builder: (context, provider, child) {
                         final list = provider.municipios;
                         if (list.isEmpty) {
-                          return Text('Cargando municipios...', 
-                            style: AppText.bodyMd(color: AppColors.outline));
+                          return Text('Cargando municipios...',
+                              style: AppText.bodyMd(color: AppColors.outline));
                         }
 
                         String currentNombre = '';
                         if (_selectedMunicipioId != null) {
                           try {
-                            currentNombre = list.firstWhere((m) => m.id == _selectedMunicipioId).nombre;
+                            currentNombre = list
+                                .firstWhere((m) => m.id == _selectedMunicipioId)
+                                .nombre;
                           } catch (_) {}
                         }
 
@@ -499,28 +490,35 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                           child: Autocomplete<Object>(
                             key: ValueKey('auto_mun_$_selectedMunicipioId'),
                             initialValue: TextEditingValue(text: currentNombre),
-                            optionsBuilder: (TextEditingValue textEditingValue) {
+                            optionsBuilder:
+                                (TextEditingValue textEditingValue) {
                               if (textEditingValue.text == '') return list;
                               return list.where((m) => m.nombre
                                   .toLowerCase()
-                                  .contains(textEditingValue.text.toLowerCase()));
+                                  .contains(
+                                      textEditingValue.text.toLowerCase()));
                             },
-                            displayStringForOption: (option) => (option as dynamic).nombre,
+                            displayStringForOption: (option) =>
+                                (option as dynamic).nombre,
                             onSelected: (option) {
                               setState(() {
                                 _selectedMunicipioId = (option as dynamic).id;
                               });
                             },
-                            fieldViewBuilder: (ctx, controller, focusNode, onSubmitted) {
+                            fieldViewBuilder:
+                                (ctx, controller, focusNode, onSubmitted) {
                               return TextField(
                                 controller: controller,
                                 focusNode: focusNode,
                                 decoration: InputDecoration(
                                   hintText: 'Buscar municipio...',
-                                  hintStyle: AppText.bodyMd(color: AppColors.outline),
-                                  prefixIcon: const Icon(Icons.location_city, color: AppColors.primary, size: 20),
+                                  hintStyle:
+                                      AppText.bodyMd(color: AppColors.outline),
+                                  prefixIcon: const Icon(Icons.location_city,
+                                      color: AppColors.primary, size: 20),
                                   border: InputBorder.none,
-                                  contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                                  contentPadding:
+                                      const EdgeInsets.symmetric(vertical: 16),
                                 ),
                               );
                             },
@@ -531,8 +529,10 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                                   elevation: 8.0,
                                   borderRadius: BorderRadius.circular(12),
                                   child: Container(
-                                    width: MediaQuery.of(context).size.width - 80,
-                                    constraints: const BoxConstraints(maxHeight: 250),
+                                    width:
+                                        MediaQuery.of(context).size.width - 80,
+                                    constraints:
+                                        const BoxConstraints(maxHeight: 250),
                                     decoration: BoxDecoration(
                                       color: Colors.white,
                                       borderRadius: BorderRadius.circular(12),
@@ -541,11 +541,14 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                                       padding: EdgeInsets.zero,
                                       shrinkWrap: true,
                                       itemCount: options.length,
-                                      separatorBuilder: (c, i) => const Divider(height: 1),
+                                      separatorBuilder: (c, i) =>
+                                          const Divider(height: 1),
                                       itemBuilder: (ctx, index) {
                                         final option = options.elementAt(index);
                                         return ListTile(
-                                          title: Text((option as dynamic).nombre, style: AppText.bodyMd()),
+                                          title: Text(
+                                              (option as dynamic).nombre,
+                                              style: AppText.bodyMd()),
                                           onTap: () => onSelected(option),
                                         );
                                       },

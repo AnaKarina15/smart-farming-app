@@ -574,6 +574,19 @@ class _LoteCardState extends State<_LoteCard> {
                   ),
                 ),
               ),
+
+              // Chevron
+              Padding(
+                padding: const EdgeInsets.only(right: 16),
+                child: AnimatedRotation(
+                  duration: const Duration(milliseconds: 250),
+                  turns: widget.isSelected ? 0.5 : 0,
+                  child: const Icon(
+                    Icons.expand_more,
+                    color: AppColors.outline,
+                  ),
+                ),
+              ),
             ],
           ),
 

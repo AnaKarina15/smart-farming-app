@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import '../widgets/success_scaffold.dart';
-import 'lote_history_screen.dart';
+import '../common/agro_bottom_nav.dart';
 
 class IrrigationSuccessScreen extends StatelessWidget {
   final String lote;
   final int liters;
+  final AgroTab currentTab;
 
   const IrrigationSuccessScreen({
     super.key,
     this.lote = 'Lote 1',
     this.liters = 20,
+    this.currentTab = AgroTab.home,
   });
 
   @override
@@ -24,14 +26,7 @@ class IrrigationSuccessScreen extends StatelessWidget {
       detailLabel: 'Agua Aplicada',
       detailValue: '$liters Litros',
       detailIcon: Icons.water_drop,
-      fallbackIcon: Icons.water_drop,
-      primaryButtonText: 'VER HISTORIAL DEL LOTE',
-      onPrimaryPressed: () {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => LoteHistoryScreen(loteName: lote)),
-        );
-      },
+      currentTab: currentTab,
     );
   }
 }

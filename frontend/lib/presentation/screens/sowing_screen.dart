@@ -2,21 +2,25 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text.dart';
 import '../common/agro_bottom_nav.dart';
-import '../widgets/offline_banner.dart';
 import '../widgets/custom_app_bar.dart';
 import '../widgets/rugged_button.dart';
+import '../widgets/offline_banner.dart';
 import 'home_screen.dart';
 import 'map_onboarding_screen.dart';
 import 'profile_screen.dart';
 import 'tasks_screen.dart';
 import 'sowing_success_screen.dart';
 import 'terrain_status_screen.dart';
-import 'viability_screen.dart';
 
 class SowingScreen extends StatefulWidget {
-  final AgroTab currentTab;
   final String? fixedLote;
-  const SowingScreen({super.key, this.currentTab = AgroTab.tareas, this.fixedLote});
+  final AgroTab currentTab;
+
+  const SowingScreen({
+    super.key,
+    this.fixedLote,
+    this.currentTab = AgroTab.home,
+  });
 
   @override
   State<SowingScreen> createState() => _SowingScreenState();
@@ -25,8 +29,10 @@ class SowingScreen extends StatefulWidget {
 class _SowingScreenState extends State<SowingScreen> {
   String _crop = 'Maíz';
   late String _lote;
-  final _dateController = TextEditingController(text: '24/05/2026');
-  final _otherCropController = TextEditingController();
+  final TextEditingController _dateController = TextEditingController(
+    text: "${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}",
+  );
+  final TextEditingController _otherCropController = TextEditingController();
 
   @override
   void initState() {
@@ -106,59 +112,53 @@ class _SowingScreenState extends State<SowingScreen> {
                           borderSide:
                               const BorderSide(color: AppColors.outlineVariant),
                         ),
-                        contentPadding: const EdgeInsets.all(16),
                       ),
                     ),
                   ],
                   const SizedBox(height: 24),
 
-                  // Verificar viabilidad
-                  GestureDetector(
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => ViabilityScreen(
-                            lote: _lote, currentTab: widget.currentTab),
-                      ),
-                    ),
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppColors.secondaryContainer,
+                  Text('FECHA DE SIEMBRA', style: AppText.labelCaps()),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _dateController,
+                    readOnly: true,
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: AppColors.surfaceContainerLowest,
+                      hintText: 'Seleccione la fecha',
+                      suffixIcon: const Icon(Icons.calendar_today,
+                          color: AppColors.primary),
+                      border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
+                        borderSide:
+                            const BorderSide(color: AppColors.outlineVariant),
                       ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.verified_user,
-                            color: AppColors.onSecondaryContainer,
-                            size: 24,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'Verificar Viabilidad',
-                              style: AppText.labelCaps(
-                                color: AppColors.onSecondaryContainer,
-                              ),
-                            ),
-                          ),
-                          const Icon(
-                            Icons.arrow_forward_ios,
-                            color: AppColors.onSecondaryContainer,
-                            size: 16,
-                          ),
-                        ],
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide:
+                            const BorderSide(color: AppColors.outlineVariant),
                       ),
                     ),
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: DateTime.now(),
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(2100),
+                      );
+                      if (picked != null) {
+                        setState(() {
+                          _dateController.text =
+                              "${picked.day}/${picked.month}/${picked.year}";
+                        });
+                      }
+                    },
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    '* Recomendado antes de registrar la siembra *',
-                    style: AppText.bodyMd(
-                      color: AppColors.onSurfaceVariant,
-                    ).copyWith(fontSize: 12, fontStyle: FontStyle.italic),
-                  ),
+                  const SizedBox(height: 24),
+
+                  Text('LOTE ASIGNADO', style: AppText.labelCaps()),
+                  const SizedBox(height: 8),
+                  _selector(),
                   const SizedBox(height: 24),
 
                   Text('ESTADO PREVIO', style: AppText.labelCaps()),
@@ -179,165 +179,51 @@ class _SowingScreenState extends State<SowingScreen> {
                           color: AppColors.outlineVariant,
                           width: 1,
                         ),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(16),
                       ),
                       child: Row(
                         children: [
                           Container(
-                            width: 48,
-                            height: 48,
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: AppColors.surfaceContainer,
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryContainer,
+                              borderRadius: BorderRadius.circular(12),
                             ),
                             child: const Icon(
-                              Icons.analytics,
-                              color: AppColors.onSurface,
-                              size: 22,
+                              Icons.terrain,
+                              color: AppColors.onPrimaryContainer,
+                              size: 24,
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 16),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   'Estado del Terreno',
-                                  style: AppText.bodyMd().copyWith(
-                                    fontWeight: FontWeight.w500,
+                                  style: AppText.bodyLg().copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                Text(
+                                  'Verificar condiciones antes',
+                                  style: AppText.bodyMd(
+                                    color: AppColors.onSurfaceVariant,
                                   ),
                                 ),
                               ],
                             ),
                           ),
                           const Icon(
-                            Icons.open_in_new,
-                            color: AppColors.onSurfaceVariant,
-                            size: 20,
+                            Icons.chevron_right,
+                            color: AppColors.outline,
                           ),
                         ],
                       ),
                     ),
                   ),
-                  const SizedBox(height: 24),
-
-                  Text('FECHA DE SIEMBRA', style: AppText.labelCaps()),
-                  const SizedBox(height: 8),
-                  GestureDetector(
-                    onTap: () async {
-                      final picked = await showDatePicker(
-                        context: context,
-                        initialDate: DateTime.now(),
-                        firstDate: DateTime(2020),
-                        lastDate: DateTime(2030),
-                      );
-                      if (picked != null) {
-                        setState(() {
-                          _dateController.text =
-                              "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
-                        });
-                      }
-                    },
-                    child: AbsorbPointer(
-                      child: TextField(
-                        controller: _dateController,
-                        decoration: InputDecoration(
-                          prefixIcon: const Icon(
-                            Icons.calendar_today,
-                            color: AppColors.onSurfaceVariant,
-                          ),
-                          filled: true,
-                          fillColor: AppColors.surfaceContainerLowest,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: AppColors.outlineVariant,
-                              width: 1,
-                            ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: AppColors.outlineVariant,
-                              width: 1,
-                            ),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 18,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  Text('SELECCIONAR LOTE', style: AppText.labelCaps()),
-                  const SizedBox(height: 8),
-                  _selector(),
-                  const SizedBox(height: 24),
-
-                  // Area
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryFixed,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: AppColors.outlineVariant,
-                        width: 1,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'ÁREA DISPONIBLE',
-                                style: AppText.labelCaps(
-                                  color: AppColors.onPrimaryFixedVariant,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.baseline,
-                                textBaseline: TextBaseline.alphabetic,
-                                children: [
-                                  Text(
-                                    _lote.contains('A1')
-                                        ? '12.5'
-                                        : (_lote.contains('B2')
-                                            ? '8.0'
-                                            : '20.0'),
-                                    style: AppText.h1(
-                                      color: AppColors.onPrimaryFixed,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    'ha',
-                                    style: AppText.bodyLg(
-                                      color: AppColors.onPrimaryFixed,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                        Icon(
-                          Icons.straighten,
-                          size: 64,
-                          color: AppColors.primaryContainer.withValues(
-                            alpha: 0.3,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 16),
 
                   RuggedButton(
                     text: 'GUARDAR CULTIVO',
@@ -350,7 +236,10 @@ class _SowingScreenState extends State<SowingScreen> {
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => SowingSuccessScreen(lote: _lote, crop: finalCrop, currentTab: widget.currentTab),
+                          builder: (_) => SowingSuccessScreen(
+                              lote: _lote,
+                              crop: finalCrop,
+                              currentTab: widget.currentTab),
                         ),
                       );
                     },
@@ -366,8 +255,8 @@ class _SowingScreenState extends State<SowingScreen> {
         current: widget.currentTab,
         onTap: (tab) {
           if (tab == AgroTab.home) {
-            Navigator.pushReplacement(
-                context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (_) => const HomeScreen()));
           } else if (tab == AgroTab.lotes) {
             Navigator.pushReplacement(context,
                 MaterialPageRoute(builder: (_) => const MapOnboardingScreen()));

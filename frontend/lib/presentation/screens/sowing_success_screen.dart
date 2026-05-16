@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/success_scaffold.dart';
 import '../common/agro_bottom_nav.dart';
-import 'home_screen.dart';
-import 'map_onboarding_screen.dart';
-import 'tasks_screen.dart';
-
 class SowingSuccessScreen extends StatelessWidget {
   final String lote;
   final String crop;

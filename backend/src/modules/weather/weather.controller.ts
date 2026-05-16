@@ -11,10 +11,7 @@ export class WeatherController {
   @ApiOperation({ summary: 'Get current temperature by coordinates' })
   @ApiQuery({ name: 'lat', type: Number, required: true })
   @ApiQuery({ name: 'lon', type: Number, required: true })
-  async getCurrentWeather(
-    @Query('lat') lat: number,
-    @Query('lon') lon: number,
-  ) {
+  async getCurrentWeather(@Query('lat') lat: number, @Query('lon') lon: number) {
     return this.weatherService.getWeatherData(lat, lon);
   }
 

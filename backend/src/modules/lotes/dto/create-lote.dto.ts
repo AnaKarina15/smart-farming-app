@@ -6,6 +6,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsUUID,
   Max,
   MaxLength,
   Min,
@@ -55,4 +56,22 @@ export class CreateLoteDto {
   @IsOptional()
   @IsLongitude()
   longitud?: number;
+
+  @ApiProperty({
+    example: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+    required: false,
+    description: 'ID del cultivo del catalogo (FK a tabla cultivos)',
+  })
+  @IsOptional()
+  @IsUUID()
+  cultivoActualId?: string;
+
+  @ApiProperty({
+    example: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+    required: false,
+    description: 'ID del municipio del Magdalena donde se ubica el lote (FK a tabla municipios)',
+  })
+  @IsOptional()
+  @IsUUID()
+  municipioId?: string;
 }

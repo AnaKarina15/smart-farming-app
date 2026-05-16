@@ -15,8 +15,28 @@ export class LoteResponseDto {
   @ApiProperty()
   superficieHectareas!: number;
 
-  @ApiProperty({ required: false, nullable: true })
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    description: '@deprecated: nombre legacy del cultivo (string). Usar cultivoActualId.',
+  })
   cultivoActual!: string | null;
+
+  @ApiProperty({
+    format: 'uuid',
+    required: false,
+    nullable: true,
+    description: 'FK al catalogo de cultivos',
+  })
+  cultivoActualId!: string | null;
+
+  @ApiProperty({
+    format: 'uuid',
+    required: false,
+    nullable: true,
+    description: 'FK al catalogo de municipios del Magdalena',
+  })
+  municipioId!: string | null;
 
   @ApiProperty({ required: false, nullable: true })
   latitud!: number | null;
@@ -43,6 +63,8 @@ export class LoteResponseDto {
     dto.descripcion = lote.descripcion;
     dto.superficieHectareas = Number(lote.superficieHectareas);
     dto.cultivoActual = lote.cultivoActual;
+    dto.cultivoActualId = lote.cultivoActualId;
+    dto.municipioId = lote.municipioId;
     dto.latitud = lote.latitud !== null ? Number(lote.latitud) : null;
     dto.longitud = lote.longitud !== null ? Number(lote.longitud) : null;
     dto.estado = lote.estado;

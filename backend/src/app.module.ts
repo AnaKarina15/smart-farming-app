@@ -14,6 +14,7 @@ import { validationSchema } from './config/validation.schema';
 import { typeOrmConfigFactory } from './database/typeorm.config';
 import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { CatalogosModule } from './modules/catalogos/catalogos.module';
 import { HealthModule } from './modules/health/health.module';
 import { LotesModule } from './modules/lotes/lotes.module';
 import { UsersModule } from './modules/users/users.module';
@@ -68,6 +69,7 @@ import { WeatherModule } from './modules/weather/weather.module';
     AuthModule,
     UsersModule,
     LotesModule,
+    CatalogosModule,
     HealthModule,
     WeatherModule,
   ],

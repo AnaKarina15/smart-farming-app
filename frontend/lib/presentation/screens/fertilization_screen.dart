@@ -15,6 +15,7 @@ import '../../data/providers/auth_provider.dart';
 import '../../data/providers/lotes_provider.dart';
 import '../../data/models/lote_model.dart';
 import 'fertilization_success_screen.dart';
+import '../../data/providers/catalogos_provider.dart';
 
 class FertilizationScreen extends StatefulWidget {
   final AgroTab currentTab;
@@ -31,7 +32,9 @@ class FertilizationScreen extends StatefulWidget {
 }
 
 class _FertilizationScreenState extends State<FertilizationScreen> {
-  String _fertilizer = 'Nitrógeno';
+  String? _selectedFertId;
+  String? _selectedFertNombre;
+  double? _suggestedDose;
   int _amount = 50;
   String _unit = 'KG';
   String? _loteId;
@@ -76,7 +79,8 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
         if (mounted) {
           setState(() {
             if (widget.fixedLote != null) {
-              final found = lotes.where((l) => l.nombre == widget.fixedLote).toList();
+              final found =
+                  lotes.where((l) => l.nombre == widget.fixedLote).toList();
               if (found.isNotEmpty) {
                 _loteId = found.first.id;
                 _loteNombre = found.first.nombre;
@@ -118,22 +122,50 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
                       border: Border.all(color: AppColors.outlineVariant),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: _fertilizer,
-                        isExpanded: true,
-                        icon: const Icon(Icons.expand_more,
-                            color: AppColors.onSurfaceVariant),
-                        items: ['Nitrógeno', 'Fósforo', 'Orgánico', 'Otro']
-                            .map((e) =>
-                                DropdownMenuItem(value: e, child: Text(e)))
-                            .toList(),
-                        onChanged: (v) =>
-                            setState(() => _fertilizer = v ?? _fertilizer),
-                      ),
+                    child: Consumer<CatalogosProvider>(
+                      builder: (context, provider, child) {
+                        final list = provider.fertilizantes;
+                        if (_selectedFertId == null && list.isNotEmpty) {
+                          _selectedFertId = list.first.id;
+                          _selectedFertNombre = list.first.nombre;
+                          _suggestedDose = list.first.dosisRecomendadaKgHa;
+                        }
+
+                        return DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _selectedFertId,
+                            isExpanded: true,
+                            icon: const Icon(Icons.expand_more,
+                                color: AppColors.onSurfaceVariant),
+                            items: [
+                              ...list.map((e) => DropdownMenuItem(
+                                    value: e.id,
+                                    child: Text(e.nombre),
+                                  )),
+                              const DropdownMenuItem(
+                                value: 'OTROS',
+                                child: Text('Otro (especificar)'),
+                              ),
+                            ],
+                            onChanged: (v) {
+                              if (v == null) return;
+                              setState(() {
+                                _selectedFertId = v;
+                                if (v != 'OTROS') {
+                                  final f = list.firstWhere((e) => e.id == v);
+                                  _selectedFertNombre = f.nombre;
+                                  _suggestedDose = f.dosisRecomendadaKgHa;
+                                } else {
+                                  _suggestedDose = null;
+                                }
+                              });
+                            },
+                          ),
+                        );
+                      },
                     ),
                   ),
-                  if (_fertilizer == 'Otro') ...[
+                  if (_selectedFertId == 'OTROS') ...[
                     const SizedBox(height: 12),
                     TextField(
                       controller: _otherFertController,
@@ -165,7 +197,9 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
                           color: AppColors.secondary, size: 20),
                       const SizedBox(width: 6),
                       Text(
-                        'Dosis sugerida: 400 KG',
+                        _suggestedDose != null
+                            ? 'Dosis sugerida: $_suggestedDose $_unit'
+                            : 'Selecciona un fertilizante del catálogo para ver dosis',
                         style: AppText.bodyMd(color: AppColors.secondary),
                       ),
                     ],
@@ -306,52 +340,58 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
                   RuggedButton(
                     text: _guardando ? 'GUARDANDO...' : 'GUARDAR REGISTRO',
                     icon: Icons.save,
-                    onPressed: _guardando ? () {} : () async {
-                      if (_loteId == null) return;
-                      setState(() => _guardando = true);
+                    onPressed: _guardando
+                        ? () {}
+                        : () async {
+                            if (_loteId == null) return;
+                            setState(() => _guardando = true);
 
-                      final finalFert = _fertilizer == 'Otro' &&
-                              _otherFertController.text.isNotEmpty
-                          ? _otherFertController.text
-                          : _fertilizer;
+                            final finalFertNombre =
+                                _selectedFertId == 'OTROS' &&
+                                        _otherFertController.text.isNotEmpty
+                                    ? _otherFertController.text
+                                    : (_selectedFertNombre ?? 'Desconocido');
 
-                      final user = context.read<AuthProvider>().currentUser;
-                      final userId = user?.id ?? 'unknown';
-                      final id = 'fert_${DateTime.now().millisecondsSinceEpoch}';
-                      final now = DateTime.now().toIso8601String();
+                            final user =
+                                context.read<AuthProvider>().currentUser;
+                            final userId = user?.id ?? 'unknown';
+                            final id =
+                                'fert_${DateTime.now().millisecondsSinceEpoch}';
+                            final now = DateTime.now().toIso8601String();
 
-                      await DatabaseHelper.instance.insert(DatabaseHelper.tableFertilizacion, {
-                        'id': id,
-                        'loteId': _loteId,
-                        'loteNombre': _loteNombre,
-                        'tipoFertilizante': _fertilizer,
-                        'nombre': finalFert,
-                        'dosis': _amount,
-                        'unidad': _unit,
-                        'metodoAplicacion': null,
-                        'fecha': now,
-                        'observaciones': null,
-                        'userId': userId,
-                        'createdAt': now,
-                        'isPendingSync': 1,
-                      });
+                            await DatabaseHelper.instance
+                                .insert(DatabaseHelper.tableFertilizacion, {
+                              'id': id,
+                              'loteId': _loteId,
+                              'loteNombre': _loteNombre,
+                              'tipoFertilizante': _selectedFertId,
+                              'nombre': finalFertNombre,
+                              'dosis': _amount,
+                              'unidad': _unit,
+                              'metodoAplicacion': null,
+                              'fecha': now,
+                              'observaciones': null,
+                              'userId': userId,
+                              'createdAt': now,
+                              'isPendingSync': 1,
+                            });
 
-                      if (!mounted) return;
-                      setState(() => _guardando = false);
+                            if (!mounted) return;
+                            setState(() => _guardando = false);
 
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => FertilizationSuccessScreen(
-                            lote: _loteNombre ?? '',
-                            fertilizer: finalFert,
-                            amount: _amount,
-                            unit: _unit,
-                            currentTab: widget.currentTab,
-                          ),
-                        ),
-                      );
-                    },
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => FertilizationSuccessScreen(
+                                  lote: _loteNombre ?? '',
+                                  fertilizer: finalFertNombre,
+                                  amount: _amount,
+                                  unit: _unit,
+                                  currentTab: widget.currentTab,
+                                ),
+                              ),
+                            );
+                          },
                   ),
                   const SizedBox(height: 24),
                 ],

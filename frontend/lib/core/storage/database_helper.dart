@@ -15,7 +15,7 @@ import 'package:path_provider/path_provider.dart';
 /// - observaciones  → observaciones generales del campo
 class DatabaseHelper {
   static const _databaseName = 'AgroField.db';
-  static const _databaseVersion = 2;
+  static const _databaseVersion = 3;
 
   // Nombres de tablas
   static const tableLotes = 'lotes';
@@ -26,6 +26,13 @@ class DatabaseHelper {
   static const tableHallazgos = 'hallazgos';
   static const tableTratamientos = 'tratamientos';
   static const tableObservaciones = 'observaciones';
+
+  // Catálogos (Sprint 2)
+  static const tableCatCultivos = 'catalogo_cultivos';
+  static const tableCatMunicipios = 'catalogo_municipios';
+  static const tableCatPlagas = 'catalogo_plagas';
+  static const tableCatFertilizantes = 'catalogo_fertilizantes';
+  static const tableCatTiposSuelo = 'catalogo_tipos_suelo';
 
   // Singleton
   DatabaseHelper._privateConstructor();
@@ -56,13 +63,24 @@ class DatabaseHelper {
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
-      // Migración desde v1: agregar las nuevas tablas
       await _createSiembras(db);
       await _createRiego(db);
       await _createFertilizacion(db);
       await _createHallazgos(db);
       await _createTratamientos(db);
       await _createObservaciones(db);
+    }
+    if (oldVersion < 3) {
+      // Sprint 2: Catálogos y cambios en lotes
+      await _createCatalogoCultivos(db);
+      await _createCatalogoMunicipios(db);
+      await _createCatalogoPlagas(db);
+      await _createCatalogoFertilizantes(db);
+      await _createCatalogoTiposSuelo(db);
+      
+      // Agregar columnas a lotes
+      await db.execute('ALTER TABLE $tableLotes ADD COLUMN cultivoActualId TEXT');
+      await db.execute('ALTER TABLE $tableLotes ADD COLUMN municipioId TEXT');
     }
   }
 
@@ -75,6 +93,12 @@ class DatabaseHelper {
     await _createHallazgos(db);
     await _createTratamientos(db);
     await _createObservaciones(db);
+    // Catálogos
+    await _createCatalogoCultivos(db);
+    await _createCatalogoMunicipios(db);
+    await _createCatalogoPlagas(db);
+    await _createCatalogoFertilizantes(db);
+    await _createCatalogoTiposSuelo(db);
   }
 
   // ─── Tablas ───────────────────────────────────────────────
@@ -224,6 +248,89 @@ class DatabaseHelper {
     ''');
   }
 
+  // ─── Tablas de Catálogos (Sprint 2) ─────────────────────────
+
+  Future<void> _createCatalogoCultivos(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS $tableCatCultivos (
+        id TEXT PRIMARY KEY,
+        nombre TEXT NOT NULL,
+        nombreCientifico TEXT,
+        categoria TEXT,
+        cicloVegetativo TEXT,
+        diasCosecha INTEGER,
+        densidadSiembraPorHa INTEGER,
+        descripcion TEXT,
+        activo INTEGER DEFAULT 1,
+        syncedAt TEXT
+      )
+    ''');
+  }
+
+  Future<void> _createCatalogoMunicipios(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS $tableCatMunicipios (
+        id TEXT PRIMARY KEY,
+        codigoDane TEXT,
+        nombre TEXT NOT NULL,
+        subregion TEXT,
+        latitud REAL,
+        longitud REAL,
+        activo INTEGER DEFAULT 1,
+        syncedAt TEXT
+      )
+    ''');
+  }
+
+  Future<void> _createCatalogoPlagas(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS $tableCatPlagas (
+        id TEXT PRIMARY KEY,
+        nombre TEXT NOT NULL,
+        nombreCientifico TEXT,
+        tipo TEXT,
+        severidadTipica TEXT,
+        sintomas TEXT,
+        cultivosAfectados TEXT,
+        activo INTEGER DEFAULT 1,
+        syncedAt TEXT
+      )
+    ''');
+  }
+
+  Future<void> _createCatalogoFertilizantes(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS $tableCatFertilizantes (
+        id TEXT PRIMARY KEY,
+        nombre TEXT NOT NULL,
+        tipo TEXT,
+        composicionNpk TEXT,
+        presentacion TEXT,
+        dosisRecomendadaKgHa REAL,
+        descripcion TEXT,
+        activo INTEGER DEFAULT 1,
+        syncedAt TEXT
+      )
+    ''');
+  }
+
+  Future<void> _createCatalogoTiposSuelo(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS $tableCatTiposSuelo (
+        id TEXT PRIMARY KEY,
+        nombre TEXT NOT NULL,
+        clase TEXT,
+        drenaje TEXT,
+        retencionHumedadPct REAL,
+        phTipico REAL,
+        cultivosRecomendados TEXT,
+        descripcion TEXT,
+        activo INTEGER DEFAULT 1,
+        syncedAt TEXT
+      )
+    ''');
+  }
+
   // ─── Operaciones genéricas ─────────────────────────────────
 
   Future<int> insert(String table, Map<String, dynamic> row) async {
@@ -277,6 +384,25 @@ class DatabaseHelper {
     final batch = db.batch();
     for (final lote in lotes) {
       batch.insert(tableLotes, lote, conflictAlgorithm: ConflictAlgorithm.replace);
+    }
+    await batch.commit(noResult: true);
+  }
+
+  // ─── Catálogos ─────────────────────────────────────────────
+
+  Future<void> upsertCatalogo(String table, List<Map<String, dynamic>> items) async {
+    final db = await database;
+    final batch = db.batch();
+    final syncedAt = DateTime.now().toIso8601String();
+    
+    for (final item in items) {
+      final data = Map<String, dynamic>.from(item);
+      data['syncedAt'] = syncedAt;
+      // Convertir booleanos a enteros para SQLite
+      if (data.containsKey('activo')) {
+        data['activo'] = (data['activo'] == true || data['activo'] == 1) ? 1 : 0;
+      }
+      batch.insert(table, data, conflictAlgorithm: ConflictAlgorithm.replace);
     }
     await batch.commit(noResult: true);
   }

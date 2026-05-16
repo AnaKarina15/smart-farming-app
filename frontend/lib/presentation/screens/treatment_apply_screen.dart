@@ -13,7 +13,6 @@ import 'package:provider/provider.dart';
 import '../../core/storage/database_helper.dart';
 import '../../data/providers/auth_provider.dart';
 import '../../data/providers/lotes_provider.dart';
-import '../../data/models/lote_model.dart';
 
 class TreatmentApplyScreen extends StatefulWidget {
   final String? alertLoteName;
@@ -70,7 +69,8 @@ class _TreatmentApplyScreenState extends State<TreatmentApplyScreen> {
         if (mounted) {
           setState(() {
             if (widget.alertLoteName != null) {
-              final found = lotes.where((l) => l.nombre == widget.alertLoteName).toList();
+              final found =
+                  lotes.where((l) => l.nombre == widget.alertLoteName).toList();
               if (found.isNotEmpty) {
                 _loteId = found.first.id;
                 _loteNombre = found.first.nombre;
@@ -141,7 +141,8 @@ class _TreatmentApplyScreenState extends State<TreatmentApplyScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
                     color: AppColors.surfaceContainerLowest,
-                    border: Border.all(color: AppColors.outlineVariant, width: 1),
+                    border:
+                        Border.all(color: AppColors.outlineVariant, width: 1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: DropdownButtonHideUnderline(
@@ -151,7 +152,8 @@ class _TreatmentApplyScreenState extends State<TreatmentApplyScreen> {
                       icon: const Icon(Icons.arrow_drop_down,
                           color: AppColors.onSurfaceVariant),
                       items: lotes
-                          .map((l) => DropdownMenuItem(value: l.id, child: Text(l.nombre)))
+                          .map((l) => DropdownMenuItem(
+                              value: l.id, child: Text(l.nombre)))
                           .toList(),
                       onChanged: (v) {
                         if (v == null) return;
@@ -235,45 +237,49 @@ class _TreatmentApplyScreenState extends State<TreatmentApplyScreen> {
             RuggedButton(
               text: _guardando ? 'GUARDANDO...' : 'REGISTRAR',
               icon: Icons.check_circle,
-              onPressed: _guardando ? () {} : () async {
-                if (_loteId == null) return;
-                setState(() => _guardando = true);
+              onPressed: _guardando
+                  ? () {}
+                  : () async {
+                      if (_loteId == null) return;
+                      setState(() => _guardando = true);
 
-                final user = context.read<AuthProvider>().currentUser;
-                final userId = user?.id ?? 'unknown';
-                final id = 'trat_${DateTime.now().millisecondsSinceEpoch}';
-                final now = DateTime.now().toIso8601String();
+                      final user = context.read<AuthProvider>().currentUser;
+                      final userId = user?.id ?? 'unknown';
+                      final id =
+                          'trat_${DateTime.now().millisecondsSinceEpoch}';
+                      final now = DateTime.now().toIso8601String();
 
-                await DatabaseHelper.instance.insert(DatabaseHelper.tableTratamientos, {
-                  'id': id,
-                  'hallazgoId': null,
-                  'loteId': _loteId,
-                  'loteNombre': _loteNombre,
-                  'producto': _insumoCtrl.text,
-                  'dosis': double.tryParse(_dosisCtrl.text) ?? 0.0,
-                  'unidad': _unidad,
-                  'metodoAplicacion': _metodo,
-                  'fecha': now,
-                  'observaciones': _obsCtrl.text,
-                  'userId': userId,
-                  'createdAt': now,
-                  'isPendingSync': 1,
-                });
+                      await DatabaseHelper.instance
+                          .insert(DatabaseHelper.tableTratamientos, {
+                        'id': id,
+                        'hallazgoId': null,
+                        'loteId': _loteId,
+                        'loteNombre': _loteNombre,
+                        'producto': _insumoCtrl.text,
+                        'dosis': double.tryParse(_dosisCtrl.text) ?? 0.0,
+                        'unidad': _unidad,
+                        'metodoAplicacion': _metodo,
+                        'fecha': now,
+                        'observaciones': _obsCtrl.text,
+                        'userId': userId,
+                        'createdAt': now,
+                        'isPendingSync': 1,
+                      });
 
-                if (!mounted) return;
-                setState(() => _guardando = false);
+                      if (!mounted) return;
+                      setState(() => _guardando = false);
 
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => TreatmentSuccessScreen(
-                      lote: _loteNombre ?? '',
-                      metodo: _metodo,
-                      currentTab: widget.currentTab,
-                    ),
-                  ),
-                );
-              },
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => TreatmentSuccessScreen(
+                            lote: _loteNombre ?? '',
+                            metodo: _metodo,
+                            currentTab: widget.currentTab,
+                          ),
+                        ),
+                      );
+                    },
             ),
             const SizedBox(height: 24),
           ],

@@ -15,6 +15,8 @@ import 'map_onboarding_screen.dart';
 import 'profile_screen.dart';
 import 'tasks_screen.dart';
 import 'lotes_list_screen.dart';
+import '../../data/providers/catalogos_provider.dart';
+import 'package:provider/provider.dart';
 
 class RegisterLoteScreen extends StatefulWidget {
   const RegisterLoteScreen({super.key});
@@ -32,6 +34,9 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
   String? _locationLabel;
   bool _loadingLocation = false;
   bool _saving = false;
+
+  String? _selectedCultivoId;
+  String? _selectedMunicipioId;
 
   int? _draggingPointIndex;
   List<Offset> _polygonPoints = [
@@ -448,6 +453,82 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                         ),
                         contentPadding: const EdgeInsets.all(14),
                       ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // ── Cultivo (Catálogo) ────────────────────────────────
+                    Text('CULTIVO ACTUAL (OPCIONAL)', style: AppText.labelCaps()),
+                    const SizedBox(height: 8),
+                    Consumer<CatalogosProvider>(
+                      builder: (context, provider, child) {
+                        return DropdownButtonFormField<String>(
+                          value: _selectedCultivoId,
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: AppColors.surface,
+                            hintText: 'Selecciona un cultivo',
+                            prefixIcon: Icon(Icons.agriculture,
+                                color: AppColors.primary, size: 20),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                  color: AppColors.outlineVariant),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                  color: AppColors.outlineVariant),
+                            ),
+                            contentPadding: const EdgeInsets.all(14),
+                          ),
+                          items: provider.cultivos.map((c) {
+                            return DropdownMenuItem(
+                              value: c.id,
+                              child: Text(c.nombre),
+                            );
+                          }).toList(),
+                          onChanged: (val) =>
+                              setState(() => _selectedCultivoId = val),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    // ── Municipio (Catálogo) ──────────────────────────────
+                    Text('MUNICIPIO (OPCIONAL)', style: AppText.labelCaps()),
+                    const SizedBox(height: 8),
+                    Consumer<CatalogosProvider>(
+                      builder: (context, provider, child) {
+                        return DropdownButtonFormField<String>(
+                          value: _selectedMunicipioId,
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: AppColors.surface,
+                            hintText: 'Selecciona un municipio',
+                            prefixIcon: Icon(Icons.location_city,
+                                color: AppColors.primary, size: 20),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                  color: AppColors.outlineVariant),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                  color: AppColors.outlineVariant),
+                            ),
+                            contentPadding: const EdgeInsets.all(14),
+                          ),
+                          items: provider.municipios.map((m) {
+                            return DropdownMenuItem(
+                              value: m.id,
+                              child: Text(m.nombre),
+                            );
+                          }).toList(),
+                          onChanged: (val) =>
+                              setState(() => _selectedMunicipioId = val),
+                        );
+                      },
                     ),
                     const SizedBox(height: 16),
 

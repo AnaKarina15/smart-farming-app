@@ -8,7 +8,7 @@ import 'home_screen.dart';
 import 'map_onboarding_screen.dart';
 import 'profile_screen.dart';
 import 'irrigation_screen.dart';
-import 'phytosanitary_screen.dart';
+import 'evaluation_screen.dart';
 
 class TasksScreen extends StatelessWidget {
   const TasksScreen({super.key});
@@ -102,7 +102,12 @@ class TasksScreen extends StatelessWidget {
               onAction: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (_) => const PhytosanitaryScreen())),
+                      builder: (_) => const EvaluationScreen(
+                            loteName: 'Lote 1',
+                            plagueName: 'Gusano Cogollero',
+                            treatment: 'Control Biológico',
+                            treatmentTime: '36H',
+                          ))),
             ),
             const SizedBox(height: 16),
 

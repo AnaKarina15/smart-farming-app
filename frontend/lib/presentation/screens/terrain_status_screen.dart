@@ -45,7 +45,7 @@ class _TerrainStatusScreenState extends State<TerrainStatusScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Estado del terreno',
-                style: AppText.h3(color: AppColors.onSurface)),
+                style: AppText.h2(color: AppColors.onSurface)),
             const SizedBox(height: 5),
             Text(
               'Seleccione la condición actual del lote asignado.',

@@ -48,54 +48,36 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Left: Back and/or Avatar
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (showBack)
-                    IconButton(
-                      onPressed: onBackTap ?? () => Navigator.of(context).pop(),
-                      icon: const Icon(
-                        Icons.arrow_back,
-                        color: AppColors.onSurface,
-                        size: 28,
+              // Left: Avatar
+              if (showAvatar)
+                GestureDetector(
+                  onTap: onAvatarTap ?? () => profileImage.pickImage(context),
+                  child: Container(
+                    width: 45,
+                    height: 45,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.surfaceContainerHigh,
+                      border: Border.all(
+                        color: AppColors.outlineVariant,
+                        width: 1,
                       ),
-                      splashRadius: 24,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
+                      image: profileImage.imageFile != null
+                          ? DecorationImage(
+                              image: FileImage(profileImage.imageFile!),
+                              fit: BoxFit.cover,
+                            )
+                          : const DecorationImage(
+                              image: NetworkImage(
+                                'https://lh3.googleusercontent.com/aida-public/AB6AXuCTJGCEi16aUTDw3teJYYIG4o1sxhol2vxdeCDJd_xTonNe12Xf1kwbshQ25TtdlrWtlRcQjf1jwF9dTVqHu1tyjOt6u5S7TfEBN9pj9aRcwZZlN1gyXHmJZdWvkNY4gZj2fKmnxNlRKM9M2x--gjPXGDZOM4ROQ29HS6R_mNK7AM-xsv_0nRQcjbocYWRLFNyyNxlBsP3KuhDLKcX8mj7LaEVo1rnPVG4XYxIHCN3svc1Hz144HJM-1Nl4V5xfFKi41FQgiNCpX4p3',
+                              ),
+                              fit: BoxFit.cover,
+                            ),
                     ),
-                  if (showBack && showAvatar) const SizedBox(width: 12),
-                  if (showAvatar)
-                    GestureDetector(
-                      onTap:
-                          onAvatarTap ?? () => profileImage.pickImage(context),
-                      child: Container(
-                        width: 45,
-                        height: 45,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppColors.surfaceContainerHigh,
-                          border: Border.all(
-                            color: AppColors.outlineVariant,
-                            width: 1,
-                          ),
-                          image: profileImage.imageFile != null
-                              ? DecorationImage(
-                                  image: FileImage(profileImage.imageFile!),
-                                  fit: BoxFit.cover,
-                                )
-                              : const DecorationImage(
-                                  image: NetworkImage(
-                                    'https://lh3.googleusercontent.com/aida-public/AB6AXuCTJGCEi16aUTDw3teJYYIG4o1sxhol2vxdeCDJd_xTonNe12Xf1kwbshQ25TtdlrWtlRcQjf1jwF9dTVqHu1tyjOt6u5S7TfEBN9pj9aRcwZZlN1gyXHmJZdWvkNY4gZj2fKmnxNlRKM9M2x--gjPXGDZOM4ROQ29HS6R_mNK7AM-xsv_0nRQcjbocYWRLFNyyNxlBsP3KuhDLKcX8mj7LaEVo1rnPVG4XYxIHCN3svc1Hz144HJM-1Nl4V5xfFKi41FQgiNCpX4p3',
-                                  ),
-                                  fit: BoxFit.cover,
-                                ),
-                        ),
-                      ),
-                    ),
-                  if (!showBack && !showAvatar) const SizedBox(width: 48),
-                ],
-              ),
+                  ),
+                )
+              else
+                const SizedBox(width: 48),
 
               // Center: Title
               Text(

@@ -15,6 +15,9 @@ import 'phytosanitary_screen.dart';
 import 'tasks_screen.dart';
 import 'register_lote_screen.dart';
 import 'lote_history_screen.dart';
+import 'package:provider/provider.dart';
+import '../../data/providers/lotes_provider.dart';
+import '../../data/models/lote_model.dart';
 
 /// Vista principal de Lotes — mapa aéreo + lista de cards.
 class LotesListScreen extends StatefulWidget {
@@ -40,51 +43,11 @@ class LotesListScreen extends StatefulWidget {
 class _LotesListScreenState extends State<LotesListScreen> {
   bool _showSuccess = false;
   int? _selectedLoteIndex;
-  late List<_LoteData> _lotes;
 
   @override
   void initState() {
     super.initState();
-    _lotes = [
-      _LoteData(
-        name: 'Lote 1',
-        subtitle: 'Sector Norte',
-        location: 'Vereda Las Palmas',
-        area: '3.2',
-        status: LoteStatus.active,
-      ),
-      _LoteData(
-        name: 'Lote 2',
-        subtitle: 'Ladera Este',
-        location: 'Finca El Progreso',
-        area: '1.8',
-        status: LoteStatus.active,
-      ),
-      _LoteData(
-        name: 'Lote 3',
-        subtitle: 'Valle Sur',
-        location: 'Km 12 vía principal',
-        area: '4.5',
-        status: LoteStatus.active,
-      ),
-    ];
-
-    if (widget.newLoteName != null) {
-      _lotes.insert(
-        0,
-        _LoteData(
-          name: widget.newLoteName!,
-          subtitle: '',
-          location: widget.newLoteLocation ?? 'Sin ubicación',
-          area: widget.newLoteArea ?? '—',
-          status: LoteStatus.active,
-          lat: widget.newLoteLat,
-          lng: widget.newLoteLng,
-          isNew: true,
-        ),
-      );
-      _showSuccess = true;
-    }
+    _showSuccess = widget.newLoteName != null;
   }
 
   Color _statusColor(LoteStatus s) {
@@ -98,6 +61,9 @@ class _LotesListScreenState extends State<LotesListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lotesProvider = context.watch<LotesProvider>();
+    final lotes = lotesProvider.lotes;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: const CustomAppBar(),
@@ -117,7 +83,7 @@ class _LotesListScreenState extends State<LotesListScreen> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'Registro de lote exitoso',
+                      'Operación exitosa',
                       style: AppText.bodyMd(color: AppColors.primary)
                           .copyWith(fontWeight: FontWeight.w700),
                     ),
@@ -150,7 +116,7 @@ class _LotesListScreenState extends State<LotesListScreen> {
                 // Polygons
                 CustomPaint(
                   painter: _AerialMapPainter(
-                    lotes: _lotes,
+                    lotes: lotes,
                     selectedIndex: _selectedLoteIndex,
                     statusColor: _statusColor,
                   ),
@@ -224,7 +190,7 @@ class _LotesListScreenState extends State<LotesListScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text('Mis Lotes', style: AppText.h2()),
-                        Text('${_lotes.length} registrados',
+                        Text('${lotes.length} registrados',
                             style: AppText.bodyMd(
                                 color: AppColors.onSurfaceVariant)),
                       ],
@@ -232,39 +198,44 @@ class _LotesListScreenState extends State<LotesListScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Scrollable cards
+                  // Scrollable cards or Empty State
                   Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Column(
-                        children: [
-                          ...List.generate(_lotes.length, (i) {
-                            final lote = _lotes[i];
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 14),
-                              child: GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    if (_selectedLoteIndex == i) {
-                                      _selectedLoteIndex =
-                                          null; // Toggle to close
-                                    } else {
-                                      _selectedLoteIndex = i;
-                                    }
-                                  });
-                                },
-                                child: _LoteCard(
-                                  lote: lote,
-                                  isSelected: _selectedLoteIndex == i,
-                                  statusColor: _statusColor(lote.status),
-                                ),
-                              ),
-                            );
-                          }),
-                          const SizedBox(height: 8),
-                        ],
-                      ),
-                    ),
+                    child: lotes.isEmpty
+                        ? _buildEmptyState(context)
+                        : SingleChildScrollView(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: Column(
+                              children: [
+                                ...List.generate(lotes.length, (i) {
+                                  final lote = lotes[i];
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 14),
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        setState(() {
+                                          if (_selectedLoteIndex == i) {
+                                            _selectedLoteIndex =
+                                                null; // Toggle to close
+                                          } else {
+                                            _selectedLoteIndex = i;
+                                          }
+                                        });
+                                      },
+                                      child: _LoteCard(
+                                        lote: lote,
+                                        isSelected: _selectedLoteIndex == i,
+                                        statusColor: _statusColor(
+                                            lote.estado == 'alerta'
+                                                ? LoteStatus.alert
+                                                : LoteStatus.active),
+                                      ),
+                                    ),
+                                  );
+                                }),
+                                const SizedBox(height: 8),
+                              ],
+                            ),
+                          ),
                   ),
                 ],
               ),
@@ -292,38 +263,51 @@ class _LotesListScreenState extends State<LotesListScreen> {
       ),
     );
   }
-}
 
-// ─── Data model ──────────────────────────────────────────────────────────────
+  Widget _buildEmptyState(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.landscape_outlined,
+              size: 80, color: AppColors.outlineVariant),
+          const SizedBox(height: 16),
+          Text(
+            'No tienes lotes registrados',
+            style: AppText.h3(color: AppColors.onSurfaceVariant),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Registra tu primer lote para comenzar\na gestionar tu finca.',
+            textAlign: TextAlign.center,
+            style: AppText.bodyMd(color: AppColors.outline),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const RegisterLoteScreen()),
+            ),
+            icon: const Icon(Icons.add),
+            label: const Text('REGISTRAR LOTE'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 enum LoteStatus { active, alert }
-
-class _LoteData {
-  final String name;
-  final String subtitle;
-  final String location;
-  final String area;
-  final LoteStatus status;
-  final double? lat;
-  final double? lng;
-  final bool isNew;
-
-  _LoteData({
-    required this.name,
-    required this.subtitle,
-    required this.location,
-    required this.area,
-    required this.status,
-    this.lat,
-    this.lng,
-    this.isNew = false,
-  });
-}
 
 // ─── Aerial map painter ───────────────────────────────────────────────────────
 
 class _AerialMapPainter extends CustomPainter {
-  final List<_LoteData> lotes;
+  final List<LoteModel> lotes;
   final int? selectedIndex;
   final Color Function(LoteStatus) statusColor;
 
@@ -369,8 +353,10 @@ class _AerialMapPainter extends CustomPainter {
       final lote = lotes[i];
       final poly = _polygons[i];
       final isSelected = i == selectedIndex;
-      final color =
-          isSelected ? const Color(0xFFD32F2F) : statusColor(lote.status);
+      final color = isSelected
+          ? const Color(0xFFD32F2F)
+          : statusColor(
+              lote.estado == 'alerta' ? LoteStatus.alert : LoteStatus.active);
 
       final path = Path();
       path.moveTo(poly[0].dx * w, poly[0].dy * h);
@@ -402,9 +388,7 @@ class _AerialMapPainter extends CustomPainter {
       final cy =
           poly.map((o) => o.dy).reduce((a, b) => a + b) / poly.length * h;
 
-      final label = lote.subtitle.isNotEmpty
-          ? '${lote.name}\n${lote.subtitle}'.toUpperCase()
-          : lote.name.toUpperCase();
+      final label = lote.nombre.toUpperCase();
 
       final tp = TextPainter(
         text: TextSpan(
@@ -438,7 +422,7 @@ class _AerialMapPainter extends CustomPainter {
 // ─── Lot card ─────────────────────────────────────────────────────────────────
 
 class _LoteCard extends StatefulWidget {
-  final _LoteData lote;
+  final LoteModel lote;
   final bool isSelected;
   final Color statusColor;
 
@@ -453,9 +437,7 @@ class _LoteCard extends StatefulWidget {
 }
 
 class _LoteCardState extends State<_LoteCard> {
-  String get _loteName => widget.lote.subtitle.isNotEmpty
-      ? '${widget.lote.name} — ${widget.lote.subtitle}'
-      : widget.lote.name;
+  String get _loteName => widget.lote.nombre;
 
   void _navigate(Widget screen) {
     Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
@@ -532,7 +514,11 @@ class _LoteCardState extends State<_LoteCard> {
                                   .copyWith(fontWeight: FontWeight.w700),
                             ),
                           ),
-                          if (widget.lote.isNew)
+                          // Si se creó hace menos de 5 minutos, mostrar badge de nuevo
+                          if (DateTime.now()
+                                  .difference(widget.lote.createdAt)
+                                  .inMinutes <
+                              5)
                             _Badge('NUEVO', AppColors.primary,
                                 AppColors.onPrimary),
                         ],
@@ -545,7 +531,7 @@ class _LoteCardState extends State<_LoteCard> {
                           const SizedBox(width: 3),
                           Expanded(
                             child: Text(
-                              widget.lote.location,
+                              widget.lote.descripcion ?? 'Sin ubicación',
                               style: AppText.bodyMd(
                                   color: AppColors.onSurfaceVariant),
                               maxLines: 1,
@@ -559,15 +545,16 @@ class _LoteCardState extends State<_LoteCard> {
                         children: [
                           _Chip(
                             icon: Icons.straighten,
-                            label: '${widget.lote.area} hec',
+                            label: '${widget.lote.superficieHectareas} hec',
                           ),
                           const SizedBox(width: 8),
                           _Chip(
-                            icon: widget.lote.lat != null
+                            icon: widget.lote.latitud != null
                                 ? Icons.gps_fixed
                                 : Icons.gps_not_fixed,
-                            label:
-                                widget.lote.lat != null ? 'GPS ✓' : 'Sin GPS',
+                            label: widget.lote.latitud != null
+                                ? 'GPS ✓'
+                                : 'Sin GPS',
                           ),
                         ],
                       ),

@@ -34,12 +34,10 @@ class FertilizationScreen extends StatefulWidget {
 class _FertilizationScreenState extends State<FertilizationScreen> {
   String? _selectedFertId;
   String? _selectedFertNombre;
-  double? _suggestedDose;
   int _amount = 50;
   String _unit = 'KG';
   String? _loteId;
   String? _loteNombre;
-  final _otherFertController = TextEditingController();
   final _amountController = TextEditingController();
   bool _guardando = false;
 
@@ -57,7 +55,6 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
 
   @override
   void dispose() {
-    _otherFertController.dispose();
     _amountController.dispose();
     super.dispose();
   }
@@ -111,7 +108,6 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
                 children: [
                   Text('Registro de Fertilización', style: AppText.h1()),
                   const SizedBox(height: 5),
-
                   Text('SELECCIONAR FERTILIZANTE', style: AppText.labelCaps()),
                   const SizedBox(height: 8),
                   Container(
@@ -125,87 +121,76 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
                     child: Consumer<CatalogosProvider>(
                       builder: (context, provider, child) {
                         final list = provider.fertilizantes;
-                        if (_selectedFertId == null && list.isNotEmpty) {
-                          _selectedFertId = list.first.id;
-                          _selectedFertNombre = list.first.nombre;
-                          _suggestedDose = list.first.dosisRecomendadaKgHa;
+                        if (list.isEmpty) {
+                          return Center(
+                            child: Text('Cargando catálogo...', 
+                              style: AppText.bodyMd(color: AppColors.outline)),
+                          );
                         }
 
-                        return DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            value: _selectedFertId,
-                            isExpanded: true,
-                            icon: const Icon(Icons.expand_more,
-                                color: AppColors.onSurfaceVariant),
-                            items: [
-                              ...list.map((e) => DropdownMenuItem(
-                                    value: e.id,
-                                    child: Text(e.nombre),
-                                  )),
-                              const DropdownMenuItem(
-                                value: 'OTROS',
-                                child: Text('Otro (especificar)'),
+                        return Autocomplete<Object>(
+                          initialValue: TextEditingValue(text: _selectedFertNombre ?? ''),
+                          optionsBuilder: (TextEditingValue textEditingValue) {
+                            if (textEditingValue.text == '') return list;
+                            return list.where((f) => f.nombre
+                                .toLowerCase()
+                                .contains(textEditingValue.text.toLowerCase()));
+                          },
+                          displayStringForOption: (option) => (option as dynamic).nombre,
+                          onSelected: (option) {
+                            setState(() {
+                              _selectedFertId = (option as dynamic).id;
+                              _selectedFertNombre = (option as dynamic).nombre;
+                            });
+                          },
+                          fieldViewBuilder: (ctx, controller, focusNode, onSubmitted) {
+                            return TextField(
+                              controller: controller,
+                              focusNode: focusNode,
+                              decoration: InputDecoration(
+                                hintText: 'Escribe el fertilizante...',
+                                hintStyle: AppText.bodyMd(color: AppColors.outline),
+                                prefixIcon: const Icon(Icons.search, color: AppColors.primary, size: 20),
+                                border: InputBorder.none,
+                                contentPadding: const EdgeInsets.symmetric(vertical: 16),
                               ),
-                            ],
-                            onChanged: (v) {
-                              if (v == null) return;
-                              setState(() {
-                                _selectedFertId = v;
-                                if (v != 'OTROS') {
-                                  final f = list.firstWhere((e) => e.id == v);
-                                  _selectedFertNombre = f.nombre;
-                                  _suggestedDose = f.dosisRecomendadaKgHa;
-                                } else {
-                                  _suggestedDose = null;
-                                }
-                              });
-                            },
-                          ),
+                            );
+                          },
+                          optionsViewBuilder: (ctx, onSelected, options) {
+                            return Align(
+                              alignment: Alignment.topLeft,
+                              child: Material(
+                                elevation: 8.0,
+                                borderRadius: BorderRadius.circular(12),
+                                child: Container(
+                                  width: MediaQuery.of(context).size.width - 80,
+                                  constraints: const BoxConstraints(maxHeight: 250),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: ListView.separated(
+                                    padding: EdgeInsets.zero,
+                                    shrinkWrap: true,
+                                    itemCount: options.length,
+                                    separatorBuilder: (c, i) => const Divider(height: 1),
+                                    itemBuilder: (ctx, index) {
+                                      final option = options.elementAt(index);
+                                      return ListTile(
+                                        title: Text((option as dynamic).nombre, style: AppText.bodyMd()),
+                                        onTap: () => onSelected(option),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
                         );
                       },
                     ),
                   ),
-                  if (_selectedFertId == 'OTROS') ...[
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _otherFertController,
-                      decoration: InputDecoration(
-                        filled: true,
-                        fillColor: AppColors.surfaceContainerLowest,
-                        hintText: 'Especifique el fertilizante...',
-                        hintStyle: AppText.bodyMd(color: AppColors.outline),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide:
-                              const BorderSide(color: AppColors.outlineVariant),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide:
-                              const BorderSide(color: AppColors.outlineVariant),
-                        ),
-                        contentPadding: const EdgeInsets.all(16),
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 15),
-
-                  // Tip
-                  Row(
-                    children: [
-                      const Icon(Icons.lightbulb,
-                          color: AppColors.secondary, size: 20),
-                      const SizedBox(width: 6),
-                      Text(
-                        _suggestedDose != null
-                            ? 'Dosis sugerida: $_suggestedDose $_unit'
-                            : 'Selecciona un fertilizante del catálogo para ver dosis',
-                        style: AppText.bodyMd(color: AppColors.secondary),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
-
+                  const SizedBox(height: 20),
                   Text('UNIDAD DE MEDIDA', style: AppText.labelCaps()),
                   const SizedBox(height: 8),
                   Container(
@@ -241,7 +226,6 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-
                   Text('CANTIDAD APLICADA', style: AppText.labelCaps()),
                   const SizedBox(height: 12),
                   Row(
@@ -313,7 +297,6 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
                     ],
                   ),
                   const SizedBox(height: 24),
-
                   Text('SELECCIONAR LOTE', style: AppText.labelCaps()),
                   const SizedBox(height: 12),
                   if (lotesProvider.isLoading && lotes.isEmpty)
@@ -347,10 +330,7 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
                             setState(() => _guardando = true);
 
                             final finalFertNombre =
-                                _selectedFertId == 'OTROS' &&
-                                        _otherFertController.text.isNotEmpty
-                                    ? _otherFertController.text
-                                    : (_selectedFertNombre ?? 'Desconocido');
+                                _selectedFertNombre ?? 'Desconocido';
 
                             final user =
                                 context.read<AuthProvider>().currentUser;
@@ -365,6 +345,7 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
                               'loteId': _loteId,
                               'loteNombre': _loteNombre,
                               'tipoFertilizante': _selectedFertId,
+                              'fertilizanteId': _selectedFertId,
                               'nombre': finalFertNombre,
                               'dosis': _amount,
                               'unidad': _unit,

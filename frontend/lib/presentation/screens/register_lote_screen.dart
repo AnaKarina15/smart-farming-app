@@ -14,9 +14,10 @@ import 'home_screen.dart';
 import 'map_onboarding_screen.dart';
 import 'profile_screen.dart';
 import 'tasks_screen.dart';
-import 'lotes_list_screen.dart';
-import '../../data/providers/catalogos_provider.dart';
 import 'package:provider/provider.dart';
+import '../../data/providers/lotes_provider.dart';
+import '../../data/providers/auth_provider.dart';
+import '../../data/providers/catalogos_provider.dart';
 
 class RegisterLoteScreen extends StatefulWidget {
   const RegisterLoteScreen({super.key});
@@ -35,7 +36,6 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
   bool _loadingLocation = false;
   bool _saving = false;
 
-  String? _selectedCultivoId;
   String? _selectedMunicipioId;
 
   int? _draggingPointIndex;
@@ -105,6 +105,20 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
           _locationLabel = parts.isNotEmpty
               ? parts.join(', ')
               : '${_lat!.toStringAsFixed(5)}, ${_lng!.toStringAsFixed(5)}';
+
+          // Auto-seleccionar municipio si coincide con el catálogo
+          final locality = p.locality;
+          if (locality != null) {
+            final catalogos = context.read<CatalogosProvider>();
+            try {
+              final match = catalogos.municipios.firstWhere(
+                (m) => m.nombre.toLowerCase().contains(locality.toLowerCase()),
+              );
+              _selectedMunicipioId = match.id;
+            } catch (_) {
+              // No hay coincidencia exacta, se queda manual
+            }
+          }
         }
       } catch (_) {
         _locationLabel =
@@ -125,31 +139,42 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
       _showSnack('Por favor ingresa un nombre para el lote.');
       return;
     }
-    setState(() => _saving = true);
-    await Future.delayed(const Duration(milliseconds: 700));
-    if (!mounted) return;
+    // ─── REAL SAVE ─────────────────────────────────────────
+    final auth = context.read<AuthProvider>();
+    final lotesProvider = context.read<LotesProvider>();
 
-    // Mark that lotes exist so onboarding is skipped next time
-    final prefs = await SharedPreferences.getInstance();
-    final isFirstLote = !(prefs.getBool('has_lotes') ?? false);
-    await prefs.setBool('has_lotes', true);
+    final success = await lotesProvider.crearLote(
+      nombre: name,
+      descripcion: _locationLabel,
+      superficieHectareas: double.tryParse(_areaController.text) ?? 0.0,
+      latitud: _lat,
+      longitud: _lng,
+      propietarioId: auth.currentUser?.id ?? 'unknown',
+    );
 
     setState(() => _saving = false);
 
+    if (!success) {
+      _showSnack('Error al guardar el lote: ${lotesProvider.errorMessage}');
+      return;
+    }
+
     if (!mounted) return;
+
+    // Verificar si es el primer lote para mostrar un mensaje especial
+    final prefs = await SharedPreferences.getInstance();
+    final isFirstLote = !(prefs.getBool('has_lotes') ?? false);
+    await prefs.setBool('has_lotes', true);
 
     // Show success dialog
     await showDialog(
         context: context,
         barrierDismissible: false,
-        barrierColor: Colors.black.withValues(alpha: 0.3), // slightly dim
         builder: (ctx) => BackdropFilter(
               filter: dart_ui.ImageFilter.blur(sigmaX: 8, sigmaY: 8),
               child: Dialog(
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(24)),
-                elevation: 0,
-                backgroundColor: Colors.white,
                 child: Padding(
                   padding: const EdgeInsets.all(28),
                   child: Column(
@@ -158,7 +183,7 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                       Container(
                         width: 72,
                         height: 72,
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           shape: BoxShape.circle,
                           color: AppColors.primaryContainer,
                         ),
@@ -184,7 +209,10 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: () => Navigator.pop(ctx),
+                          onPressed: () {
+                            Navigator.pop(ctx); // Close dialog
+                            Navigator.pop(context); // Back to list
+                          },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
                             foregroundColor: AppColors.onPrimary,
@@ -199,20 +227,6 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                 ),
               ),
             ));
-
-    if (!mounted) return;
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (_) => LotesListScreen(
-          newLoteName: name,
-          newLoteLocation: _locationLabel ?? 'Sin ubicación registrada',
-          newLoteLat: _lat,
-          newLoteLng: _lng,
-          newLoteArea: _areaController.text.trim(),
-        ),
-      ),
-    );
   }
 
   void _showSnack(String msg) {
@@ -456,77 +470,91 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // ── Cultivo (Catálogo) ────────────────────────────────
-                    Text('CULTIVO ACTUAL (OPCIONAL)', style: AppText.labelCaps()),
-                    const SizedBox(height: 8),
-                    Consumer<CatalogosProvider>(
-                      builder: (context, provider, child) {
-                        return DropdownButtonFormField<String>(
-                          value: _selectedCultivoId,
-                          decoration: InputDecoration(
-                            filled: true,
-                            fillColor: AppColors.surface,
-                            hintText: 'Selecciona un cultivo',
-                            prefixIcon: Icon(Icons.agriculture,
-                                color: AppColors.primary, size: 20),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                  color: AppColors.outlineVariant),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                  color: AppColors.outlineVariant),
-                            ),
-                            contentPadding: const EdgeInsets.all(14),
-                          ),
-                          items: provider.cultivos.map((c) {
-                            return DropdownMenuItem(
-                              value: c.id,
-                              child: Text(c.nombre),
-                            );
-                          }).toList(),
-                          onChanged: (val) =>
-                              setState(() => _selectedCultivoId = val),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 16),
-
                     // ── Municipio (Catálogo) ──────────────────────────────
                     Text('MUNICIPIO (OPCIONAL)', style: AppText.labelCaps()),
                     const SizedBox(height: 8),
                     Consumer<CatalogosProvider>(
                       builder: (context, provider, child) {
-                        return DropdownButtonFormField<String>(
-                          value: _selectedMunicipioId,
-                          decoration: InputDecoration(
-                            filled: true,
-                            fillColor: AppColors.surface,
-                            hintText: 'Selecciona un municipio',
-                            prefixIcon: Icon(Icons.location_city,
-                                color: AppColors.primary, size: 20),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                  color: AppColors.outlineVariant),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                  color: AppColors.outlineVariant),
-                            ),
-                            contentPadding: const EdgeInsets.all(14),
+                        final list = provider.municipios;
+                        if (list.isEmpty) {
+                          return Text('Cargando municipios...', 
+                            style: AppText.bodyMd(color: AppColors.outline));
+                        }
+
+                        String currentNombre = '';
+                        if (_selectedMunicipioId != null) {
+                          try {
+                            currentNombre = list.firstWhere((m) => m.id == _selectedMunicipioId).nombre;
+                          } catch (_) {}
+                        }
+
+                        return Container(
+                          height: 56,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            border: Border.all(color: AppColors.outlineVariant),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          items: provider.municipios.map((m) {
-                            return DropdownMenuItem(
-                              value: m.id,
-                              child: Text(m.nombre),
-                            );
-                          }).toList(),
-                          onChanged: (val) =>
-                              setState(() => _selectedMunicipioId = val),
+                          child: Autocomplete<Object>(
+                            key: ValueKey('auto_mun_$_selectedMunicipioId'),
+                            initialValue: TextEditingValue(text: currentNombre),
+                            optionsBuilder: (TextEditingValue textEditingValue) {
+                              if (textEditingValue.text == '') return list;
+                              return list.where((m) => m.nombre
+                                  .toLowerCase()
+                                  .contains(textEditingValue.text.toLowerCase()));
+                            },
+                            displayStringForOption: (option) => (option as dynamic).nombre,
+                            onSelected: (option) {
+                              setState(() {
+                                _selectedMunicipioId = (option as dynamic).id;
+                              });
+                            },
+                            fieldViewBuilder: (ctx, controller, focusNode, onSubmitted) {
+                              return TextField(
+                                controller: controller,
+                                focusNode: focusNode,
+                                decoration: InputDecoration(
+                                  hintText: 'Buscar municipio...',
+                                  hintStyle: AppText.bodyMd(color: AppColors.outline),
+                                  prefixIcon: const Icon(Icons.location_city, color: AppColors.primary, size: 20),
+                                  border: InputBorder.none,
+                                  contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                                ),
+                              );
+                            },
+                            optionsViewBuilder: (ctx, onSelected, options) {
+                              return Align(
+                                alignment: Alignment.topLeft,
+                                child: Material(
+                                  elevation: 8.0,
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Container(
+                                    width: MediaQuery.of(context).size.width - 80,
+                                    constraints: const BoxConstraints(maxHeight: 250),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: ListView.separated(
+                                      padding: EdgeInsets.zero,
+                                      shrinkWrap: true,
+                                      itemCount: options.length,
+                                      separatorBuilder: (c, i) => const Divider(height: 1),
+                                      itemBuilder: (ctx, index) {
+                                        final option = options.elementAt(index);
+                                        return ListTile(
+                                          title: Text((option as dynamic).nombre, style: AppText.bodyMd()),
+                                          onTap: () => onSelected(option),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                         );
                       },
                     ),

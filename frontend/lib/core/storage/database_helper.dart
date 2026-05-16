@@ -15,7 +15,7 @@ import 'package:path_provider/path_provider.dart';
 /// - observaciones  → observaciones generales del campo
 class DatabaseHelper {
   static const _databaseName = 'AgroField.db';
-  static const _databaseVersion = 3;
+  static const _databaseVersion = 4;
 
   // Nombres de tablas
   static const tableLotes = 'lotes';
@@ -82,6 +82,11 @@ class DatabaseHelper {
       await db.execute('ALTER TABLE $tableLotes ADD COLUMN cultivoActualId TEXT');
       await db.execute('ALTER TABLE $tableLotes ADD COLUMN municipioId TEXT');
     }
+    if (oldVersion < 4) {
+      // Sprint 2: IDs de catálogos en tareas
+      await db.execute('ALTER TABLE $tableSiembras ADD COLUMN cultivoId TEXT');
+      await db.execute('ALTER TABLE $tableFertilizacion ADD COLUMN fertilizanteId TEXT');
+    }
   }
 
   Future<void> _createAllTables(Database db) async {
@@ -141,6 +146,7 @@ class DatabaseHelper {
         loteId TEXT NOT NULL,
         loteNombre TEXT NOT NULL,
         cultivo TEXT NOT NULL,
+        cultivoId TEXT,
         variedad TEXT,
         fecha TEXT NOT NULL,
         cantidadSemillas REAL,
@@ -181,6 +187,7 @@ class DatabaseHelper {
         loteId TEXT NOT NULL,
         loteNombre TEXT NOT NULL,
         tipoFertilizante TEXT NOT NULL,
+        fertilizanteId TEXT,
         nombre TEXT,
         dosis REAL,
         unidad TEXT,

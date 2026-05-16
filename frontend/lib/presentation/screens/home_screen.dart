@@ -151,10 +151,7 @@ class _HeroSectionState extends State<_HeroSection> {
         if (permission == LocationPermission.always ||
             permission == LocationPermission.whileInUse) {
           Position position = await Geolocator.getCurrentPosition(
-            locationSettings: const LocationSettings(
-              accuracy: LocationAccuracy.high,
-            ),
-          );
+              desiredAccuracy: LocationAccuracy.high);
 
           if (lotes.isNotEmpty) {
             double minDistance = double.infinity;
@@ -258,8 +255,7 @@ class _HeroSectionState extends State<_HeroSection> {
       }
 
       // 2. Fetch soil status
-      final url =
-          Uri.parse('${ApiEndpoints.baseUrl}/weather/sensor/humidity');
+      final url = Uri.parse('${ApiEndpoints.baseUrl}/weather/sensor/humidity');
       final response = await http.get(url).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -623,9 +619,7 @@ class _WeatherSectionState extends State<_WeatherSection> {
       }
 
       Position position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-        ),
+        desiredAccuracy: LocationAccuracy.high,
       );
 
       final data = await _weatherService.getWeatherData(
@@ -656,7 +650,8 @@ class _WeatherSectionState extends State<_WeatherSection> {
   }
 
   IconData _getTempIcon() {
-    if (_temperature == '...' || _temperature == '--°C') return Icons.thermostat;
+    if (_temperature == '...' || _temperature == '--°C')
+      return Icons.thermostat;
     try {
       final val =
           double.tryParse(_temperature.replaceAll('°C', '').trim()) ?? 25.0;
@@ -686,8 +681,7 @@ class _WeatherSectionState extends State<_WeatherSection> {
         Expanded(
             child: _buildCard(_getTempIcon(), 'Temperatura', _temperature)),
         const SizedBox(width: 8),
-        Expanded(
-            child: _buildCard(_getRainIcon(), 'Prob. Lluvia', _rainProb)),
+        Expanded(child: _buildCard(_getRainIcon(), 'Prob. Lluvia', _rainProb)),
       ],
     );
   }

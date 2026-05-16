@@ -21,6 +21,9 @@ export class UserResponseDto {
   @ApiPropertyOptional({ nullable: true })
   telefono!: string | null;
 
+  @ApiPropertyOptional({ nullable: true })
+  fotoPerfilUrl!: string | null;
+
   @ApiProperty({ enum: UserRole })
   role!: UserRole;
 
@@ -51,6 +54,7 @@ export class UserResponseDto {
     dto.nombreCompleto = user.nombreCompleto;
     dto.email = user.email;
     dto.telefono = user.telefono;
+    dto.fotoPerfilUrl = user.fotoPerfilUrl;
     dto.role = user.role;
     dto.activo = user.activo;
     dto.mustChangePassword = user.mustChangePassword;

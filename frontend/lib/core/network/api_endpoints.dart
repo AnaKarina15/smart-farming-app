@@ -25,6 +25,7 @@ class ApiEndpoints {
   static const String refresh = '/auth/refresh';
   static const String logout = '/auth/logout';
   static const String me = '/users/me';
+  static const String avatar = '/users/me/avatar';
   static const String lotes = '/lotes';
   static String loteById(String id) => '/lotes/$id';
   static const String health = '/health';

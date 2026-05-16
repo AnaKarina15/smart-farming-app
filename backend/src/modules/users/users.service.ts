@@ -91,6 +91,28 @@ export class UsersService {
     return UserResponseDto.fromEntity(user);
   }
 
+  async updateAvatar(id: string, file: Express.Multer.File): Promise<UserResponseDto> {
+    const user = await this.findById(id);
+    // In a real production app, we would upload to S3 or a CDN here.
+    // For this prototype, we'll assume a local static directory or a base64 string.
+    // Actually, we can just save the base64 string or a local path.
+    // If we use local storage in Multer, `file.filename` is the name.
+    const url = `/uploads/avatars/${file.filename}`;
+    
+    user.fotoPerfilUrl = url;
+    await this.usersRepo.save(user);
+
+    await this.auditService.log({
+      actorId: id,
+      action: 'user.update_avatar',
+      targetType: 'user',
+      targetId: id,
+      details: { url },
+    });
+
+    return this.toResponseDto(user);
+  }
+
   // ──────────────────────────────────────────────────────────
   // OPERACIONES ADMIN
   // ──────────────────────────────────────────────────────────

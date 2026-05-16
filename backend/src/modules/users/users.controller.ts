@@ -9,9 +9,14 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  UploadedFile,
+  UseInterceptors,
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -27,6 +32,7 @@ import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
 
 import { CreateUserDto } from './dto/create-user.dto';
+import { BadRequestException } from '@nestjs/common';
 import { ListUsersQueryDto } from './dto/list-users-query.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { AdminUpdateUserDto } from './dto/update-user.dto';
@@ -55,6 +61,39 @@ export class UsersController {
   async getMe(@CurrentUser() jwtUser: JwtPayload): Promise<UserResponseDto> {
     const user = await this.usersService.findById(jwtUser.sub);
     return this.usersService.toResponseDto(user);
+  }
+
+  @Post('me/avatar')
+  @ApiOperation({
+    summary: 'Subir foto de perfil',
+    description: 'Permite al usuario subir una foto de perfil. Retorna la URL del archivo guardado.',
+  })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: './public/uploads/avatars',
+        filename: (req, file, callback) => {
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const ext = extname(file.originalname);
+          const filename = `${uniqueSuffix}${ext}`;
+          callback(null, filename);
+        },
+      }),
+    }),
+  )
+  @ApiBody({
+    description: 'Archivo de imagen a subir',
+    required: true,
+  })
+  @ApiResponse({ status: 201, description: 'Foto de perfil actualizada', type: UserResponseDto })
+  async uploadAvatar(
+    @CurrentUser() jwtUser: JwtPayload,
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<UserResponseDto> {
+    if (!file) {
+      throw new BadRequestException('Archivo no subido');
+    }
+    return this.usersService.updateAvatar(jwtUser.sub, file);
   }
 
   // ════════════════════════════════════════════════════════

@@ -1,14 +1,24 @@
 import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../core/network/dio_client.dart';
+import '../../core/network/api_endpoints.dart';
 
 /// Shared provider that manages the user's profile photo.
 /// It notifies all listeners (CustomAppBar, ProfileScreen, etc.) when the photo changes.
 class ProfileImageProvider extends ChangeNotifier {
+  final DioClient? dioClient;
   File? _imageFile;
   final ImagePicker _picker = ImagePicker();
+  bool _isUploading = false;
+  String? _backendAvatarUrl;
+
+  ProfileImageProvider([this.dioClient]);
 
   File? get imageFile => _imageFile;
+  bool get isUploading => _isUploading;
+  String? get backendAvatarUrl => _backendAvatarUrl;
 
   /// Opens a bottom sheet for the user to choose camera or gallery,
   /// then picks the image, shows a confirmation dialog, and saves it.
@@ -131,6 +141,40 @@ class ProfileImageProvider extends ChangeNotifier {
 
     if (confirmed == true) {
       _imageFile = File(pickedFile.path);
+      notifyListeners();
+      
+      // Upload to backend
+      await _uploadToBackend(_imageFile!);
+    }
+  }
+
+  Future<void> _uploadToBackend(File file) async {
+    if (dioClient == null) return;
+    
+    _isUploading = true;
+    notifyListeners();
+
+    try {
+      final fileName = file.path.split('/').last;
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(file.path, filename: fileName),
+      });
+
+      final response = await dioClient!.dio.post(
+        ApiEndpoints.avatar,
+        data: formData,
+      );
+
+      if (response.statusCode == 201) {
+        final data = response.data;
+        // La API devuelve un UserResponseDto, leemos fotoPerfilUrl
+        _backendAvatarUrl = data['fotoPerfilUrl'];
+      }
+    } catch (e) {
+      debugPrint('Error uploading avatar: $e');
+      // Podriamos mostrar un toast o revertir la imagen, por ahora solo lo registramos
+    } finally {
+      _isUploading = false;
       notifyListeners();
     }
   }

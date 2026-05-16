@@ -6,7 +6,7 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "seed": "ts-node -r tsconfig-paths/register src/database/seeds/run-seeds.ts",
+    "seed": "ts-node src/database/seeds/run-seeds.ts",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
@@ -24,7 +24,6 @@
     "migration:run": "npm run typeorm -- migration:run -d src/database/data-source.ts",
     "migration:revert": "npm run typeorm -- migration:revert -d src/database/data-source.ts",
     "schema:sync": "npm run typeorm -- schema:sync -d src/database/data-source.ts",
-    "seed": "ts-node src/database/seeds/run-seeds.ts",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
     "docker:logs": "docker compose logs -f"
@@ -65,6 +64,7 @@
     "@types/compression": "^1.7.5",
     "@types/express": "^5.0.0",
     "@types/jest": "^29.5.14",
+    "@types/multer": "^2.1.0",
     "@types/node": "^22.10.0",
     "@types/passport-jwt": "^4.0.1",
     "@types/supertest": "^6.0.2",

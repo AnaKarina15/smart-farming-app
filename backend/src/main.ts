@@ -7,6 +7,8 @@ import compression from 'compression';
 import helmet from 'helmet';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 
+import { join } from 'path';
+
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
@@ -80,6 +82,11 @@ async function bootstrap(): Promise<void> {
   // Filtros e interceptores globales
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new TransformInterceptor());
+
+  // Servir archivos estaticos (uploads)
+  app.useStaticAssets(join(__dirname, '..', 'public'), {
+    prefix: '/public/',
+  });
 
   // Swagger / OpenAPI
   if (swaggerEnabled) {

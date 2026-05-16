@@ -32,6 +32,7 @@ void main() async {
     authService: authService,
     lotesService: lotesService,
     syncService: syncService,
+    dioClient: dioClient,
   ));
 }
 
@@ -40,6 +41,7 @@ class SmartFarmingApp extends StatelessWidget {
   final AuthService authService;
   final LotesService lotesService;
   final SyncService syncService;
+  final DioClient dioClient;
 
   const SmartFarmingApp({
     super.key,
@@ -47,6 +49,7 @@ class SmartFarmingApp extends StatelessWidget {
     required this.authService,
     required this.lotesService,
     required this.syncService,
+    required this.dioClient,
   });
 
   @override
@@ -70,7 +73,7 @@ class SmartFarmingApp extends StatelessWidget {
 
         // Provider de imagen de perfil
         ChangeNotifierProvider<ProfileImageProvider>(
-          create: (_) => ProfileImageProvider(),
+          create: (_) => ProfileImageProvider(dioClient),
         ),
       ],
       child: MaterialApp(

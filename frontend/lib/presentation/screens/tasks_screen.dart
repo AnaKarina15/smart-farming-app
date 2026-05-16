@@ -75,7 +75,7 @@ class TasksScreen extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                       builder: (_) =>
-                          const IrrigationScreen(fixedLote: 'Lote 1'))),
+                          const IrrigationScreen(fixedLote: 'Lote 1', currentTab: AgroTab.tareas))),
               footer: Text(
                 'Calculado con datos de ayer',
                 style: AppText.bodyMd(color: AppColors.onSecondaryContainer)
@@ -113,6 +113,7 @@ class TasksScreen extends StatelessWidget {
                             plagueName: 'Gusano Cogollero',
                             treatment: 'Control Biológico',
                             treatmentTime: '36H',
+                            currentTab: AgroTab.tareas,
                           ))),
             ),
             const SizedBox(height: 16),
@@ -142,7 +143,8 @@ class TasksScreen extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                       builder: (_) => const FertilizationScreen(
-                          fixedLote: 'Lote 2 - Ladera Este'))),
+                          fixedLote: 'Lote 2 - Ladera Este',
+                          currentTab: AgroTab.tareas))),
             ),
             const SizedBox(height: 16),
 

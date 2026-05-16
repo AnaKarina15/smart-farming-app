@@ -203,6 +203,7 @@ class _IrrigationScreenState extends State<IrrigationScreen> {
                     builder: (_) => IrrigationSuccessScreen(
                       lote: _selectedLote,
                       liters: _liters,
+                      currentTab: widget.currentTab,
                     ),
                   ),
                 );

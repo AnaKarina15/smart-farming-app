@@ -51,7 +51,7 @@ class _LotesListScreenState extends State<LotesListScreen> {
         subtitle: 'Sector Norte',
         location: 'Vereda Las Palmas',
         area: '3.2',
-        status: LoteStatus.alert,
+        status: LoteStatus.active,
       ),
       _LoteData(
         name: 'Lote 2',
@@ -246,7 +246,8 @@ class _LotesListScreenState extends State<LotesListScreen> {
                                 onTap: () {
                                   setState(() {
                                     if (_selectedLoteIndex == i) {
-                                      _selectedLoteIndex = null; // Toggle to close
+                                      _selectedLoteIndex =
+                                          null; // Toggle to close
                                     } else {
                                       _selectedLoteIndex = i;
                                     }

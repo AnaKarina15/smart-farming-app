@@ -52,7 +52,7 @@ class _SuccessScaffoldState extends State<SuccessScaffold> {
   @override
   void initState() {
     super.initState();
-    _timer = Timer(const Duration(seconds: 5), () {
+    _timer = Timer(const Duration(seconds: 3), () {
       if (mounted) {
         if (widget.onPrimaryPressed != null) {
           widget.onPrimaryPressed!();

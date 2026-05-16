@@ -6,18 +6,20 @@ class SoilSuccessScreen extends StatelessWidget {
   final String lote;
   final String perception;
   final AgroTab currentTab;
+  final bool isSensor;
 
   const SoilSuccessScreen({
     super.key,
     required this.lote,
     required this.perception,
     this.currentTab = AgroTab.home,
+    this.isSensor = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return SuccessScaffold(
-      title: '¡Percepción Guardada!',
+      title: isSensor ? '¡Humedad Registrada!' : '¡Percepción Guardada!',
       onlineSubtitle:
           'La información se ha registrado y sincronizado correctamente en tu cuenta.',
       offlineSubtitle:

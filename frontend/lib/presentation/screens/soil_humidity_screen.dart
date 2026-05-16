@@ -267,6 +267,7 @@ class _SoilHumidityScreenState extends State<SoilHumidityScreen> {
                       lote: _selectedLote,
                       perception: perceptionValue,
                       currentTab: widget.currentTab,
+                      isSensor: _isSensorMode,
                     ),
                   ),
                 );

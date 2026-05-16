@@ -14,6 +14,7 @@ class EvaluationScreen extends StatefulWidget {
   final String plagueName;
   final String treatment;
   final String treatmentTime;
+  final AgroTab currentTab;
 
   const EvaluationScreen({
     super.key,
@@ -21,6 +22,7 @@ class EvaluationScreen extends StatefulWidget {
     required this.plagueName,
     required this.treatment,
     required this.treatmentTime,
+    this.currentTab = AgroTab.home,
   });
 
   @override
@@ -255,6 +257,7 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
                               loteName: widget.loteName,
                               plagueName: widget.plagueName,
                               isControlled: _isControlled!,
+                              currentTab: widget.currentTab,
                             ),
                           ),
                         );

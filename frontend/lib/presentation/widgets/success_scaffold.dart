@@ -82,9 +82,7 @@ class SuccessScaffold extends StatelessWidget {
                           valueListenable: OfflineBanner.showGlobal,
                           builder: (context, isOffline, child) {
                             return Text(
-                              isOffline
-                                  ? offlineSubtitle
-                                  : onlineSubtitle,
+                              isOffline ? offlineSubtitle : onlineSubtitle,
                               textAlign: TextAlign.center,
                               style: AppText.bodyMd(
                                 color: AppColors.onSurfaceVariant,
@@ -93,7 +91,7 @@ class SuccessScaffold extends StatelessWidget {
                           },
                         ),
                       ),
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 25),
 
                       // ── Summary Card ─────────────────────────
                       Container(

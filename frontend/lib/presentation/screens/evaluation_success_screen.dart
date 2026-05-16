@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text.dart';
+import '../widgets/custom_app_bar.dart';
+import '../common/agro_bottom_nav.dart';
+import '../widgets/offline_banner.dart';
+import 'home_screen.dart';
+import 'map_onboarding_screen.dart';
+import 'profile_screen.dart';
 
 class EvaluationSuccessScreen extends StatelessWidget {
   final String loteName;
@@ -18,9 +24,10 @@ class EvaluationSuccessScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
+      appBar: const CustomAppBar(),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 48.0),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -53,20 +60,26 @@ class EvaluationSuccessScreen extends StatelessWidget {
               ),
               const SizedBox(height: 24),
 
-              // Offline message box
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceVariant.withOpacity(0.5),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  'La información se guardó en el celular y se sincronizará cuando tengas internet.',
-                  textAlign: TextAlign.center,
-                  style: AppText.bodyMd(color: AppColors.onSurfaceVariant).copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+              ValueListenableBuilder<bool>(
+                valueListenable: OfflineBanner.showGlobal,
+                builder: (context, isOffline, child) {
+                  return Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceVariant.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      isOffline
+                          ? 'La información se guardó en el celular y se sincronizará cuando tengas internet.'
+                          : 'La información se ha registrado y sincronizado correctamente en tu cuenta.',
+                      textAlign: TextAlign.center,
+                      style: AppText.bodyMd(color: AppColors.onSurfaceVariant).copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 32),
 
@@ -79,7 +92,7 @@ class EvaluationSuccessScreen extends StatelessWidget {
                   border: Border.all(color: AppColors.outlineVariant),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.02),
+                      color: Colors.black.withValues(alpha: 0.02),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -90,10 +103,11 @@ class EvaluationSuccessScreen extends StatelessWidget {
                   children: [
                     Text(
                       'RESUMEN DE REGISTRO',
-                      style: AppText.labelCaps(color: AppColors.primary).copyWith(fontWeight: FontWeight.bold),
+                      style: AppText.labelCaps(color: AppColors.primary)
+                          .copyWith(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 20),
-                    
+
                     // Location
                     _SummaryRow(
                       icon: Icons.location_on_outlined,
@@ -112,23 +126,38 @@ class EvaluationSuccessScreen extends StatelessWidget {
 
                     // Final State
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.assignment_outlined, color: AppColors.onSurfaceVariant, size: 20),
-                        const SizedBox(width: 12),
-                        Text(
-                          'Estado Final',
-                          style: AppText.bodyMd(color: AppColors.onSurfaceVariant).copyWith(fontWeight: FontWeight.bold),
-                        ),
-                        const Spacer(),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: isControlled ? AppColors.primary : AppColors.error,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            isControlled ? 'PLAGA CONTROLADA' : 'PLAGA CONTINÚA',
-                            style: AppText.labelCaps(color: Colors.white),
+                        const Icon(Icons.assignment_outlined,
+                            color: AppColors.onSurfaceVariant, size: 22),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'ESTADO FINAL',
+                                style: AppText.labelCaps(color: AppColors.onSurfaceVariant),
+                              ),
+                              const SizedBox(height: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: isControlled
+                                      ? AppColors.primary
+                                      : AppColors.error,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  isControlled
+                                      ? 'PLAGA CONTROLADA'
+                                      : 'PLAGA CONTINÚA',
+                                  style: AppText.labelCaps(color: Colors.white)
+                                      .copyWith(fontSize: 10),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
@@ -150,7 +179,7 @@ class EvaluationSuccessScreen extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(999),
                     ),
                   ),
                   child: Text(
@@ -162,6 +191,21 @@ class EvaluationSuccessScreen extends StatelessWidget {
             ],
           ),
         ),
+      ),
+      bottomNavigationBar: AgroBottomNav(
+        current: AgroTab.tareas,
+        onTap: (tab) {
+          if (tab == AgroTab.home) {
+            Navigator.pushReplacement(
+                context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+          } else if (tab == AgroTab.lotes) {
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (_) => const MapOnboardingScreen()));
+          } else if (tab == AgroTab.perfil) {
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (_) => const ProfileScreen()));
+          }
+        },
       ),
     );
   }
@@ -181,17 +225,25 @@ class _SummaryRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: AppColors.onSurfaceVariant, size: 20),
-        const SizedBox(width: 12),
-        Text(
-          label,
-          style: AppText.bodyMd(color: AppColors.onSurfaceVariant).copyWith(fontWeight: FontWeight.bold),
-        ),
-        const Spacer(),
-        Text(
-          value,
-          style: AppText.labelCaps(color: AppColors.onBackground).copyWith(fontWeight: FontWeight.bold),
+        Icon(icon, color: AppColors.onSurfaceVariant, size: 22),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label.toUpperCase(),
+                style: AppText.labelCaps(color: AppColors.onSurfaceVariant),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: AppText.h3(color: AppColors.onBackground).copyWith(fontSize: 16),
+              ),
+            ],
+          ),
         ),
       ],
     );

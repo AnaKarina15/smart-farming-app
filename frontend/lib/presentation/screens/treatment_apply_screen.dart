@@ -5,21 +5,40 @@ import '../common/agro_bottom_nav.dart';
 import '../widgets/custom_app_bar.dart';
 import '../widgets/rugged_button.dart';
 import 'treatment_success_screen.dart';
+import 'home_screen.dart';
+import 'map_onboarding_screen.dart';
+import 'profile_screen.dart';
+import 'tasks_screen.dart';
 
 class TreatmentApplyScreen extends StatefulWidget {
-  const TreatmentApplyScreen({super.key});
+  final String? alertLoteName;
+  final String? alertPlagueName;
+  final AgroTab currentTab;
+
+  const TreatmentApplyScreen({
+    super.key,
+    this.alertLoteName,
+    this.alertPlagueName,
+    this.currentTab = AgroTab.tareas,
+  });
 
   @override
   State<TreatmentApplyScreen> createState() => _TreatmentApplyScreenState();
 }
 
 class _TreatmentApplyScreenState extends State<TreatmentApplyScreen> {
-  String _lote = 'Lote 1 - Sector Norte';
+  late String _lote;
   String _unidad = 'L/ha';
   String _metodo = 'Mochila Pulverizadora';
   final _insumoCtrl = TextEditingController();
   final _dosisCtrl = TextEditingController();
   final _obsCtrl = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _lote = widget.alertLoteName ?? 'Lote 1 - Sector Norte';
+  }
 
   @override
   void dispose() {
@@ -35,54 +54,60 @@ class _TreatmentApplyScreenState extends State<TreatmentApplyScreen> {
       backgroundColor: AppColors.background,
       appBar: const CustomAppBar(),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(15),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Registrar tratamiento', style: AppText.h1()),
-            const SizedBox(height: 16),
-            // Yellow alert banner
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.warningContainer,
-                border: Border.all(color: const Color(0xFFEAB308), width: 1),
-                borderRadius: BorderRadius.circular(12),
+            Center(
+              child: Text(
+                'Registrar tratamiento',
+                textAlign: TextAlign.center,
+                style: AppText.h1(),
               ),
-              child: Row(
-                children: [
-                  const Icon(Icons.warning,
-                      color: AppColors.onWarningContainer, size: 28),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Tratando alerta: Lote 1',
-                      style: AppText.bodyLg(
-                              color: AppColors.onWarningContainer)
-                          .copyWith(fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 16),
+            if (widget.alertLoteName != null) ...[
+              // Yellow alert banner
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.warningContainer,
+                  border: Border.all(color: const Color(0xFFEAB308), width: 1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.warning,
+                        color: AppColors.onWarningContainer, size: 28),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Tratando alerta: ${widget.alertLoteName}',
+                        style:
+                            AppText.bodyLg(color: AppColors.onWarningContainer)
+                                .copyWith(fontWeight: FontWeight.w500),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-
-            _label('LOTE'),
-            _dropdown(
-              value: _lote,
-              items: const [
-                'Lote 1 - Sector Norte',
-                'Lote 2 - Sector Sur',
-                'Lote 3 - Invernadero A',
-              ],
-              onChanged: (v) => setState(() => _lote = v ?? _lote),
-            ),
-            const SizedBox(height: 16),
-
+              const SizedBox(height: 24),
+            ] else ...[
+              _label('LOTE'),
+              _dropdown(
+                value: _lote,
+                items: const [
+                  'Lote 1 - Sector Norte',
+                  'Lote 2 - Sector Sur',
+                  'Lote 3 - Invernadero A',
+                ],
+                onChanged: (v) => setState(() => _lote = v ?? _lote),
+              ),
+              const SizedBox(height: 16),
+            ],
             _label('INSUMO QUÍMICO'),
             _input(_insumoCtrl, 'Ej. Glifosato 48%'),
             const SizedBox(height: 16),
-
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -91,8 +116,7 @@ class _TreatmentApplyScreenState extends State<TreatmentApplyScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _label('DOSIS'),
-                      _input(_dosisCtrl, '0.0',
-                          keyboard: TextInputType.number),
+                      _input(_dosisCtrl, '0.0', keyboard: TextInputType.number),
                     ],
                   ),
                 ),
@@ -114,7 +138,6 @@ class _TreatmentApplyScreenState extends State<TreatmentApplyScreen> {
               ],
             ),
             const SizedBox(height: 16),
-
             _label('MÉTODO DE APLICACIÓN'),
             _dropdown(
               value: _metodo,
@@ -126,7 +149,6 @@ class _TreatmentApplyScreenState extends State<TreatmentApplyScreen> {
               onChanged: (v) => setState(() => _metodo = v ?? _metodo),
             ),
             const SizedBox(height: 16),
-
             _label('OBSERVACIONES'),
             const SizedBox(height: 8),
             TextField(
@@ -139,15 +161,13 @@ class _TreatmentApplyScreenState extends State<TreatmentApplyScreen> {
                 hintStyle: AppText.bodyMd(color: AppColors.outline),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide:
-                      const BorderSide(color: AppColors.outlineVariant),
+                  borderSide: const BorderSide(color: AppColors.outlineVariant),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide:
-                      const BorderSide(color: AppColors.outlineVariant),
+                  borderSide: const BorderSide(color: AppColors.outlineVariant),
                 ),
-                contentPadding: const EdgeInsets.all(16),
+                contentPadding: const EdgeInsets.all(12),
               ),
             ),
             const SizedBox(height: 32),
@@ -160,6 +180,7 @@ class _TreatmentApplyScreenState extends State<TreatmentApplyScreen> {
                   builder: (_) => TreatmentSuccessScreen(
                     lote: _lote,
                     metodo: _metodo,
+                    currentTab: widget.currentTab,
                   ),
                 ),
               ),
@@ -168,7 +189,24 @@ class _TreatmentApplyScreenState extends State<TreatmentApplyScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: const AgroBottomNav(current: AgroTab.tareas),
+      bottomNavigationBar: AgroBottomNav(
+        current: widget.currentTab,
+        onTap: (tab) {
+          if (tab == AgroTab.home) {
+            Navigator.pushReplacement(
+                context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+          } else if (tab == AgroTab.lotes) {
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (_) => const MapOnboardingScreen()));
+          } else if (tab == AgroTab.perfil) {
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (_) => const ProfileScreen()));
+          } else if (tab == AgroTab.tareas) {
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (_) => const TasksScreen()));
+          }
+        },
+      ),
     );
   }
 

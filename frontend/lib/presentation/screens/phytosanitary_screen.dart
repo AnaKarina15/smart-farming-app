@@ -7,6 +7,10 @@ import '../widgets/custom_app_bar.dart';
 import 'find_finding_screen.dart';
 import 'phyto_history_screen.dart';
 import 'treatment_apply_screen.dart';
+import 'home_screen.dart';
+import 'map_onboarding_screen.dart';
+import 'profile_screen.dart';
+import 'tasks_screen.dart';
 
 class PhytosanitaryScreen extends StatefulWidget {
   final AgroTab currentTab;
@@ -58,7 +62,7 @@ class _PhytosanitaryScreenState extends State<PhytosanitaryScreen> {
               icon: Icons.vaccines,
               title: 'Aplicar Tratamiento',
               subtitle: 'Ejecutar acciones correctivas',
-              destination: const TreatmentApplyScreen(),
+              destination: TreatmentApplyScreen(currentTab: widget.currentTab),
             ),
             const SizedBox(height: 12),
             _hubItem(
@@ -71,7 +75,24 @@ class _PhytosanitaryScreenState extends State<PhytosanitaryScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: AgroBottomNav(current: widget.currentTab),
+      bottomNavigationBar: AgroBottomNav(
+        current: widget.currentTab,
+        onTap: (tab) {
+          if (tab == AgroTab.home) {
+            Navigator.pushReplacement(
+                context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+          } else if (tab == AgroTab.lotes) {
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (_) => const MapOnboardingScreen()));
+          } else if (tab == AgroTab.perfil) {
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (_) => const ProfileScreen()));
+          } else if (tab == AgroTab.tareas) {
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (_) => const TasksScreen()));
+          }
+        },
+      ),
     );
   }
 

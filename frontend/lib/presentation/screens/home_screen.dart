@@ -151,7 +151,10 @@ class _HeroSectionState extends State<_HeroSection> {
         if (permission == LocationPermission.always ||
             permission == LocationPermission.whileInUse) {
           Position position = await Geolocator.getCurrentPosition(
-              desiredAccuracy: LocationAccuracy.high);
+            locationSettings: const LocationSettings(
+              accuracy: LocationAccuracy.high,
+            ),
+          );
 
           if (lotes.isNotEmpty) {
             double minDistance = double.infinity;
@@ -620,7 +623,9 @@ class _WeatherSectionState extends State<_WeatherSection> {
       }
 
       Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
       );
 
       final data = await _weatherService.getWeatherData(

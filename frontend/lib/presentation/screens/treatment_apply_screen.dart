@@ -37,7 +37,7 @@ class _TreatmentApplyScreenState extends State<TreatmentApplyScreen> {
   @override
   void initState() {
     super.initState();
-    _lote = widget.alertLoteName ?? 'Lote 1 - Sector Norte';
+    _lote = widget.alertLoteName ?? 'Lote 1 — Sector Norte';
   }
 
   @override
@@ -97,9 +97,9 @@ class _TreatmentApplyScreenState extends State<TreatmentApplyScreen> {
               _dropdown(
                 value: _lote,
                 items: const [
-                  'Lote 1 - Sector Norte',
-                  'Lote 2 - Sector Sur',
-                  'Lote 3 - Invernadero A',
+                  'Lote 1 — Sector Norte',
+                  'Lote 2 — Ladera Este',
+                  'Lote 3 — Valle Sur',
                 ],
                 onChanged: (v) => setState(() => _lote = v ?? _lote),
               ),

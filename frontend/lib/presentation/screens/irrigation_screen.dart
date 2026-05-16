@@ -33,7 +33,7 @@ class _IrrigationScreenState extends State<IrrigationScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedLote = widget.fixedLote ?? 'Lote 1';
+    _selectedLote = widget.fixedLote ?? 'Lote 1 — Sector Norte';
     _litersController = TextEditingController(text: _liters.toString());
   }
 
@@ -252,11 +252,17 @@ class _IrrigationScreenState extends State<IrrigationScreen> {
             color: AppColors.onSurfaceVariant,
           ),
           items: const [
-            DropdownMenuItem(value: 'Lote 1', child: Text('Lote 1')),
-            DropdownMenuItem(value: 'Lote 2', child: Text('Lote 2')),
-            DropdownMenuItem(value: 'Lote 3', child: Text('Lote 3')),
+            DropdownMenuItem(
+                value: 'Lote 1 — Sector Norte',
+                child: Text('Lote 1 — Sector Norte')),
+            DropdownMenuItem(
+                value: 'Lote 2 — Ladera Este',
+                child: Text('Lote 2 — Ladera Este')),
+            DropdownMenuItem(
+                value: 'Lote 3 — Valle Sur',
+                child: Text('Lote 3 — Valle Sur')),
           ],
-          onChanged: (v) => setState(() => _selectedLote = v ?? 'Lote 1'),
+          onChanged: (v) => setState(() => _selectedLote = v ?? 'Lote 1 — Sector Norte'),
         ),
       ),
     );

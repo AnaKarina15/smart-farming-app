@@ -37,7 +37,7 @@ class _SowingScreenState extends State<SowingScreen> {
   @override
   void initState() {
     super.initState();
-    _lote = widget.fixedLote ?? 'Lote Norte - Sector A1';
+    _lote = widget.fixedLote ?? 'Lote 1 — Sector Norte';
   }
 
   @override
@@ -296,20 +296,20 @@ class _SowingScreenState extends State<SowingScreen> {
                 ),
                 items: const [
                   DropdownMenuItem(
-                    value: 'Lote Norte - Sector A1',
-                    child: Text('Lote Norte - Sector A1'),
+                    value: 'Lote 1 — Sector Norte',
+                    child: Text('Lote 1 — Sector Norte'),
                   ),
                   DropdownMenuItem(
-                    value: 'Lote Sur - Sector B2',
-                    child: Text('Lote Sur - Sector B2'),
+                    value: 'Lote 2 — Ladera Este',
+                    child: Text('Lote 2 — Ladera Este'),
                   ),
                   DropdownMenuItem(
-                    value: 'Lote Este - Reserva',
-                    child: Text('Lote Este - Reserva'),
+                    value: 'Lote 3 — Valle Sur',
+                    child: Text('Lote 3 — Valle Sur'),
                   ),
                 ],
                 onChanged: (v) =>
-                    setState(() => _lote = v ?? 'Lote Norte - Sector A1'),
+                    setState(() => _lote = v ?? 'Lote 1 — Sector Norte'),
               ),
             ),
           ),

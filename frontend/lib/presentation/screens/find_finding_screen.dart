@@ -20,7 +20,7 @@ class FindFindingScreen extends StatefulWidget {
 }
 
 class _FindFindingScreenState extends State<FindFindingScreen> {
-  String _lote = 'LOTE Norte - 45B';
+  String _lote = 'Lote 1 — Sector Norte';
   String _tipo = 'INSECTO';
   String _severidad = 'MEDIO';
 
@@ -58,7 +58,11 @@ class _FindFindingScreenState extends State<FindFindingScreen> {
                   isExpanded: true,
                   icon: const Icon(Icons.keyboard_arrow_down,
                       color: AppColors.onSurfaceVariant),
-                  items: ['LOTE Norte - 45B', 'LOTE Sur - 12A']
+                  items: [
+                    'Lote 1 — Sector Norte',
+                    'Lote 2 — Ladera Este',
+                    'Lote 3 — Valle Sur'
+                  ]
                       .map((e) => DropdownMenuItem(value: e, child: Text(e)))
                       .toList(),
                   onChanged: (v) => setState(() => _lote = v ?? _lote),

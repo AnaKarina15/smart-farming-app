@@ -36,7 +36,7 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
   @override
   void initState() {
     super.initState();
-    _lote = widget.fixedLote ?? 'Lote 1 - Sector Norte';
+    _lote = widget.fixedLote ?? 'Lote 1 — Sector Norte';
     _amountController.text = _amount.toString();
   }
 
@@ -351,16 +351,17 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
               const Icon(Icons.expand_more, color: AppColors.onSurfaceVariant),
           items: const [
             DropdownMenuItem(
-                value: 'Lote 1 - Sector Norte',
-                child: Text('Lote 1 - Sector Norte')),
+                value: 'Lote 1 — Sector Norte',
+                child: Text('Lote 1 — Sector Norte')),
             DropdownMenuItem(
-                value: 'Lote 2 - Ladera Este',
-                child: Text('Lote 2 - Ladera Este')),
+                value: 'Lote 2 — Ladera Este',
+                child: Text('Lote 2 — Ladera Este')),
             DropdownMenuItem(
-                value: 'Lote 3 - Valle Sur', child: Text('Lote 3 - Valle Sur')),
+                value: 'Lote 3 — Valle Sur',
+                child: Text('Lote 3 — Valle Sur')),
           ],
           onChanged: (v) =>
-              setState(() => _lote = v ?? 'Lote 1 - Sector Norte'),
+              setState(() => _lote = v ?? 'Lote 1 — Sector Norte'),
         ),
       ),
     );

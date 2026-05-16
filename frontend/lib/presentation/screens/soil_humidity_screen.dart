@@ -103,11 +103,11 @@ class _SoilHumidityScreenState extends State<SoilHumidityScreen> {
 
   // Lotes simulados para asociar el registro o el sensor
   final List<String> _lotes = [
-    'Lote A (Norte)',
-    'Lote B (Sur)',
-    'Lote C (Este)'
+    'Lote 1 — Sector Norte',
+    'Lote 2 — Ladera Este',
+    'Lote 3 — Valle Sur'
   ];
-  String _selectedLote = 'Lote A (Norte)';
+  String _selectedLote = 'Lote 1 — Sector Norte';
 
   @override
   void initState() {

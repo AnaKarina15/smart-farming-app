@@ -38,14 +38,14 @@ class _TerrainStatusScreenState extends State<TerrainStatusScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: const CustomAppBar(),
+      appBar: const CustomAppBar(showBack: true),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Estado del terreno',
-                style: AppText.h3(color: const Color(0xFF1E5266))),
+                style: AppText.h3(color: AppColors.onSurface)),
             const SizedBox(height: 5),
             Text(
               'Seleccione la condición actual del lote asignado.',
@@ -150,9 +150,7 @@ class _TerrainStatusScreenState extends State<TerrainStatusScreen> {
             Text(
               label,
               style: AppText.labelCaps(
-                      color: isSelected
-                          ? Colors.white
-                          : AppColors.onSurface)
+                      color: isSelected ? Colors.white : AppColors.onSurface)
                   .copyWith(fontSize: 12),
             ),
           ],

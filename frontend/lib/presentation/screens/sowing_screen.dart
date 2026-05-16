@@ -30,7 +30,8 @@ class _SowingScreenState extends State<SowingScreen> {
   String _crop = 'Maíz';
   late String _lote;
   final TextEditingController _dateController = TextEditingController(
-    text: "${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}",
+    text:
+        "${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}",
   );
   final TextEditingController _otherCropController = TextEditingController();
 
@@ -51,7 +52,7 @@ class _SowingScreenState extends State<SowingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: const CustomAppBar(),
+      appBar: const CustomAppBar(showBack: true),
       body: Column(
         children: [
           const OfflineBanner(),
@@ -64,11 +65,10 @@ class _SowingScreenState extends State<SowingScreen> {
                   Text('Registrar Nueva Siembra', style: AppText.h1()),
                   const SizedBox(height: 5),
                   Text(
-                    'Complete los detalles técnicos del lote.',
+                    'Complete los detalles del lote.',
                     style: AppText.bodyMd(color: AppColors.onSurfaceVariant),
                   ),
-                  const SizedBox(height: 32),
-
+                  const SizedBox(height: 10),
                   Text('SELECCIONAR CULTIVO', style: AppText.labelCaps()),
                   const SizedBox(height: 8),
                   Container(
@@ -116,7 +116,6 @@ class _SowingScreenState extends State<SowingScreen> {
                     ),
                   ],
                   const SizedBox(height: 24),
-
                   Text('FECHA DE SIEMBRA', style: AppText.labelCaps()),
                   const SizedBox(height: 8),
                   TextField(
@@ -155,12 +154,10 @@ class _SowingScreenState extends State<SowingScreen> {
                     },
                   ),
                   const SizedBox(height: 24),
-
                   Text('LOTE ASIGNADO', style: AppText.labelCaps()),
                   const SizedBox(height: 8),
                   _selector(),
                   const SizedBox(height: 24),
-
                   Text('ESTADO PREVIO', style: AppText.labelCaps()),
                   const SizedBox(height: 12),
                   GestureDetector(
@@ -206,12 +203,6 @@ class _SowingScreenState extends State<SowingScreen> {
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                                Text(
-                                  'Verificar condiciones antes',
-                                  style: AppText.bodyMd(
-                                    color: AppColors.onSurfaceVariant,
-                                  ),
-                                ),
                               ],
                             ),
                           ),
@@ -224,7 +215,6 @@ class _SowingScreenState extends State<SowingScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-
                   RuggedButton(
                     text: 'GUARDAR CULTIVO',
                     icon: Icons.save,
@@ -255,8 +245,8 @@ class _SowingScreenState extends State<SowingScreen> {
         current: widget.currentTab,
         onTap: (tab) {
           if (tab == AgroTab.home) {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (_) => const HomeScreen()));
+            Navigator.pushReplacement(
+                context, MaterialPageRoute(builder: (_) => const HomeScreen()));
           } else if (tab == AgroTab.lotes) {
             Navigator.pushReplacement(context,
                 MaterialPageRoute(builder: (_) => const MapOnboardingScreen()));

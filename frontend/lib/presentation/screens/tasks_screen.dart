@@ -27,10 +27,9 @@ class TasksScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const OfflineBanner(),
-            const SizedBox(height: 2),
             Text('Sugerencias y Alertas del Sistema',
-                style: AppText.h2(color: AppColors.primary)),
-            const SizedBox(height: 5),
+                style: AppText.h2(color: AppColors.onSurface)),
+            const SizedBox(height: 10),
 
             // Card 1: Riego
             _TaskCard(
@@ -74,8 +73,8 @@ class TasksScreen extends StatelessWidget {
               onAction: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (_) =>
-                          const IrrigationScreen(fixedLote: 'Lote 1', currentTab: AgroTab.tareas))),
+                      builder: (_) => const IrrigationScreen(
+                          fixedLote: 'Lote 1', currentTab: AgroTab.tareas))),
               footer: Text(
                 'Calculado con datos de ayer',
                 style: AppText.bodyMd(color: AppColors.onSecondaryContainer)

@@ -58,7 +58,7 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: const CustomAppBar(),
+      appBar: const CustomAppBar(showBack: true),
       body: Column(
         children: [
           const OfflineBanner(),

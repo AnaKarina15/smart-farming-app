@@ -92,7 +92,7 @@ class _LotesListScreenState extends State<LotesListScreen> {
       case LoteStatus.alert:
         return const Color(0xFFD32F2F);
       case LoteStatus.active:
-        return const Color(0xFF2E5D42);
+        return const Color.fromARGB(255, 21, 40, 29);
     }
   }
 

@@ -27,7 +27,7 @@ class _PhytosanitaryScreenState extends State<PhytosanitaryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: const CustomAppBar(),
+      appBar: const CustomAppBar(showBack: true),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(

@@ -34,7 +34,7 @@ class FertilizationScreen extends StatefulWidget {
 class _FertilizationScreenState extends State<FertilizationScreen> {
   String? _selectedFertId;
   String? _selectedFertNombre;
-  int _amount = 50;
+  int _amount = 0;
   String _unit = 'KG';
   String? _loteId;
   String? _loteNombre;
@@ -123,36 +123,43 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
                         final list = provider.fertilizantes;
                         if (list.isEmpty) {
                           return Center(
-                            child: Text('Cargando catálogo...', 
-                              style: AppText.bodyMd(color: AppColors.outline)),
+                            child: Text('Cargando catálogo...',
+                                style:
+                                    AppText.bodyMd(color: AppColors.outline)),
                           );
                         }
 
                         return Autocomplete<Object>(
-                          initialValue: TextEditingValue(text: _selectedFertNombre ?? ''),
+                          initialValue:
+                              TextEditingValue(text: _selectedFertNombre ?? ''),
                           optionsBuilder: (TextEditingValue textEditingValue) {
                             if (textEditingValue.text == '') return list;
                             return list.where((f) => f.nombre
                                 .toLowerCase()
                                 .contains(textEditingValue.text.toLowerCase()));
                           },
-                          displayStringForOption: (option) => (option as dynamic).nombre,
+                          displayStringForOption: (option) =>
+                              (option as dynamic).nombre,
                           onSelected: (option) {
                             setState(() {
                               _selectedFertId = (option as dynamic).id;
                               _selectedFertNombre = (option as dynamic).nombre;
                             });
                           },
-                          fieldViewBuilder: (ctx, controller, focusNode, onSubmitted) {
+                          fieldViewBuilder:
+                              (ctx, controller, focusNode, onSubmitted) {
                             return TextField(
                               controller: controller,
                               focusNode: focusNode,
                               decoration: InputDecoration(
                                 hintText: 'Escribe el fertilizante...',
-                                hintStyle: AppText.bodyMd(color: AppColors.outline),
-                                prefixIcon: const Icon(Icons.search, color: AppColors.primary, size: 20),
+                                hintStyle:
+                                    AppText.bodyMd(color: AppColors.outline),
+                                prefixIcon: const Icon(Icons.search,
+                                    color: AppColors.primary, size: 20),
                                 border: InputBorder.none,
-                                contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                                contentPadding:
+                                    const EdgeInsets.symmetric(vertical: 16),
                               ),
                             );
                           },
@@ -164,7 +171,8 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
                                 borderRadius: BorderRadius.circular(12),
                                 child: Container(
                                   width: MediaQuery.of(context).size.width - 80,
-                                  constraints: const BoxConstraints(maxHeight: 250),
+                                  constraints:
+                                      const BoxConstraints(maxHeight: 250),
                                   decoration: BoxDecoration(
                                     color: Colors.white,
                                     borderRadius: BorderRadius.circular(12),
@@ -173,11 +181,13 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
                                     padding: EdgeInsets.zero,
                                     shrinkWrap: true,
                                     itemCount: options.length,
-                                    separatorBuilder: (c, i) => const Divider(height: 1),
+                                    separatorBuilder: (c, i) =>
+                                        const Divider(height: 1),
                                     itemBuilder: (ctx, index) {
                                       final option = options.elementAt(index);
                                       return ListTile(
-                                        title: Text((option as dynamic).nombre, style: AppText.bodyMd()),
+                                        title: Text((option as dynamic).nombre,
+                                            style: AppText.bodyMd()),
                                         onTap: () => onSelected(option),
                                       );
                                     },

@@ -31,7 +31,7 @@ class IrrigationScreen extends StatefulWidget {
 }
 
 class _IrrigationScreenState extends State<IrrigationScreen> {
-  int _liters = 10;
+  int _liters = 0;
   String? _loteId;
   String? _loteNombre;
   late TextEditingController _litersController;
@@ -72,7 +72,8 @@ class _IrrigationScreenState extends State<IrrigationScreen> {
         if (mounted) {
           setState(() {
             if (widget.fixedLote != null) {
-              final found = lotes.where((l) => l.nombre == widget.fixedLote).toList();
+              final found =
+                  lotes.where((l) => l.nombre == widget.fixedLote).toList();
               if (found.isNotEmpty) {
                 _loteId = found.first.id;
                 _loteNombre = found.first.nombre;
@@ -237,44 +238,48 @@ class _IrrigationScreenState extends State<IrrigationScreen> {
             RuggedButton(
               text: _guardando ? 'GUARDANDO...' : 'CONFIRMAR RIEGO',
               icon: Icons.check_circle,
-              onPressed: _guardando ? () {} : () async {
-                if (_loteId == null) return;
-                setState(() => _guardando = true);
+              onPressed: _guardando
+                  ? () {}
+                  : () async {
+                      if (_loteId == null) return;
+                      setState(() => _guardando = true);
 
-                final user = context.read<AuthProvider>().currentUser;
-                final userId = user?.id ?? 'unknown';
-                final id = 'riego_${DateTime.now().millisecondsSinceEpoch}';
-                final now = DateTime.now().toIso8601String();
+                      final user = context.read<AuthProvider>().currentUser;
+                      final userId = user?.id ?? 'unknown';
+                      final id =
+                          'riego_${DateTime.now().millisecondsSinceEpoch}';
+                      final now = DateTime.now().toIso8601String();
 
-                await DatabaseHelper.instance.insert(DatabaseHelper.tableRiego, {
-                  'id': id,
-                  'loteId': _loteId,
-                  'loteNombre': _loteNombre,
-                  'tipo': 'Manual',
-                  'duracionMinutos': null,
-                  'cantidadLitros': _liters,
-                  'fecha': now,
-                  'humedad': null,
-                  'observaciones': null,
-                  'userId': userId,
-                  'createdAt': now,
-                  'isPendingSync': 1,
-                });
+                      await DatabaseHelper.instance
+                          .insert(DatabaseHelper.tableRiego, {
+                        'id': id,
+                        'loteId': _loteId,
+                        'loteNombre': _loteNombre,
+                        'tipo': 'Manual',
+                        'duracionMinutos': null,
+                        'cantidadLitros': _liters,
+                        'fecha': now,
+                        'humedad': null,
+                        'observaciones': null,
+                        'userId': userId,
+                        'createdAt': now,
+                        'isPendingSync': 1,
+                      });
 
-                if (!mounted) return;
-                setState(() => _guardando = false);
+                      if (!mounted) return;
+                      setState(() => _guardando = false);
 
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => IrrigationSuccessScreen(
-                      lote: _loteNombre ?? '',
-                      liters: _liters,
-                      currentTab: widget.currentTab,
-                    ),
-                  ),
-                );
-              },
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => IrrigationSuccessScreen(
+                            lote: _loteNombre ?? '',
+                            liters: _liters,
+                            currentTab: widget.currentTab,
+                          ),
+                        ),
+                      );
+                    },
             ),
             const SizedBox(height: 24),
           ],

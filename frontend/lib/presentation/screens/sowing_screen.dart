@@ -122,36 +122,44 @@ class _SowingScreenState extends State<SowingScreen> {
                         final list = provider.cultivos;
                         if (list.isEmpty) {
                           return Center(
-                            child: Text('Cargando catálogo...', 
-                              style: AppText.bodyMd(color: AppColors.outline)),
+                            child: Text('Cargando catálogo...',
+                                style:
+                                    AppText.bodyMd(color: AppColors.outline)),
                           );
                         }
 
                         return Autocomplete<Object>(
-                          initialValue: TextEditingValue(text: _selectedCultivoNombre ?? ''),
+                          initialValue: TextEditingValue(
+                              text: _selectedCultivoNombre ?? ''),
                           optionsBuilder: (TextEditingValue textEditingValue) {
                             if (textEditingValue.text == '') return list;
                             return list.where((c) => c.nombre
                                 .toLowerCase()
                                 .contains(textEditingValue.text.toLowerCase()));
                           },
-                          displayStringForOption: (option) => (option as dynamic).nombre,
+                          displayStringForOption: (option) =>
+                              (option as dynamic).nombre,
                           onSelected: (option) {
                             setState(() {
                               _selectedCultivoId = (option as dynamic).id;
-                              _selectedCultivoNombre = (option as dynamic).nombre;
+                              _selectedCultivoNombre =
+                                  (option as dynamic).nombre;
                             });
                           },
-                          fieldViewBuilder: (ctx, controller, focusNode, onSubmitted) {
+                          fieldViewBuilder:
+                              (ctx, controller, focusNode, onSubmitted) {
                             return TextField(
                               controller: controller,
                               focusNode: focusNode,
                               decoration: InputDecoration(
                                 hintText: 'Escribe el cultivo...',
-                                hintStyle: AppText.bodyMd(color: AppColors.outline),
-                                prefixIcon: const Icon(Icons.search, color: AppColors.primary, size: 20),
+                                hintStyle:
+                                    AppText.bodyMd(color: AppColors.outline),
+                                prefixIcon: const Icon(Icons.search,
+                                    color: AppColors.primary, size: 20),
                                 border: InputBorder.none,
-                                contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                                contentPadding:
+                                    const EdgeInsets.symmetric(vertical: 16),
                               ),
                             );
                           },
@@ -163,7 +171,8 @@ class _SowingScreenState extends State<SowingScreen> {
                                 borderRadius: BorderRadius.circular(12),
                                 child: Container(
                                   width: MediaQuery.of(context).size.width - 80,
-                                  constraints: const BoxConstraints(maxHeight: 250),
+                                  constraints:
+                                      const BoxConstraints(maxHeight: 250),
                                   decoration: BoxDecoration(
                                     color: Colors.white,
                                     borderRadius: BorderRadius.circular(12),
@@ -172,11 +181,13 @@ class _SowingScreenState extends State<SowingScreen> {
                                     padding: EdgeInsets.zero,
                                     shrinkWrap: true,
                                     itemCount: options.length,
-                                    separatorBuilder: (c, i) => const Divider(height: 1),
+                                    separatorBuilder: (c, i) =>
+                                        const Divider(height: 1),
                                     itemBuilder: (ctx, index) {
                                       final option = options.elementAt(index);
                                       return ListTile(
-                                        title: Text((option as dynamic).nombre, style: AppText.bodyMd()),
+                                        title: Text((option as dynamic).nombre,
+                                            style: AppText.bodyMd()),
                                         onTap: () => onSelected(option),
                                       );
                                     },
@@ -245,11 +256,13 @@ class _SowingScreenState extends State<SowingScreen> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                              'Por favor, selecciona un lote primero',
+                              lotes.isEmpty
+                                  ? 'Por favor, agrega un lote primero'
+                                  : 'Por favor, selecciona un lote primero',
                               style: AppText.bodyMd(color: Colors.white)
                                   .copyWith(fontWeight: FontWeight.w600),
                             ),
-                            backgroundColor: AppColors.primary,
+                            backgroundColor: AppColors.error,
                             behavior: SnackBarBehavior.floating,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -309,7 +322,8 @@ class _SowingScreenState extends State<SowingScreen> {
                                   if (_loteNombre != null)
                                     Text(
                                       'Analizar condición de $_loteNombre',
-                                      style: AppText.bodyMd(color: AppColors.outline),
+                                      style: AppText.bodyMd(
+                                          color: AppColors.outline),
                                     ),
                                 ],
                               ),
@@ -323,17 +337,39 @@ class _SowingScreenState extends State<SowingScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
                   RuggedButton(
                     text: _guardando ? 'GUARDANDO...' : 'GUARDAR CULTIVO',
                     icon: Icons.save,
                     onPressed: _guardando
                         ? () {}
                         : () async {
-                            if (_loteId == null) return;
+                            if (_loteId == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    lotes.isEmpty
+                                        ? 'Por favor, agrega un lote primero'
+                                        : 'Por favor, selecciona un lote primero',
+                                    style: AppText.bodyMd(color: Colors.white)
+                                        .copyWith(fontWeight: FontWeight.w600),
+                                  ),
+                                  backgroundColor: AppColors.error,
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  margin:
+                                      const EdgeInsets.fromLTRB(24, 0, 24, 100),
+                                  duration: const Duration(seconds: 2),
+                                ),
+                              );
+                              return;
+                            }
                             setState(() => _guardando = true);
 
-                            final finalCropNombre = _selectedCultivoNombre ?? 'Desconocido';
+                            final finalCropNombre =
+                                _selectedCultivoNombre ?? 'Desconocido';
 
                             final user =
                                 context.read<AuthProvider>().currentUser;

@@ -6,8 +6,38 @@ import '../../data/providers/auth_provider.dart';
 import '../widgets/custom_app_bar.dart';
 import 'map_onboarding_screen.dart';
 
-class RegistrationSuccessScreen extends StatelessWidget {
+import 'dart:async';
+
+class RegistrationSuccessScreen extends StatefulWidget {
   const RegistrationSuccessScreen({super.key});
+
+  @override
+  State<RegistrationSuccessScreen> createState() => _RegistrationSuccessScreenState();
+}
+
+class _RegistrationSuccessScreenState extends State<RegistrationSuccessScreen> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer(const Duration(seconds: 5), () {
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const MapOnboardingScreen(),
+          ),
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

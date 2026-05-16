@@ -15,7 +15,8 @@ import 'viability_screen.dart';
 
 class SowingScreen extends StatefulWidget {
   final AgroTab currentTab;
-  const SowingScreen({super.key, this.currentTab = AgroTab.tareas});
+  final String? fixedLote;
+  const SowingScreen({super.key, this.currentTab = AgroTab.tareas, this.fixedLote});
 
   @override
   State<SowingScreen> createState() => _SowingScreenState();
@@ -23,9 +24,15 @@ class SowingScreen extends StatefulWidget {
 
 class _SowingScreenState extends State<SowingScreen> {
   String _crop = 'Maíz';
-  String _lote = 'Lote Norte - Sector A1';
+  late String _lote;
   final _dateController = TextEditingController(text: '24/05/2026');
   final _otherCropController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _lote = widget.fixedLote ?? 'Lote Norte - Sector A1';
+  }
 
   @override
   void dispose() {

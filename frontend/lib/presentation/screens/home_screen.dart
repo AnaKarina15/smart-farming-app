@@ -134,7 +134,7 @@ class _HeroSectionState extends State<_HeroSection> {
       // 1. Fetch lotes locally
       final lotes =
           await DatabaseHelper.instance.queryAllRows(DatabaseHelper.tableLotes);
-          
+
       // Obtener ubicación actual y Lote más cercano
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (serviceEnabled) {
@@ -142,69 +142,42 @@ class _HeroSectionState extends State<_HeroSection> {
         if (permission == LocationPermission.denied) {
           permission = await Geolocator.requestPermission();
         }
-        if (permission == LocationPermission.always || permission == LocationPermission.whileInUse) {
-           Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-           
-           if (lotes.isNotEmpty) {
-             double minDistance = double.infinity;
-             Map<String, dynamic>? closestLote;
+        if (permission == LocationPermission.always ||
+            permission == LocationPermission.whileInUse) {
+          Position position = await Geolocator.getCurrentPosition(
+              desiredAccuracy: LocationAccuracy.high);
 
-             for (var lote in lotes) {
-               if (lote['latitud'] != null && lote['longitud'] != null) {
-                 double distance = Geolocator.distanceBetween(
-                   position.latitude, 
-                   position.longitude, 
-                   (lote['latitud'] as num).toDouble(), 
-                   (lote['longitud'] as num).toDouble()
-                 );
-                 if (distance < minDistance) {
-                   minDistance = distance;
-                   closestLote = lote;
-                 }
-               }
-             }
+          if (lotes.isNotEmpty) {
+            double minDistance = double.infinity;
+            Map<String, dynamic>? closestLote;
 
-             if (mounted) {
-               if (closestLote != null && minDistance < 1000) { // 1km radius
-                 setState(() {
-                   _loteName = closestLote!['nombre'];
-                 });
-               } else {
-                 // Si no hay lote cerca, buscar nombre de ubicación real
-                 try {
-                   List<Placemark> placemarks = await placemarkFromCoordinates(
-                       position.latitude, position.longitude);
-                   if (placemarks.isNotEmpty) {
-                     Placemark place = placemarks[0];
-                      setState(() {
-                        String locality = place.locality ?? '';
-                        String area = place.subAdministrativeArea ?? '';
-                        if (locality == area || area.isEmpty) {
-                          _loteName = locality;
-                        } else if (locality.isEmpty) {
-                          _loteName = area;
-                        } else {
-                          _loteName = "$locality, $area";
-                        }
-                        if (_loteName.trim().isEmpty) {
-                          _loteName = 'Ubicación Actual';
-                        }
-                      });
-                   } else {
-                     setState(() => _loteName = 'Ubicación Actual');
-                   }
-                 } catch (_) {
-                   setState(() => _loteName = 'Ubicación Actual');
-                 }
-               }
-             }
-           } else {
-             if (mounted) {
-               try {
-                 List<Placemark> placemarks = await placemarkFromCoordinates(
-                     position.latitude, position.longitude);
-                 if (placemarks.isNotEmpty) {
-                   Placemark place = placemarks[0];
+            for (var lote in lotes) {
+              if (lote['latitud'] != null && lote['longitud'] != null) {
+                double distance = Geolocator.distanceBetween(
+                    position.latitude,
+                    position.longitude,
+                    (lote['latitud'] as num).toDouble(),
+                    (lote['longitud'] as num).toDouble());
+                if (distance < minDistance) {
+                  minDistance = distance;
+                  closestLote = lote;
+                }
+              }
+            }
+
+            if (mounted) {
+              if (closestLote != null && minDistance < 1000) {
+                // 1km radius
+                setState(() {
+                  _loteName = closestLote!['nombre'];
+                });
+              } else {
+                // Si no hay lote cerca, buscar nombre de ubicación real
+                try {
+                  List<Placemark> placemarks = await placemarkFromCoordinates(
+                      position.latitude, position.longitude);
+                  if (placemarks.isNotEmpty) {
+                    Placemark place = placemarks[0];
                     setState(() {
                       String locality = place.locality ?? '';
                       String area = place.subAdministrativeArea ?? '';
@@ -219,25 +192,58 @@ class _HeroSectionState extends State<_HeroSection> {
                         _loteName = 'Ubicación Actual';
                       }
                     });
-                 } else {
-                   setState(() => _loteName = 'Ubicación Actual');
-                 }
-               } catch (_) {
-                 setState(() => _loteName = 'Ubicación Actual');
-               }
-             }
-           }
+                  } else {
+                    setState(() => _loteName = 'Ubicación Actual');
+                  }
+                } catch (_) {
+                  setState(() => _loteName = 'Ubicación Actual');
+                }
+              }
+            }
+          } else {
+            if (mounted) {
+              try {
+                List<Placemark> placemarks = await placemarkFromCoordinates(
+                    position.latitude, position.longitude);
+                if (placemarks.isNotEmpty) {
+                  Placemark place = placemarks[0];
+                  setState(() {
+                    String locality = place.locality ?? '';
+                    String area = place.subAdministrativeArea ?? '';
+                    if (locality == area || area.isEmpty) {
+                      _loteName = locality;
+                    } else if (locality.isEmpty) {
+                      _loteName = area;
+                    } else {
+                      _loteName = "$locality, $area";
+                    }
+                    if (_loteName.trim().isEmpty) {
+                      _loteName = 'Ubicación Actual';
+                    }
+                  });
+                } else {
+                  setState(() => _loteName = 'Ubicación Actual');
+                }
+              } catch (_) {
+                setState(() => _loteName = 'Ubicación Actual');
+              }
+            }
+          }
         } else {
           if (mounted) {
             setState(() {
-              _loteName = lotes.isNotEmpty ? lotes.first['nombre'] : 'Ubicación Desconocida';
+              _loteName = lotes.isNotEmpty
+                  ? lotes.first['nombre']
+                  : 'Ubicación Desconocida';
             });
           }
         }
       } else {
         if (mounted) {
           setState(() {
-            _loteName = lotes.isNotEmpty ? lotes.first['nombre'] : 'Ubicación Desconocida';
+            _loteName = lotes.isNotEmpty
+                ? lotes.first['nombre']
+                : 'Ubicación Desconocida';
           });
         }
       }
@@ -441,11 +447,18 @@ class _QuickActionsCarouselState extends State<_QuickActionsCarousel> {
               const SizedBox(width: 25),
               _action(
                 context,
+                Icons.grass,
+                'Siembra',
+                const SowingScreen(currentTab: AgroTab.home),
+              ),
+              const SizedBox(width: 25),
+              _action(
+                context,
                 Icons.water_drop,
                 'Riego',
                 const IrrigationScreen(currentTab: AgroTab.home),
               ),
-              const SizedBox(width: 25),
+              const SizedBox(width: 20),
               _action(
                 context,
                 Icons.eco,
@@ -453,13 +466,6 @@ class _QuickActionsCarouselState extends State<_QuickActionsCarousel> {
                 const FertilizationScreen(currentTab: AgroTab.home),
               ),
               const SizedBox(width: 20),
-              _action(
-                context,
-                Icons.grass,
-                'Siembra',
-                const SowingScreen(currentTab: AgroTab.home),
-              ),
-              const SizedBox(width: 25),
               _action(
                 context,
                 Icons.sensors,

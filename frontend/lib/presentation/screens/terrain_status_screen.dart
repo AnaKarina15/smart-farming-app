@@ -141,36 +141,20 @@ class _TerrainStatusScreenState extends State<TerrainStatusScreen> {
                   ? const Color(0xFF2E5D42)
                   : AppColors.outlineVariant),
         ),
-        child: Stack(
-          alignment: Alignment.center,
+        child: Column(
           children: [
-            Column(
-              children: [
-                Icon(icon,
-                    color: isSelected ? Colors.white : const Color(0xFF1E5266),
-                    size: 28),
-                const SizedBox(height: 8),
-                Text(
-                  label,
-                  style: AppText.labelCaps(
-                          color: isSelected
-                              ? Colors.white
-                              : const Color(0xFF1E5266))
-                      .copyWith(fontSize: 12),
-                ),
-              ],
+            Icon(icon,
+                color: isSelected ? Colors.white : AppColors.onSurface,
+                size: 28),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: AppText.labelCaps(
+                      color: isSelected
+                          ? Colors.white
+                          : AppColors.onSurface)
+                  .copyWith(fontSize: 12),
             ),
-            if (isSelected)
-              Positioned(
-                top: -8,
-                right: 16,
-                child: Container(
-                  decoration: const BoxDecoration(
-                      shape: BoxShape.circle, color: Colors.white),
-                  child: const Icon(Icons.check_circle,
-                      color: Color(0xFF2E5D42), size: 16),
-                ),
-              ),
           ],
         ),
       ),

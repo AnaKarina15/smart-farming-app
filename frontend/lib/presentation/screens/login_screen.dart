@@ -5,8 +5,10 @@ import '../../core/theme/app_text.dart';
 import '../../data/providers/auth_provider.dart';
 import '../widgets/rugged_button.dart';
 import '../widgets/rugged_text_field.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'register_screen.dart';
 import 'map_onboarding_screen.dart';
+import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -44,9 +46,15 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       if (!mounted) return;
       if (success) {
+        final prefs = await SharedPreferences.getInstance();
+        final hasLotes = prefs.getBool('has_lotes') ?? false;
+        
+        if (!mounted) return;
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const MapOnboardingScreen()),
+          MaterialPageRoute(
+            builder: (_) => hasLotes ? const HomeScreen() : const MapOnboardingScreen(),
+          ),
         );
       } else {
         setState(() {

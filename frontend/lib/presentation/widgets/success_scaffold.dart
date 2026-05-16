@@ -9,8 +9,10 @@ import '../screens/map_onboarding_screen.dart';
 import '../screens/profile_screen.dart';
 import '../screens/tasks_screen.dart';
 
+import 'dart:async';
+
 /// Layout reusable para pantallas de éxito (riego, fertilización, siembra…).
-class SuccessScaffold extends StatelessWidget {
+class SuccessScaffold extends StatefulWidget {
   final String title;
   final String onlineSubtitle;
   final String offlineSubtitle;
@@ -39,6 +41,29 @@ class SuccessScaffold extends StatelessWidget {
     this.fallbackIcon,
     this.currentTab = AgroTab.home,
   });
+
+  @override
+  State<SuccessScaffold> createState() => _SuccessScaffoldState();
+}
+
+class _SuccessScaffoldState extends State<SuccessScaffold> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer(const Duration(seconds: 5), () {
+      if (mounted && widget.onPrimaryPressed != null) {
+        widget.onPrimaryPressed!();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -74,9 +99,8 @@ class SuccessScaffold extends StatelessWidget {
                           size: 48,
                         ),
                       ),
-                      const SizedBox(height: 24),
                       Text(
-                        title.toUpperCase(),
+                        widget.title.toUpperCase(),
                         textAlign: TextAlign.center,
                         style: AppText.h2(color: AppColors.primary),
                       ),
@@ -87,7 +111,7 @@ class SuccessScaffold extends StatelessWidget {
                           valueListenable: OfflineBanner.showGlobal,
                           builder: (context, isOffline, child) {
                             return Text(
-                              isOffline ? offlineSubtitle : onlineSubtitle,
+                              isOffline ? widget.offlineSubtitle : widget.onlineSubtitle,
                               textAlign: TextAlign.center,
                               style: AppText.bodyMd(
                                 color: AppColors.onSurfaceVariant,
@@ -128,7 +152,7 @@ class SuccessScaffold extends StatelessWidget {
                               ],
                             ),
                             const SizedBox(height: 24),
-                            _row('Ubicación', location, AppColors.onSurface),
+                            _row('Ubicación', widget.location, AppColors.onSurface),
                             const SizedBox(height: 14),
                             const Divider(
                               color: AppColors.outlineVariant,
@@ -140,7 +164,7 @@ class SuccessScaffold extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Icon(
-                                  detailIcon,
+                                  widget.detailIcon,
                                   color: AppColors.primary,
                                   size: 22,
                                 ),
@@ -151,15 +175,17 @@ class SuccessScaffold extends StatelessWidget {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        detailLabel.toUpperCase(),
-                                        style: AppText.labelCaps(),
+                                        widget.detailLabel.toUpperCase(),
+                                        style: AppText.labelCaps(
+                                            color: AppColors.onSurfaceVariant),
                                       ),
-                                      const SizedBox(height: 2),
+                                      const SizedBox(height: 4),
                                       Text(
-                                        detailValue,
-                                        style: AppText.h3(
-                                          color: AppColors.primary,
-                                        ),
+                                        widget.detailValue,
+                                        style: AppText.bodyMd(
+                                            color: AppColors.onSurface)
+                                            .copyWith(
+                                                fontWeight: FontWeight.w600),
                                       ),
                                     ],
                                   ),
@@ -169,45 +195,131 @@ class SuccessScaffold extends StatelessWidget {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 25),
+
+                      // ── Media / Additional Space ─────────────
+                      if (widget.imageUrl != null)
+                        Container(
+                          width: double.infinity,
+                          height: 160,
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceContainer,
+                            borderRadius: BorderRadius.circular(12),
+                            image: DecorationImage(
+                              image: NetworkImage(widget.imageUrl!),
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        )
+                      else if (widget.fallbackIcon != null)
+                        Container(
+                          width: double.infinity,
+                          height: 160,
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceContainerLowest,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: AppColors.outlineVariant,
+                              width: 1,
+                            ),
+                          ),
+                          child: Icon(
+                            widget.fallbackIcon,
+                            size: 48,
+                            color: AppColors.outline,
+                          ),
+                        ),
+                      if (widget.imageUrl != null || widget.fallbackIcon != null)
+                        const SizedBox(height: 25),
+
+                      // ── Primary Action ───────────────────────
+                      if (widget.primaryButtonText != null)
+                        SizedBox(
+                          width: double.infinity,
+                          height: 56,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: AppColors.onPrimary,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              elevation: 0,
+                            ),
+                            onPressed: widget.onPrimaryPressed,
+                            child: Text(
+                              widget.primaryButtonText!,
+                              style: AppText.labelCaps(
+                                color: AppColors.onPrimary,
+                              ).copyWith(fontSize: 14),
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
               ),
             ),
           ),
-
-          // ── Bottom Actions Removed ────────────────────────
         ],
       ),
       bottomNavigationBar: AgroBottomNav(
-        current: currentTab,
+        current: widget.currentTab,
         onTap: (tab) {
           if (tab == AgroTab.home) {
             Navigator.pushReplacement(
-                context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+              context,
+              MaterialPageRoute(builder: (_) => const HomeScreen()),
+            );
           } else if (tab == AgroTab.lotes) {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (_) => const MapOnboardingScreen()));
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const MapOnboardingScreen()),
+            );
           } else if (tab == AgroTab.perfil) {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (_) => const ProfileScreen()));
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const ProfileScreen()),
+            );
           } else if (tab == AgroTab.tareas) {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (_) => const TasksScreen()));
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const TasksScreen()),
+            );
           }
         },
       ),
     );
   }
 
-  Widget _row(String label, String value, Color color) {
-    return Column(
+  Widget _row(String label, String value, Color valueColor) {
+    return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label.toUpperCase(), style: AppText.labelCaps()),
-        const SizedBox(height: 4),
-        Text(value, style: AppText.h3(color: color)),
+        const Icon(
+          Icons.location_on,
+          color: AppColors.primary,
+          size: 22,
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label.toUpperCase(),
+                style: AppText.labelCaps(color: AppColors.onSurfaceVariant),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: AppText.bodyMd(color: valueColor).copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }

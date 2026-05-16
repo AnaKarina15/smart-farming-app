@@ -16,7 +16,7 @@ class LotesMapScreen extends StatelessWidget {
   const LotesMapScreen({
     super.key,
     this.loteName = 'Lote 1',
-    this.loteArea = '3.5 Ha',
+    this.loteArea = '3.5 hec',
     this.loteCrop = 'Maíz',
   });
 
@@ -279,9 +279,9 @@ class LotesMapScreen extends StatelessWidget {
                 children: [
                   Text('OTROS LOTES CERCANOS', style: AppText.labelCaps()),
                   const SizedBox(height: 12),
-                  _otherLote(context, 'Lote 2', 'Saludable • 8 Ha • Trigo'),
+                  _otherLote(context, 'Lote 2', 'Saludable • 8 hec • Trigo'),
                   const SizedBox(height: 8),
-                  _otherLote(context, 'Lote 3', 'Saludable • 15 Ha • Soja'),
+                  _otherLote(context, 'Lote 3', 'Saludable • 15 hec • Soja'),
                 ],
               ),
             ),
@@ -369,7 +369,7 @@ class LotesMapScreen extends StatelessWidget {
 
   Widget _otherLote(BuildContext context, String name, String detail) {
     final parts = detail.split(' • ');
-    final area = parts.length > 1 ? parts[1] : '0 Ha';
+    final area = parts.length > 1 ? parts[1] : '0 hec';
     final crop = parts.length > 2 ? parts[2] : 'Desconocido';
 
     return GestureDetector(

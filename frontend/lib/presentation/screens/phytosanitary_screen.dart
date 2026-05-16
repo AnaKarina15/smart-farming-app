@@ -15,7 +15,8 @@ import 'active_alerts_screen.dart';
 
 class PhytosanitaryScreen extends StatefulWidget {
   final AgroTab currentTab;
-  const PhytosanitaryScreen({super.key, this.currentTab = AgroTab.tareas});
+  final String? fixedLote;
+  const PhytosanitaryScreen({super.key, this.currentTab = AgroTab.tareas, this.fixedLote});
 
   @override
   State<PhytosanitaryScreen> createState() => _PhytosanitaryScreenState();

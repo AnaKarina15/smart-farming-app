@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text.dart';
 import '../common/agro_bottom_nav.dart';
@@ -8,12 +9,50 @@ import 'home_screen.dart';
 import 'register_lote_screen.dart';
 import 'tasks_screen.dart';
 import 'profile_screen.dart';
+import 'lotes_list_screen.dart';
 
-class MapOnboardingScreen extends StatelessWidget {
+class MapOnboardingScreen extends StatefulWidget {
   const MapOnboardingScreen({super.key});
 
   @override
+  State<MapOnboardingScreen> createState() => _MapOnboardingScreenState();
+}
+
+class _MapOnboardingScreenState extends State<MapOnboardingScreen> {
+  bool _checking = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkLotes();
+  }
+
+  Future<void> _checkLotes() async {
+    final prefs = await SharedPreferences.getInstance();
+    final hasLotes = prefs.getBool('has_lotes') ?? false;
+    if (!mounted) return;
+    if (hasLotes) {
+      // Already has registered lotes → go directly to list
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const LotesListScreen()),
+      );
+    } else {
+      setState(() => _checking = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (_checking) {
+      return const Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: const CustomAppBar(),
@@ -99,11 +138,14 @@ class MapOnboardingScreen extends StatelessWidget {
         current: AgroTab.lotes,
         onTap: (tab) {
           if (tab == AgroTab.home) {
-            Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (_) => const HomeScreen()));
           } else if (tab == AgroTab.tareas) {
-            Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const TasksScreen()));
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (_) => const TasksScreen()));
           } else if (tab == AgroTab.perfil) {
-            Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (_) => const ProfileScreen()));
           }
         },
       ),

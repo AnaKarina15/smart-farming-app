@@ -5,7 +5,7 @@ import '../../core/theme/app_text.dart';
 /// Botón principal AgroField - píldora Material 3.
 class RuggedButton extends StatelessWidget {
   final String text;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final Color backgroundColor;
   final Color? textColor;
   final bool isOutlined;
@@ -15,7 +15,7 @@ class RuggedButton extends StatelessWidget {
   const RuggedButton({
     super.key,
     required this.text,
-    required this.onPressed,
+    this.onPressed,
     this.backgroundColor = AppColors.primary,
     this.textColor,
     this.isOutlined = false,

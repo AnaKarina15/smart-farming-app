@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text.dart';
+import '../../data/providers/lotes_provider.dart';
 import '../common/agro_bottom_nav.dart';
 import '../widgets/custom_app_bar.dart';
 import 'fertilization_screen.dart';
@@ -96,6 +98,10 @@ class _HeroSectionState extends State<_HeroSection> {
   @override
   void initState() {
     super.initState();
+    // Inicializar LotesProvider (carga SQLite + sincroniza backend)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<LotesProvider>().init();
+    });
     _fetchData();
     _checkConnectivity();
     _connectivitySubscription =
@@ -250,7 +256,7 @@ class _HeroSectionState extends State<_HeroSection> {
 
       // 2. Fetch soil status
       final url =
-          Uri.parse('${ApiEndpoints.baseUrl}/api/v1/weather/sensor/humidity');
+          Uri.parse('${ApiEndpoints.baseUrl}/weather/sensor/humidity');
       final response = await http.get(url).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);

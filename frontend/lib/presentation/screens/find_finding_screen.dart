@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text.dart';
+import '../../core/storage/database_helper.dart';
+import '../../data/providers/auth_provider.dart';
+import '../../data/providers/lotes_provider.dart';
 import '../widgets/custom_app_bar.dart';
 import '../widgets/offline_banner.dart';
 import '../widgets/rugged_button.dart';
@@ -20,12 +24,85 @@ class FindFindingScreen extends StatefulWidget {
 }
 
 class _FindFindingScreenState extends State<FindFindingScreen> {
-  String _lote = 'Lote 1 — Sector Norte';
+  String? _loteId;
+  String? _loteNombre;
   String _tipo = 'INSECTO';
   String _severidad = 'MEDIO';
+  bool _guardando = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Cargar lotes si aún no están cargados
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = context.read<LotesProvider>();
+      if (!provider.hasLotes) {
+        provider.init();
+      }
+    });
+  }
+
+  Future<void> _guardarHallazgo() async {
+    if (_loteId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Selecciona un lote')),
+      );
+      return;
+    }
+
+    setState(() => _guardando = true);
+
+    final user = context.read<AuthProvider>().currentUser;
+    final userId = user?.id ?? 'unknown';
+    final id = 'hallazgo_${DateTime.now().millisecondsSinceEpoch}';
+    final now = DateTime.now().toIso8601String();
+
+    await DatabaseHelper.instance.insert(DatabaseHelper.tableHallazgos, {
+      'id': id,
+      'loteId': _loteId,
+      'loteNombre': _loteNombre,
+      'tipo': _tipo,
+      'severidad': _severidad,
+      'descripcion': null,
+      'fotoPath': null,
+      'fecha': now,
+      'userId': userId,
+      'createdAt': now,
+      'isPendingSync': 1,
+    });
+
+    setState(() => _guardando = false);
+
+    if (!mounted) return;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => FindingSuccessScreen(
+          lote: _loteNombre ?? '',
+          findingType: _tipo,
+          currentTab: widget.currentTab,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final lotesProvider = context.watch<LotesProvider>();
+    final lotes = lotesProvider.lotes;
+
+    // Auto-seleccionar primer lote si no hay ninguno seleccionado
+    if (_loteId == null && lotes.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _loteId = lotes.first.id;
+            _loteNombre = lotes.first.nombre;
+          });
+        }
+      });
+    }
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: const CustomAppBar(showBack: true),
@@ -44,31 +121,61 @@ class _FindFindingScreenState extends State<FindFindingScreen> {
             const Divider(color: AppColors.outlineVariant),
             const SizedBox(height: 24),
             _label('LOTE'),
-            Container(
-              height: 56,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceContainerLowest,
-                border: Border.all(color: AppColors.outlineVariant),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: _lote,
-                  isExpanded: true,
-                  icon: const Icon(Icons.keyboard_arrow_down,
-                      color: AppColors.onSurfaceVariant),
-                  items: [
-                    'Lote 1 — Sector Norte',
-                    'Lote 2 — Ladera Este',
-                    'Lote 3 — Valle Sur'
-                  ]
-                      .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                      .toList(),
-                  onChanged: (v) => setState(() => _lote = v ?? _lote),
+            // ── Dropdown conectado al LotesProvider ──────────
+            if (lotesProvider.isLoading && lotes.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (lotes.isEmpty)
+              Container(
+                height: 56,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainerLowest,
+                  border: Border.all(color: AppColors.outlineVariant),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Sin lotes registrados',
+                    style: AppText.bodyMd(color: AppColors.onSurfaceVariant),
+                  ),
+                ),
+              )
+            else
+              Container(
+                height: 56,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainerLowest,
+                  border: Border.all(color: AppColors.outlineVariant),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _loteId,
+                    isExpanded: true,
+                    icon: const Icon(Icons.keyboard_arrow_down,
+                        color: AppColors.onSurfaceVariant),
+                    items: lotes
+                        .map((l) => DropdownMenuItem(
+                              value: l.id,
+                              child: Text(l.nombre),
+                            ))
+                        .toList(),
+                    onChanged: (v) {
+                      if (v == null) return;
+                      final lote = lotes.firstWhere((l) => l.id == v);
+                      setState(() {
+                        _loteId = v;
+                        _loteNombre = lote.nombre;
+                      });
+                    },
+                  ),
                 ),
               ),
-            ),
             const SizedBox(height: 24),
             _label('TIPO'),
             Row(
@@ -104,13 +211,8 @@ class _FindFindingScreenState extends State<FindFindingScreen> {
               padding: const EdgeInsets.symmetric(vertical: 32),
               decoration: BoxDecoration(
                 color: AppColors.surfaceContainerLowest,
-                border: Border.all(
-                    color: AppColors.outline,
-                    width: 1,
-                    style: BorderStyle.none),
                 borderRadius: BorderRadius.circular(12),
               ),
-              // Simulating dashed border
               child: Stack(
                 children: [
                   Positioned.fill(
@@ -135,19 +237,8 @@ class _FindFindingScreenState extends State<FindFindingScreen> {
             ),
             const SizedBox(height: 48),
             RuggedButton(
-              text: 'GUARDAR',
-              onPressed: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => FindingSuccessScreen(
-                      lote: _lote,
-                      findingType: _tipo,
-                      currentTab: widget.currentTab,
-                    ),
-                  ),
-                );
-              },
+              text: _guardando ? 'GUARDANDO...' : 'GUARDAR',
+              onPressed: _guardando ? () {} : _guardarHallazgo,
             ),
             const SizedBox(height: 24),
           ],
@@ -235,15 +326,10 @@ class _FindFindingScreenState extends State<FindFindingScreen> {
 
 class _DashedRectPainter extends CustomPainter {
   final Color color;
-
   _DashedRectPainter({required this.color});
 
   @override
-  void paint(Canvas canvas, Size size) {
-    // A simple dashed border alternative using PathDash or dotted_border package is best,
-    // but without dependencies, we can manually draw lines or just leave the border transparent
-    // since the container already has a border. For simplicity, we won't draw complex dashes here.
-  }
+  void paint(Canvas canvas, Size size) {}
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;

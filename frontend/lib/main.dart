@@ -2,26 +2,36 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'core/network/dio_client.dart';
+import 'core/storage/database_helper.dart';
 import 'core/storage/token_storage.dart';
 import 'core/theme/app_colors.dart';
 import 'data/providers/auth_provider.dart';
+import 'data/providers/lotes_provider.dart';
 import 'data/providers/profile_image_provider.dart';
 import 'data/services/auth_service.dart';
 import 'data/services/lotes_service.dart';
+import 'data/services/sync_service.dart';
 import 'presentation/screens/welcome_screen.dart';
 import 'presentation/widgets/offline_banner.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Inicializar SQLite al arrancar
+  await DatabaseHelper.instance.database;
+
   // Inicializacion de dependencias (poor man's DI)
   final tokenStorage = TokenStorage();
   final dioClient = DioClient(tokenStorage);
   final authService = AuthService(dioClient, tokenStorage);
   final lotesService = LotesService(dioClient);
+  final syncService = SyncService(dioClient);
 
   runApp(SmartFarmingApp(
     tokenStorage: tokenStorage,
     authService: authService,
     lotesService: lotesService,
+    syncService: syncService,
   ));
 }
 
@@ -29,12 +39,14 @@ class SmartFarmingApp extends StatelessWidget {
   final TokenStorage tokenStorage;
   final AuthService authService;
   final LotesService lotesService;
+  final SyncService syncService;
 
   const SmartFarmingApp({
     super.key,
     required this.tokenStorage,
     required this.authService,
     required this.lotesService,
+    required this.syncService,
   });
 
   @override
@@ -44,10 +56,16 @@ class SmartFarmingApp extends StatelessWidget {
         // Servicios disponibles para todas las pantallas
         Provider<AuthService>.value(value: authService),
         Provider<LotesService>.value(value: lotesService),
+        Provider<SyncService>.value(value: syncService),
 
         // Provider de autenticacion (state management)
         ChangeNotifierProvider<AuthProvider>(
           create: (_) => AuthProvider(authService, tokenStorage),
+        ),
+
+        // Provider de lotes con caché SQLite offline-first
+        ChangeNotifierProvider<LotesProvider>(
+          create: (_) => LotesProvider(lotesService),
         ),
 
         // Provider de imagen de perfil
@@ -56,7 +74,7 @@ class SmartFarmingApp extends StatelessWidget {
         ),
       ],
       child: MaterialApp(
-        title: 'Smart Farming',
+        title: 'AgroField',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(
@@ -78,10 +96,9 @@ class SmartFarmingApp extends StatelessWidget {
             children: [
               if (child != null) child,
               const Positioned(
-                bottom: 80, // Por encima de la barra de navegación inferior
+                bottom: 80,
                 left: 0,
                 right: 0,
-                // Ignorar punteros para que no bloquee los toques detrás del banner
                 child: IgnorePointer(
                   child: SafeArea(
                     child: OfflineBanner(),

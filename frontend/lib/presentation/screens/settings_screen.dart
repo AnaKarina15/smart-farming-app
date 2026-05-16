@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text.dart';
 import '../../data/providers/auth_provider.dart';
+import '../../data/providers/lotes_provider.dart';
+import '../../data/services/sync_service.dart';
 import '../widgets/custom_app_bar.dart';
 import '../widgets/offline_banner.dart';
 import 'welcome_screen.dart';
@@ -15,10 +17,12 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  bool _sincronizando = false;
+  String? _mensajeSync;
+
   @override
   void initState() {
     super.initState();
-    // Ocultar banner global porque esta pantalla tiene su propio indicador de red
     WidgetsBinding.instance.addPostFrameCallback((_) {
       OfflineBanner.showGlobal.value = false;
     });
@@ -26,13 +30,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   void dispose() {
-    // Restaurar banner global al salir
     OfflineBanner.showGlobal.value = true;
     super.dispose();
   }
 
+  Future<void> _sincronizar() async {
+    setState(() {
+      _sincronizando = true;
+      _mensajeSync = null;
+    });
+
+    final syncService = context.read<SyncService>();
+    final lotesProvider = context.read<LotesProvider>();
+    final exito = await syncService.syncNow(lotesProvider: lotesProvider);
+
+    if (!mounted) return;
+    setState(() {
+      _sincronizando = false;
+      _mensajeSync = exito
+          ? '✓ Sincronización exitosa'
+          : '✗ Sin conexión. Los datos locales están seguros.';
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final lotesProvider = context.watch<LotesProvider>();
+    final pendientes = lotesProvider.pendingSyncCount;
+    final isOnline = lotesProvider.isOnline;
+    final lastSync = lotesProvider.lastSync;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: const CustomAppBar(showBack: true, showSettings: false),
@@ -41,7 +68,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Title with underline
+            // Título
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -60,7 +87,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 32),
 
-            // Card 1: Network Status
+            // Card: Estado de Red
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -73,11 +100,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.wifi_off,
-                          color: AppColors.error, size: 20),
+                      Icon(
+                        isOnline ? Icons.wifi : Icons.wifi_off,
+                        color: isOnline ? AppColors.primary : AppColors.error,
+                        size: 20,
+                      ),
                       const SizedBox(width: 8),
                       Text(
-                        'ESTADO DE RED: OFFLINE',
+                        isOnline
+                            ? 'ESTADO DE RED: ONLINE'
+                            : 'ESTADO DE RED: OFFLINE',
                         style: AppText.labelCaps(color: AppColors.onSurface),
                       ),
                     ],
@@ -86,24 +118,90 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     padding: EdgeInsets.symmetric(vertical: 16.0),
                     child: Divider(color: AppColors.outlineVariant, height: 1),
                   ),
+                  // Última sincronización
                   Text(
-                    'Última sincronización: Hoy 08:00 AM',
+                    lastSync != null
+                        ? 'Última sincronización: ${_formatTime(lastSync)}'
+                        : 'Sin sincronización reciente',
                     style: AppText.bodyMd(color: AppColors.onSurfaceVariant),
                   ),
+                  // Pendientes
+                  if (pendientes > 0) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.pending_actions,
+                            size: 16, color: AppColors.error),
+                        const SizedBox(width: 6),
+                        Text(
+                          '$pendientes registro(s) pendientes de enviar',
+                          style: AppText.bodyMd(color: AppColors.error),
+                        ),
+                      ],
+                    ),
+                  ] else ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.check_circle_outline,
+                            size: 16, color: AppColors.primary),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Todo sincronizado',
+                          style: AppText.bodyMd(color: AppColors.primary),
+                        ),
+                      ],
+                    ),
+                  ],
+                  // Mensaje de resultado
+                  if (_mensajeSync != null) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: _mensajeSync!.startsWith('✓')
+                            ? AppColors.primary.withOpacity(0.1)
+                            : AppColors.error.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        _mensajeSync!,
+                        style: AppText.bodyMd(
+                          color: _mensajeSync!.startsWith('✓')
+                              ? AppColors.primary
+                              : AppColors.error,
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 20),
                   SizedBox(
                     width: double.infinity,
                     height: 48,
                     child: ElevatedButton.icon(
-                      onPressed: () {},
-                      icon: const Icon(Icons.sync,
-                          color: AppColors.onPrimary, size: 20),
+                      onPressed: _sincronizando ? null : _sincronizar,
+                      icon: _sincronizando
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppColors.onPrimary,
+                              ),
+                            )
+                          : const Icon(Icons.sync,
+                              color: AppColors.onPrimary, size: 20),
                       label: Text(
-                        'SINCRONIZAR DATOS AHORA',
+                        _sincronizando
+                            ? 'SINCRONIZANDO...'
+                            : 'SINCRONIZAR DATOS AHORA',
                         style: AppText.labelCaps(color: AppColors.onPrimary),
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
+                        disabledBackgroundColor:
+                            AppColors.primary.withOpacity(0.6),
                         shape: const StadiumBorder(),
                       ),
                     ),
@@ -113,7 +211,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 24),
 
-            // Settings options
+            // Opciones de configuración
             _SettingsTile(
               icon: Icons.notifications_none,
               title: 'NOTIFICACIONES Y ALERTAS',
@@ -133,7 +231,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 48),
 
-            // Logout Button
+            // Botón Cerrar Sesión
             SizedBox(
               width: double.infinity,
               height: 56,
@@ -200,6 +298,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       ),
     );
+  }
+
+  String _formatTime(DateTime dt) {
+    final hora = dt.hour.toString().padLeft(2, '0');
+    final min = dt.minute.toString().padLeft(2, '0');
+    final dia = dt.day.toString().padLeft(2, '0');
+    final mes = dt.month.toString().padLeft(2, '0');
+    return '$dia/$mes ${dt.year} $hora:$min';
   }
 }
 

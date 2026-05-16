@@ -16,6 +16,7 @@ import '../../data/providers/auth_provider.dart';
 import '../../data/providers/lotes_provider.dart';
 import '../../data/models/lote_model.dart';
 import 'terrain_status_screen.dart';
+import '../../data/providers/catalogos_provider.dart';
 
 class SowingScreen extends StatefulWidget {
   final String? fixedLote;
@@ -32,14 +33,14 @@ class SowingScreen extends StatefulWidget {
 }
 
 class _SowingScreenState extends State<SowingScreen> {
-  String _crop = 'Maíz';
+  String? _selectedCultivoId;
+  String? _selectedCultivoNombre;
   String? _loteId;
   String? _loteNombre;
   final TextEditingController _dateController = TextEditingController(
     text:
         "${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}",
   );
-  final TextEditingController _otherCropController = TextEditingController();
   bool _guardando = false;
 
   @override
@@ -56,7 +57,6 @@ class _SowingScreenState extends State<SowingScreen> {
   @override
   void dispose() {
     _dateController.dispose();
-    _otherCropController.dispose();
     super.dispose();
   }
 
@@ -70,7 +70,8 @@ class _SowingScreenState extends State<SowingScreen> {
         if (mounted) {
           setState(() {
             if (widget.fixedLote != null) {
-              final found = lotes.where((l) => l.nombre == widget.fixedLote).toList();
+              final found =
+                  lotes.where((l) => l.nombre == widget.fixedLote).toList();
               if (found.isNotEmpty) {
                 _loteId = found.first.id;
                 _loteNombre = found.first.nombre;
@@ -116,42 +117,78 @@ class _SowingScreenState extends State<SowingScreen> {
                       border: Border.all(color: AppColors.outlineVariant),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: _crop,
-                        isExpanded: true,
-                        icon: const Icon(Icons.expand_more,
-                            color: AppColors.onSurfaceVariant),
-                        items: ['Maíz', 'Banano', 'Café', 'Otro']
-                            .map((e) =>
-                                DropdownMenuItem(value: e, child: Text(e)))
-                            .toList(),
-                        onChanged: (v) => setState(() => _crop = v ?? _crop),
-                      ),
+                    child: Consumer<CatalogosProvider>(
+                      builder: (context, provider, child) {
+                        final list = provider.cultivos;
+                        if (list.isEmpty) {
+                          return Center(
+                            child: Text('Cargando catálogo...', 
+                              style: AppText.bodyMd(color: AppColors.outline)),
+                          );
+                        }
+
+                        return Autocomplete<Object>(
+                          initialValue: TextEditingValue(text: _selectedCultivoNombre ?? ''),
+                          optionsBuilder: (TextEditingValue textEditingValue) {
+                            if (textEditingValue.text == '') return list;
+                            return list.where((c) => c.nombre
+                                .toLowerCase()
+                                .contains(textEditingValue.text.toLowerCase()));
+                          },
+                          displayStringForOption: (option) => (option as dynamic).nombre,
+                          onSelected: (option) {
+                            setState(() {
+                              _selectedCultivoId = (option as dynamic).id;
+                              _selectedCultivoNombre = (option as dynamic).nombre;
+                            });
+                          },
+                          fieldViewBuilder: (ctx, controller, focusNode, onSubmitted) {
+                            return TextField(
+                              controller: controller,
+                              focusNode: focusNode,
+                              decoration: InputDecoration(
+                                hintText: 'Escribe el cultivo...',
+                                hintStyle: AppText.bodyMd(color: AppColors.outline),
+                                prefixIcon: const Icon(Icons.search, color: AppColors.primary, size: 20),
+                                border: InputBorder.none,
+                                contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                              ),
+                            );
+                          },
+                          optionsViewBuilder: (ctx, onSelected, options) {
+                            return Align(
+                              alignment: Alignment.topLeft,
+                              child: Material(
+                                elevation: 8.0,
+                                borderRadius: BorderRadius.circular(12),
+                                child: Container(
+                                  width: MediaQuery.of(context).size.width - 80,
+                                  constraints: const BoxConstraints(maxHeight: 250),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: ListView.separated(
+                                    padding: EdgeInsets.zero,
+                                    shrinkWrap: true,
+                                    itemCount: options.length,
+                                    separatorBuilder: (c, i) => const Divider(height: 1),
+                                    itemBuilder: (ctx, index) {
+                                      final option = options.elementAt(index);
+                                      return ListTile(
+                                        title: Text((option as dynamic).nombre, style: AppText.bodyMd()),
+                                        onTap: () => onSelected(option),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
                     ),
                   ),
-                  if (_crop == 'Otro') ...[
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _otherCropController,
-                      decoration: InputDecoration(
-                        filled: true,
-                        fillColor: AppColors.surfaceContainerLowest,
-                        hintText: 'Especifique el cultivo',
-                        hintStyle: AppText.bodyMd(color: AppColors.outline),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide:
-                              const BorderSide(color: AppColors.outlineVariant),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide:
-                              const BorderSide(color: AppColors.outlineVariant),
-                        ),
-                      ),
-                    ),
-                  ],
                   const SizedBox(height: 24),
                   Text('FECHA DE SIEMBRA', style: AppText.labelCaps()),
                   const SizedBox(height: 8),
@@ -204,58 +241,85 @@ class _SowingScreenState extends State<SowingScreen> {
                   const SizedBox(height: 12),
                   GestureDetector(
                     onTap: () {
-                      if (_loteNombre == null) return;
+                      if (_loteNombre == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Por favor, selecciona un lote primero',
+                              style: AppText.bodyMd(color: Colors.white)
+                                  .copyWith(fontWeight: FontWeight.w600),
+                            ),
+                            backgroundColor: AppColors.primary,
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            margin: const EdgeInsets.fromLTRB(24, 0, 24, 100),
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                        return;
+                      }
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (_) => TerrainStatusScreen(
-                              lote: _loteNombre!, currentTab: widget.currentTab),
+                              lote: _loteNombre!,
+                              currentTab: widget.currentTab),
                         ),
                       );
                     },
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceContainerLowest,
-                        border: Border.all(
-                          color: AppColors.outlineVariant,
-                          width: 1,
+                    child: Opacity(
+                      opacity: _loteNombre == null ? 0.6 : 1.0,
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceContainerLowest,
+                          border: Border.all(
+                            color: AppColors.outlineVariant,
+                            width: 1,
+                          ),
+                          borderRadius: BorderRadius.circular(16),
                         ),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryContainer,
-                              borderRadius: BorderRadius.circular(12),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryContainer,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(
+                                Icons.terrain,
+                                color: AppColors.onPrimaryContainer,
+                                size: 24,
+                              ),
                             ),
-                            child: const Icon(
-                              Icons.terrain,
-                              color: AppColors.onPrimaryContainer,
-                              size: 24,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Estado del Terreno',
-                                  style: AppText.bodyLg().copyWith(
-                                    fontWeight: FontWeight.w600,
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Estado del Terreno',
+                                    style: AppText.bodyLg().copyWith(
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                  if (_loteNombre != null)
+                                    Text(
+                                      'Analizar condición de $_loteNombre',
+                                      style: AppText.bodyMd(color: AppColors.outline),
+                                    ),
+                                ],
+                              ),
                             ),
-                          ),
-                          const Icon(
-                            Icons.chevron_right,
-                            color: AppColors.outline,
-                          ),
-                        ],
+                            const Icon(
+                              Icons.chevron_right,
+                              color: AppColors.outline,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -263,44 +327,47 @@ class _SowingScreenState extends State<SowingScreen> {
                   RuggedButton(
                     text: _guardando ? 'GUARDANDO...' : 'GUARDAR CULTIVO',
                     icon: Icons.save,
-                    onPressed: _guardando ? () {} : () async {
-                      if (_loteId == null) return;
-                      setState(() => _guardando = true);
-                      
-                      final finalCrop = _crop == 'Otro' &&
-                              _otherCropController.text.isNotEmpty
-                          ? _otherCropController.text
-                          : _crop;
-                          
-                      final user = context.read<AuthProvider>().currentUser;
-                      final userId = user?.id ?? 'unknown';
-                      final id = 'siembra_${DateTime.now().millisecondsSinceEpoch}';
-                      final now = DateTime.now().toIso8601String();
+                    onPressed: _guardando
+                        ? () {}
+                        : () async {
+                            if (_loteId == null) return;
+                            setState(() => _guardando = true);
 
-                      await DatabaseHelper.instance.insert(DatabaseHelper.tableSiembras, {
-                        'id': id,
-                        'loteId': _loteId,
-                        'loteNombre': _loteNombre,
-                        'cultivo': finalCrop,
-                        'fecha': _dateController.text,
-                        'userId': userId,
-                        'createdAt': now,
-                        'isPendingSync': 1,
-                      });
+                            final finalCropNombre = _selectedCultivoNombre ?? 'Desconocido';
 
-                      if (!mounted) return;
-                      setState(() => _guardando = false);
-                      
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => SowingSuccessScreen(
-                              lote: _loteNombre ?? '',
-                              crop: finalCrop,
-                              currentTab: widget.currentTab),
-                        ),
-                      );
-                    },
+                            final user =
+                                context.read<AuthProvider>().currentUser;
+                            final userId = user?.id ?? 'unknown';
+                            final id =
+                                'siembra_${DateTime.now().millisecondsSinceEpoch}';
+                            final now = DateTime.now().toIso8601String();
+
+                            await DatabaseHelper.instance
+                                .insert(DatabaseHelper.tableSiembras, {
+                              'id': id,
+                              'loteId': _loteId,
+                              'loteNombre': _loteNombre,
+                              'cultivo': finalCropNombre,
+                              'cultivoId': _selectedCultivoId,
+                              'fecha': _dateController.text,
+                              'userId': userId,
+                              'createdAt': now,
+                              'isPendingSync': 1,
+                            });
+
+                            if (!mounted) return;
+                            setState(() => _guardando = false);
+
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => SowingSuccessScreen(
+                                    lote: _loteNombre ?? '',
+                                    crop: finalCropNombre,
+                                    currentTab: widget.currentTab),
+                              ),
+                            );
+                          },
                   ),
                   const SizedBox(height: 24),
                 ],

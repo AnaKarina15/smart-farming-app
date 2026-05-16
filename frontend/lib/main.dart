@@ -11,6 +11,9 @@ import 'data/providers/profile_image_provider.dart';
 import 'data/services/auth_service.dart';
 import 'data/services/lotes_service.dart';
 import 'data/services/sync_service.dart';
+import 'data/services/catalogos_service.dart';
+import 'data/services/catalogos_sync_service.dart';
+import 'data/providers/catalogos_provider.dart';
 import 'presentation/screens/welcome_screen.dart';
 import 'presentation/widgets/offline_banner.dart';
 
@@ -26,12 +29,18 @@ void main() async {
   final authService = AuthService(dioClient, tokenStorage);
   final lotesService = LotesService(dioClient);
   final syncService = SyncService(dioClient);
+  final catalogosService = CatalogosService(dioClient.dio);
+  final catalogosSyncService = CatalogosSyncService(catalogosService);
+
+  // Sincronizar catálogos en segundo plano al arrancar
+  catalogosSyncService.sincronizarCatalogos();
 
   runApp(SmartFarmingApp(
     tokenStorage: tokenStorage,
     authService: authService,
     lotesService: lotesService,
     syncService: syncService,
+    catalogosSyncService: catalogosSyncService,
     dioClient: dioClient,
   ));
 }
@@ -41,6 +50,7 @@ class SmartFarmingApp extends StatelessWidget {
   final AuthService authService;
   final LotesService lotesService;
   final SyncService syncService;
+  final CatalogosSyncService catalogosSyncService;
   final DioClient dioClient;
 
   const SmartFarmingApp({
@@ -49,6 +59,7 @@ class SmartFarmingApp extends StatelessWidget {
     required this.authService,
     required this.lotesService,
     required this.syncService,
+    required this.catalogosSyncService,
     required this.dioClient,
   });
 
@@ -74,6 +85,11 @@ class SmartFarmingApp extends StatelessWidget {
         // Provider de imagen de perfil
         ChangeNotifierProvider<ProfileImageProvider>(
           create: (_) => ProfileImageProvider(dioClient),
+        ),
+
+        // Provider de catálogos (Sprint 2)
+        ChangeNotifierProvider<CatalogosProvider>(
+          create: (_) => CatalogosProvider()..cargarCatalogos(),
         ),
       ],
       child: MaterialApp(

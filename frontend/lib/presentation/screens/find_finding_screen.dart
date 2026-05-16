@@ -14,6 +14,7 @@ import 'home_screen.dart';
 import 'map_onboarding_screen.dart';
 import 'profile_screen.dart';
 import 'tasks_screen.dart';
+import '../../data/providers/catalogos_provider.dart';
 
 class FindFindingScreen extends StatefulWidget {
   final AgroTab currentTab;
@@ -26,6 +27,9 @@ class FindFindingScreen extends StatefulWidget {
 class _FindFindingScreenState extends State<FindFindingScreen> {
   String? _loteId;
   String? _loteNombre;
+  String? _selectedPlagaId;
+  String? _selectedPlagaNombre;
+  String? _sintomasSugeridos;
   String _tipo = 'INSECTO';
   String _severidad = 'MEDIO';
   bool _guardando = false;
@@ -62,6 +66,7 @@ class _FindFindingScreenState extends State<FindFindingScreen> {
       'loteId': _loteId,
       'loteNombre': _loteNombre,
       'tipo': _tipo,
+      'plagaId': _selectedPlagaId,
       'severidad': _severidad,
       'descripcion': null,
       'fotoPath': null,
@@ -79,7 +84,7 @@ class _FindFindingScreenState extends State<FindFindingScreen> {
       MaterialPageRoute(
         builder: (_) => FindingSuccessScreen(
           lote: _loteNombre ?? '',
-          findingType: _tipo,
+          findingType: _selectedPlagaNombre ?? _tipo,
           currentTab: widget.currentTab,
         ),
       ),
@@ -177,7 +182,88 @@ class _FindFindingScreenState extends State<FindFindingScreen> {
                 ),
               ),
             const SizedBox(height: 24),
-            _label('TIPO'),
+            _label('PLAGA IDENTIFICADA'),
+            Container(
+              height: 56,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceContainerLowest,
+                border: Border.all(color: AppColors.outlineVariant),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Consumer<CatalogosProvider>(
+                builder: (context, provider, child) {
+                  final list = provider.plagas;
+                  if (_selectedPlagaId == null && list.isNotEmpty) {
+                    _selectedPlagaId = list.first.id;
+                    _selectedPlagaNombre = list.first.nombre;
+                    _tipo = list.first.tipo ?? 'INSECTO';
+                    _severidad = list.first.severidadTipica ?? 'MEDIO';
+                    _sintomasSugeridos = list.first.sintomas;
+                  }
+
+                  return DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: _selectedPlagaId,
+                      isExpanded: true,
+                      icon: const Icon(Icons.keyboard_arrow_down,
+                          color: AppColors.onSurfaceVariant),
+                      items: [
+                        ...list.map((p) => DropdownMenuItem(
+                              value: p.id,
+                              child: Text(p.nombre),
+                            )),
+                        const DropdownMenuItem(
+                          value: 'OTROS',
+                          child: Text('Otra plaga/enfermedad...'),
+                        ),
+                      ],
+                      onChanged: (v) {
+                        if (v == null) return;
+                        setState(() {
+                          _selectedPlagaId = v;
+                          if (v != 'OTROS') {
+                            final p = list.firstWhere((p) => p.id == v);
+                            _selectedPlagaNombre = p.nombre;
+                            _tipo = p.tipo ?? 'INSECTO';
+                            _severidad = p.severidadTipica ?? 'MEDIO';
+                            _sintomasSugeridos = p.sintomas;
+                          } else {
+                            _sintomasSugeridos = null;
+                          }
+                        });
+                      },
+                    ),
+                  );
+                },
+              ),
+            ),
+            if (_sintomasSugeridos != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.secondaryContainer.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.info_outline,
+                        color: AppColors.secondary, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Síntomas típicos: $_sintomasSugeridos',
+                        style: AppText.bodyMd(color: AppColors.secondary),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            const SizedBox(height: 24),
+            _label('TIPO DETECTADO'),
             Row(
               children: [
                 Expanded(child: _tipoOption('INSECTO', Icons.bug_report)),

@@ -9,6 +9,8 @@ import 'map_onboarding_screen.dart';
 import 'profile_screen.dart';
 import 'tasks_screen.dart';
 import 'terrain_success_screen.dart';
+import '../../data/providers/catalogos_provider.dart';
+import 'package:provider/provider.dart';
 
 class TerrainStatusScreen extends StatefulWidget {
   final String lote;
@@ -26,6 +28,8 @@ class TerrainStatusScreen extends StatefulWidget {
 
 class _TerrainStatusScreenState extends State<TerrainStatusScreen> {
   String _selectedStatus = 'ARADO';
+  String? _selectedSueloId;
+  String? _recomendaciones;
   final TextEditingController _notesController = TextEditingController();
 
   @override
@@ -60,6 +64,74 @@ class _TerrainStatusScreenState extends State<TerrainStatusScreen> {
             const SizedBox(height: 12),
             _statusCard('CON MALEZA', Icons.grass),
             const SizedBox(height: 32),
+            Text('CARACTERIZACIÓN DEL SUELO',
+                style: AppText.labelCaps(color: const Color(0xFF1E5266))),
+            const SizedBox(height: 8),
+            Container(
+              height: 56,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceContainerLowest,
+                border: Border.all(color: AppColors.outlineVariant),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Consumer<CatalogosProvider>(
+                builder: (context, provider, child) {
+                  final list = provider.tiposSuelo;
+                  if (_selectedSueloId == null && list.isNotEmpty) {
+                    _selectedSueloId = list.first.id;
+                    _recomendaciones = list.first.cultivosRecomendados;
+                  }
+
+                  return DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: _selectedSueloId,
+                      isExpanded: true,
+                      icon: const Icon(Icons.keyboard_arrow_down,
+                          color: AppColors.onSurfaceVariant),
+                      items: list.map((s) {
+                        return DropdownMenuItem(
+                          value: s.id,
+                          child: Text(s.nombre),
+                        );
+                      }).toList(),
+                      onChanged: (v) {
+                        if (v == null) return;
+                        setState(() {
+                          _selectedSueloId = v;
+                          _recomendaciones = list
+                              .firstWhere((s) => s.id == v)
+                              .cultivosRecomendados;
+                        });
+                      },
+                    ),
+                  );
+                },
+              ),
+            ),
+            if (_recomendaciones != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryContainer.withOpacity(0.4),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.star, color: AppColors.primary, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Cultivos recomendados: $_recomendaciones',
+                        style: AppText.bodyMd(color: AppColors.onPrimaryContainer),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            const SizedBox(height: 24),
             Text('NOTAS ADICIONALES',
                 style: AppText.labelCaps(color: const Color(0xFF1E5266))),
             const SizedBox(height: 8),

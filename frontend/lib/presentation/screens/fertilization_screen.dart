@@ -15,6 +15,7 @@ import '../../data/providers/auth_provider.dart';
 import '../../data/providers/lotes_provider.dart';
 import '../../data/models/lote_model.dart';
 import 'fertilization_success_screen.dart';
+import '../../data/providers/catalogos_provider.dart';
 
 class FertilizationScreen extends StatefulWidget {
   final AgroTab currentTab;
@@ -31,12 +32,12 @@ class FertilizationScreen extends StatefulWidget {
 }
 
 class _FertilizationScreenState extends State<FertilizationScreen> {
-  String _fertilizer = 'Nitrógeno';
+  String? _selectedFertId;
+  String? _selectedFertNombre;
   int _amount = 50;
   String _unit = 'KG';
   String? _loteId;
   String? _loteNombre;
-  final _otherFertController = TextEditingController();
   final _amountController = TextEditingController();
   bool _guardando = false;
 
@@ -54,7 +55,6 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
 
   @override
   void dispose() {
-    _otherFertController.dispose();
     _amountController.dispose();
     super.dispose();
   }
@@ -76,7 +76,8 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
         if (mounted) {
           setState(() {
             if (widget.fixedLote != null) {
-              final found = lotes.where((l) => l.nombre == widget.fixedLote).toList();
+              final found =
+                  lotes.where((l) => l.nombre == widget.fixedLote).toList();
               if (found.isNotEmpty) {
                 _loteId = found.first.id;
                 _loteNombre = found.first.nombre;
@@ -107,7 +108,6 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
                 children: [
                   Text('Registro de Fertilización', style: AppText.h1()),
                   const SizedBox(height: 5),
-
                   Text('SELECCIONAR FERTILIZANTE', style: AppText.labelCaps()),
                   const SizedBox(height: 8),
                   Container(
@@ -118,60 +118,79 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
                       border: Border.all(color: AppColors.outlineVariant),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: _fertilizer,
-                        isExpanded: true,
-                        icon: const Icon(Icons.expand_more,
-                            color: AppColors.onSurfaceVariant),
-                        items: ['Nitrógeno', 'Fósforo', 'Orgánico', 'Otro']
-                            .map((e) =>
-                                DropdownMenuItem(value: e, child: Text(e)))
-                            .toList(),
-                        onChanged: (v) =>
-                            setState(() => _fertilizer = v ?? _fertilizer),
-                      ),
+                    child: Consumer<CatalogosProvider>(
+                      builder: (context, provider, child) {
+                        final list = provider.fertilizantes;
+                        if (list.isEmpty) {
+                          return Center(
+                            child: Text('Cargando catálogo...', 
+                              style: AppText.bodyMd(color: AppColors.outline)),
+                          );
+                        }
+
+                        return Autocomplete<Object>(
+                          initialValue: TextEditingValue(text: _selectedFertNombre ?? ''),
+                          optionsBuilder: (TextEditingValue textEditingValue) {
+                            if (textEditingValue.text == '') return list;
+                            return list.where((f) => f.nombre
+                                .toLowerCase()
+                                .contains(textEditingValue.text.toLowerCase()));
+                          },
+                          displayStringForOption: (option) => (option as dynamic).nombre,
+                          onSelected: (option) {
+                            setState(() {
+                              _selectedFertId = (option as dynamic).id;
+                              _selectedFertNombre = (option as dynamic).nombre;
+                            });
+                          },
+                          fieldViewBuilder: (ctx, controller, focusNode, onSubmitted) {
+                            return TextField(
+                              controller: controller,
+                              focusNode: focusNode,
+                              decoration: InputDecoration(
+                                hintText: 'Escribe el fertilizante...',
+                                hintStyle: AppText.bodyMd(color: AppColors.outline),
+                                prefixIcon: const Icon(Icons.search, color: AppColors.primary, size: 20),
+                                border: InputBorder.none,
+                                contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                              ),
+                            );
+                          },
+                          optionsViewBuilder: (ctx, onSelected, options) {
+                            return Align(
+                              alignment: Alignment.topLeft,
+                              child: Material(
+                                elevation: 8.0,
+                                borderRadius: BorderRadius.circular(12),
+                                child: Container(
+                                  width: MediaQuery.of(context).size.width - 80,
+                                  constraints: const BoxConstraints(maxHeight: 250),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: ListView.separated(
+                                    padding: EdgeInsets.zero,
+                                    shrinkWrap: true,
+                                    itemCount: options.length,
+                                    separatorBuilder: (c, i) => const Divider(height: 1),
+                                    itemBuilder: (ctx, index) {
+                                      final option = options.elementAt(index);
+                                      return ListTile(
+                                        title: Text((option as dynamic).nombre, style: AppText.bodyMd()),
+                                        onTap: () => onSelected(option),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
                     ),
                   ),
-                  if (_fertilizer == 'Otro') ...[
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _otherFertController,
-                      decoration: InputDecoration(
-                        filled: true,
-                        fillColor: AppColors.surfaceContainerLowest,
-                        hintText: 'Especifique el fertilizante...',
-                        hintStyle: AppText.bodyMd(color: AppColors.outline),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide:
-                              const BorderSide(color: AppColors.outlineVariant),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide:
-                              const BorderSide(color: AppColors.outlineVariant),
-                        ),
-                        contentPadding: const EdgeInsets.all(16),
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 15),
-
-                  // Tip
-                  Row(
-                    children: [
-                      const Icon(Icons.lightbulb,
-                          color: AppColors.secondary, size: 20),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Dosis sugerida: 400 KG',
-                        style: AppText.bodyMd(color: AppColors.secondary),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
-
+                  const SizedBox(height: 20),
                   Text('UNIDAD DE MEDIDA', style: AppText.labelCaps()),
                   const SizedBox(height: 8),
                   Container(
@@ -207,7 +226,6 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-
                   Text('CANTIDAD APLICADA', style: AppText.labelCaps()),
                   const SizedBox(height: 12),
                   Row(
@@ -279,7 +297,6 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
                     ],
                   ),
                   const SizedBox(height: 24),
-
                   Text('SELECCIONAR LOTE', style: AppText.labelCaps()),
                   const SizedBox(height: 12),
                   if (lotesProvider.isLoading && lotes.isEmpty)
@@ -306,52 +323,56 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
                   RuggedButton(
                     text: _guardando ? 'GUARDANDO...' : 'GUARDAR REGISTRO',
                     icon: Icons.save,
-                    onPressed: _guardando ? () {} : () async {
-                      if (_loteId == null) return;
-                      setState(() => _guardando = true);
+                    onPressed: _guardando
+                        ? () {}
+                        : () async {
+                            if (_loteId == null) return;
+                            setState(() => _guardando = true);
 
-                      final finalFert = _fertilizer == 'Otro' &&
-                              _otherFertController.text.isNotEmpty
-                          ? _otherFertController.text
-                          : _fertilizer;
+                            final finalFertNombre =
+                                _selectedFertNombre ?? 'Desconocido';
 
-                      final user = context.read<AuthProvider>().currentUser;
-                      final userId = user?.id ?? 'unknown';
-                      final id = 'fert_${DateTime.now().millisecondsSinceEpoch}';
-                      final now = DateTime.now().toIso8601String();
+                            final user =
+                                context.read<AuthProvider>().currentUser;
+                            final userId = user?.id ?? 'unknown';
+                            final id =
+                                'fert_${DateTime.now().millisecondsSinceEpoch}';
+                            final now = DateTime.now().toIso8601String();
 
-                      await DatabaseHelper.instance.insert(DatabaseHelper.tableFertilizacion, {
-                        'id': id,
-                        'loteId': _loteId,
-                        'loteNombre': _loteNombre,
-                        'tipoFertilizante': _fertilizer,
-                        'nombre': finalFert,
-                        'dosis': _amount,
-                        'unidad': _unit,
-                        'metodoAplicacion': null,
-                        'fecha': now,
-                        'observaciones': null,
-                        'userId': userId,
-                        'createdAt': now,
-                        'isPendingSync': 1,
-                      });
+                            await DatabaseHelper.instance
+                                .insert(DatabaseHelper.tableFertilizacion, {
+                              'id': id,
+                              'loteId': _loteId,
+                              'loteNombre': _loteNombre,
+                              'tipoFertilizante': _selectedFertId,
+                              'fertilizanteId': _selectedFertId,
+                              'nombre': finalFertNombre,
+                              'dosis': _amount,
+                              'unidad': _unit,
+                              'metodoAplicacion': null,
+                              'fecha': now,
+                              'observaciones': null,
+                              'userId': userId,
+                              'createdAt': now,
+                              'isPendingSync': 1,
+                            });
 
-                      if (!mounted) return;
-                      setState(() => _guardando = false);
+                            if (!mounted) return;
+                            setState(() => _guardando = false);
 
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => FertilizationSuccessScreen(
-                            lote: _loteNombre ?? '',
-                            fertilizer: finalFert,
-                            amount: _amount,
-                            unit: _unit,
-                            currentTab: widget.currentTab,
-                          ),
-                        ),
-                      );
-                    },
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => FertilizationSuccessScreen(
+                                  lote: _loteNombre ?? '',
+                                  fertilizer: finalFertNombre,
+                                  amount: _amount,
+                                  unit: _unit,
+                                  currentTab: widget.currentTab,
+                                ),
+                              ),
+                            );
+                          },
                   ),
                   const SizedBox(height: 24),
                 ],

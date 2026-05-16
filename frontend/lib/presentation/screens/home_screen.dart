@@ -255,8 +255,7 @@ class _HeroSectionState extends State<_HeroSection> {
       }
 
       // 2. Fetch soil status
-      final url =
-          Uri.parse('${ApiEndpoints.baseUrl}/weather/sensor/humidity');
+      final url = Uri.parse('${ApiEndpoints.baseUrl}/weather/sensor/humidity');
       final response = await http.get(url).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -650,15 +649,39 @@ class _WeatherSectionState extends State<_WeatherSection> {
     }
   }
 
+  IconData _getTempIcon() {
+    if (_temperature == '...' || _temperature == '--°C')
+      return Icons.thermostat;
+    try {
+      final val =
+          double.tryParse(_temperature.replaceAll('°C', '').trim()) ?? 25.0;
+      if (val > 30) return Icons.wb_sunny; // Hot
+      if (val < 15) return Icons.ac_unit; // Cold
+      return Icons.thermostat; // Mild
+    } catch (_) {
+      return Icons.thermostat;
+    }
+  }
+
+  IconData _getRainIcon() {
+    if (_rainProb == '...' || _rainProb == '--%') return Icons.water_drop;
+    try {
+      final val = double.tryParse(_rainProb.replaceAll('%', '').trim()) ?? 0.0;
+      if (val > 50) return Icons.umbrella; // High chance of rain
+      return Icons.water_drop;
+    } catch (_) {
+      return Icons.water_drop;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
         Expanded(
-            child: _buildCard(Icons.thermostat, 'Temperatura', _temperature)),
+            child: _buildCard(_getTempIcon(), 'Temperatura', _temperature)),
         const SizedBox(width: 8),
-        Expanded(
-            child: _buildCard(Icons.water_drop, 'Prob. Lluvia', _rainProb)),
+        Expanded(child: _buildCard(_getRainIcon(), 'Prob. Lluvia', _rainProb)),
       ],
     );
   }

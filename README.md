@@ -1,200 +1,91 @@
-markdown# AgroField - Plataforma de Agricultura Inteligente
+# 🚜 AgroField - Plataforma de Agricultura Inteligente
 
-Plataforma digital para pequenos productores del Magdalena con backend NestJS y frontend Flutter.
+AgroField es una solución digital diseñada para empoderar a los pequeños productores del Magdalena, Colombia. Permite la gestión técnica de cultivos, control fitosanitario y monitoreo de humedad en tiempo real mediante un ecosistema **Offline-First**.
 
-## Estructura del proyecto
-agrofield/
-├── backend/        # API REST en NestJS + PostgreSQL
-└── frontend/       # App movil/web en Flutter
+---
 
-## Requisitos previos
+## 🏗️ Estructura del Ecosistema
+El proyecto está dividido en dos grandes módulos:
+*   **Backend (`/backend`)**: API REST robusta desarrollada con **NestJS**, PostgreSQL y TypeORM.
+*   **Frontend (`/frontend`)**: Aplicación móvil multiplataforma desarrollada en **Flutter** con arquitectura basada en Providers.
 
-Antes de empezar, instala:
+---
 
-| Software | Version | Descarga |
-|----------|---------|----------|
-| Node.js | v20+ | https://nodejs.org |
-| Docker Desktop | Reciente | https://www.docker.com/products/docker-desktop |
-| Flutter SDK | 3.27+ | https://docs.flutter.dev/get-started/install |
-| Git | Reciente | https://git-scm.com |
-| Java JDK | 17 | https://adoptium.net |
+## 📋 Requisitos Previos
+Asegúrate de tener instalado lo siguiente antes de comenzar:
 
-Verifica con:
+| Herramienta | Versión | Propósito |
+| :--- | :--- | :--- |
+| **Node.js** | v20+ | Motor del Backend |
+| **Docker Desktop** | Reciente | Contenedores de Base de Datos |
+| **Flutter SDK** | 3.27+ | Framework de la App Móvil |
+| **Java JDK** | 17 | Compilación Android |
+| **ADB** | Reciente | Conexión con dispositivos físicos |
 
-```bash
-node --version
-docker --version
-flutter --version
-java -version
-```
+---
 
-## Backend - Levantar la API
+## 🚀 Guía de Inicio Rápido (Orden de Encendido)
 
-### 1. Entrar al backend
+Para evitar errores de conexión entre la app y el servidor, sigue este orden exacto:
 
-```bash
-cd backend
-```
+### 1. Preparar el Backend (Base de Datos y API)
+1.  Entra a la carpeta: `cd backend`
+2.  Instala dependencias: `npm install`
+3.  Configura el entorno: Copia `.env.example` a `.env`
+4.  **Levantar DB**: `npm run docker:up` (Puerto por defecto: `5433`)
+5.  **Correr Migraciones**: `npm run migration:run`
+6.  **Iniciar Servidor**: `npm run start:dev`
+    *   *La API estará disponible en:* `http://localhost:3000/api/v1`
+    *   *Documentación Swagger:* `http://localhost:3000/api/docs`
 
-### 2. Instalar dependencias
+### 2. Conectar Dispositivo (Celular o Emulador)
+*   **Si usas Celular Físico:**
+    1.  Activa la **Depuración Inalámbrica** en opciones de desarrollador.
+    2.  Conéctate mediante ADB: `adb connect 192.168.0.X:PUERTO`
+*   **Si usas Emulador:**
+    1.  Abre **Android Studio** -> Device Manager.
+    2.  Inicia tu dispositivo virtual (AVD).
+*   **Verificación:** Asegúrate de que el dispositivo aparezca en la barra inferior de VS Code.
 
-```bash
-npm install
-```
+### 3. Lanzar la Aplicación (Frontend)
+1.  Entra a la carpeta: `cd frontend`
+2.  Instala dependencias: `flutter pub get`
+3.  **Ejecutar**: `flutter run` (o presiona `F5` en VS Code)
 
-### 3. Configurar variables de entorno
+---
 
-Copia `.env.example` a `.env`:
+## 🌐 Configuración de Red Inteligente
+La aplicación detecta automáticamente el entorno para conectar con el backend. Revisa `lib/core/network/api_endpoints.dart` si necesitas ajustes:
 
-```bash
-# Windows PowerShell
-Copy-Item .env.example .env
+*   **Web (Chrome):** Conecta a `localhost`.
+*   **Emulador Android:** Conecta a `10.0.2.2`.
+*   **Celular Físico:** Utiliza la IP IPv4 de tu computadora (ej. `192.168.0.11`).
+    > **IMPORTANTE:** Ambos dispositivos deben estar en la misma red WiFi. Si cambias de red, actualiza tu IP local con el comando `ipconfig`.
 
-# Linux/Mac
-cp .env.example .env
-```
+---
 
-### 4. Levantar PostgreSQL en Docker
+## 🛠️ Solución de Problemas Comunes
 
-```bash
-docker compose up -d
-```
+### 1. ¿Error al iniciar sesión? (Connection Refused)
+*   **Firewall de Windows:** Es la causa principal. Desactiva temporalmente el Firewall (Red Privada) o crea una regla de entrada para el puerto `3000`.
+*   **Backend Caído:** Verifica que la terminal del backend no muestre errores en rojo.
 
-Esto levanta:
-- PostgreSQL en `localhost:5432`
-- pgAdmin en `localhost:5050` (admin@agrofield.local / admin)
+### 2. Docker no inicia
+*   Ejecuta: `docker compose down -v` para limpiar volúmenes y luego `npm run docker:up`.
 
-### 5. Correr migraciones de la base de datos
+### 3. Errores de SDK
+*   Asegúrate de que la ruta de Flutter no tenga espacios (Ej: `C:\dev\flutter` es correcto, `C:\Mis Programas\flutter` puede fallar).
 
-```bash
-npm run migration:run
-```
+---
 
-### 6. Arrancar el servidor
+## 👥 Equipo de Desarrollo
+**Universidad del Magdalena** - Facultad de Ingeniería
+*Arquitectura de Software 2026*
 
-```bash
-npm run start:dev
-```
+*   Botto Jimenez Yuranis
+*   Capataz Gamarra Jesus
+*   Castaño Mazenett Camila
+*   Rivera Garcia Andres
+*   Rivera Julio Ana Karina
 
-Quedara en: http://localhost:3000
-
-Swagger UI: http://localhost:3000/api/docs
-
-## Frontend - Levantar la app
-
-### 1. Entrar al frontend
-
-```bash
-cd frontend
-```
-
-### 2. Instalar dependencias
-
-```bash
-flutter pub get
-```
-
-### 3. Configurar URL del backend (si no es localhost:3000)
-
-Edita `lib/core/network/api_endpoints.dart`:
-
-```dart
-static const String baseUrl = 'http://TU_HOST:3000/api/v1';
-```
-
-### 4. Correr la app
-
-**En navegador (recomendado para desarrollo):**
-
-```bash
-flutter run -d chrome --web-port 8080
-```
-
-**En emulador Android:**
-
-```bash
-flutter run -d emulator-5554
-```
-
-Y cambia `baseUrl` a `http://10.0.2.2:3000/api/v1`
-
-**En celular fisico Android:**
-
-1. Conecta el celular por USB con depuracion activada
-2. Cambia `baseUrl` a `http://IP_LOCAL_DE_TU_PC:3000/api/v1`
-3. Corre `flutter run`
-
-## Probar el sistema
-
-### 1. Registrar un usuario
-
-Abre la app en Chrome y crea una cuenta nueva.
-
-### 2. Verificar en Swagger
-
-Ve a http://localhost:3000/api/docs y haz login con el mismo usuario.
-
-### 3. Verificar en pgAdmin
-
-Abre http://localhost:5050:
-- Email: admin@agrofield.local
-- Password: admin
-
-Conecta a:
-- Host: agrofield-postgres
-- Port: 5432
-- DB: agrofield_db
-- User: postgres
-- Password: postgres
-
-La tabla `users` mostrara los registros.
-
-## Apagar todo
-
-```bash
-# En backend
-Ctrl+C
-docker compose down
-
-# En frontend
-q
-```
-
-## Solucion de problemas
-
-### CORS error en navegador
-
-Verifica que el backend este corriendo en `http://localhost:3000`.
-
-### "Connection refused" desde celular
-
-- Asegurate de que el PC y el celular esten en la MISMA red WiFi
-- Cambia `baseUrl` con la IP local del PC (ej. 192.168.1.10)
-- Verifica que el firewall de Windows permita el puerto 3000
-
-### Docker no levanta
-
-```bash
-docker compose down -v
-docker compose up -d
-npm run migration:run
-```
-
-### Flutter pub get falla
-
-```bash
-flutter clean
-flutter pub get
-```
-
-## Equipo
-
-Universidad del Magdalena - Arquitectura de Software 2026
-
-- Botto Jimenez Yuranis
-- Capataz Gamarra Jesus
-- Castano Mazenett Camila
-- Rivera Garcia Andres
-- Rivera Julio Ana Karina
-
-Docente: Johan Alberto Robles Solano
+**Docente:** Johan Alberto Robles Solano

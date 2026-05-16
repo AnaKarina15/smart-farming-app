@@ -350,8 +350,7 @@ class _SowingScreenState extends State<SowingScreen> {
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
-                          builder: (_) =>
-                              SowingSuccessScreen(lote: _lote, crop: finalCrop),
+                          builder: (_) => SowingSuccessScreen(lote: _lote, crop: finalCrop, currentTab: widget.currentTab),
                         ),
                       );
                     },

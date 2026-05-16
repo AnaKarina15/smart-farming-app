@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
 import '../widgets/success_scaffold.dart';
-import 'lote_history_screen.dart';
+import '../common/agro_bottom_nav.dart';
+import 'home_screen.dart';
+import 'map_onboarding_screen.dart';
+import 'tasks_screen.dart';
 
 class SowingSuccessScreen extends StatelessWidget {
   final String lote;
   final String crop;
+  final AgroTab currentTab;
 
   const SowingSuccessScreen({
     super.key,
     this.lote = 'Lote Norte',
     this.crop = 'Maíz',
+    this.currentTab = AgroTab.home,
   });
 
   @override
@@ -22,14 +27,9 @@ class SowingSuccessScreen extends StatelessWidget {
           'La información se guardó en el celular y se sincronizará cuando tengas internet.',
       location: lote,
       detailLabel: 'Cultivo',
-      detailValue: '$crop (2.5 ha)',
+      detailValue: '$crop (2.5 hec)',
       detailIcon: Icons.grass,
-      fallbackIcon: Icons.agriculture,
-      primaryButtonText: 'VER HISTORIAL DEL LOTE',
-      onPrimaryPressed: () => Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => LoteHistoryScreen(loteName: lote)),
-      ),
+      currentTab: currentTab,
     );
   }
 }

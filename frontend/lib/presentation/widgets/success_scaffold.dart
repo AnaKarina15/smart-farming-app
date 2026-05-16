@@ -53,8 +53,20 @@ class _SuccessScaffoldState extends State<SuccessScaffold> {
   void initState() {
     super.initState();
     _timer = Timer(const Duration(seconds: 5), () {
-      if (mounted && widget.onPrimaryPressed != null) {
-        widget.onPrimaryPressed!();
+      if (mounted) {
+        if (widget.onPrimaryPressed != null) {
+          widget.onPrimaryPressed!();
+        } else {
+          Widget destination;
+          if (widget.currentTab == AgroTab.lotes) {
+            destination = const MapOnboardingScreen();
+          } else if (widget.currentTab == AgroTab.tareas) {
+            destination = const TasksScreen();
+          } else {
+            destination = const HomeScreen();
+          }
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => destination));
+        }
       }
     });
   }

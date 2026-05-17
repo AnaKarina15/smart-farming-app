@@ -140,7 +140,7 @@ class _TarjetaResumen extends StatelessWidget {
         border: Border.all(color: AK.border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
+            color: Colors.black.withOpacity(0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -193,7 +193,7 @@ class _GraficoActividad extends StatelessWidget {
         border: Border.all(color: AK.border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
+            color: Colors.black.withOpacity(0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -259,7 +259,7 @@ class _GraficoPainter extends CustomPainter {
     canvas.drawPath(
       area,
       Paint()
-        ..color = AppColors.primary.withValues(alpha: 0.08)
+        ..color = AppColors.primary.withOpacity(0.08)
         ..style = PaintingStyle.fill,
     );
 
@@ -343,7 +343,7 @@ class _TarjetaRol extends StatelessWidget {
         border: Border.all(color: AK.border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
+            color: Colors.black.withOpacity(0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -357,7 +357,7 @@ class _TarjetaRol extends StatelessWidget {
                 width: 28,
                 height: 28,
                 decoration: BoxDecoration(
-                  color: item.color.withValues(alpha: 0.12),
+                  color: item.color.withOpacity(0.12),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(item.icono, color: item.color, size: 16),

@@ -359,56 +359,64 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
 
 class _TarjetaUsuario extends StatelessWidget {
   final UsuarioAdmin usuario;
-  const _TarjetaUsuario({required this.usuario});
+  final bool estatica;
+  
+  const _TarjetaUsuario({
+    required this.usuario,
+    this.estatica = false,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => _irADetalle(context),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AK.border),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                AvatarIniciales(
-                  iniciales: usuario.iniciales,
-                  role: usuario.role,
-                  radio: 22,
+    final cardContent = Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AK.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              AvatarIniciales(
+                iniciales: usuario.iniciales,
+                role: usuario.role,
+                radio: 22,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      usuario.nombreCompleto,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700, fontSize: 15, color: AK.text,
+                      ),
+                    ),
+                    Text(
+                      usuario.email,
+                      style: const TextStyle(fontSize: 12, color: AK.subtext),
+                    ),
+                  ],
                 ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              RolChip(role: usuario.role),
+              const SizedBox(width: 8),
+              PuntoEstado(activo: usuario.activo, eliminado: usuario.estaEliminado),
+              const Spacer(),
+              if (estatica) ...[
+                const Icon(Icons.edit_outlined, size: 20, color: AK.subtext),
                 const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        usuario.nombreCompleto,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700, fontSize: 15, color: AK.text,
-                        ),
-                      ),
-                      Text(
-                        usuario.email,
-                        style: const TextStyle(fontSize: 12, color: AK.subtext),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                RolChip(role: usuario.role),
-                const SizedBox(width: 8),
-                PuntoEstado(activo: usuario.activo, eliminado: usuario.estaEliminado),
-                const Spacer(),
+                const Icon(Icons.more_vert, size: 20, color: AK.subtext),
+              ] else ...[
                 GestureDetector(
                   onTap: () {
                     Navigator.push(
@@ -424,14 +432,21 @@ class _TarjetaUsuario extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 GestureDetector(
-                  onTap: () => _mostrarMenu(context),
+                  onTap: () => _mostrarMenuDestacado(context),
                   child: const Icon(Icons.more_vert, size: 20, color: AK.subtext),
                 ),
               ],
-            ),
-          ],
-        ),
+            ],
+          ),
+        ],
       ),
+    );
+
+    if (estatica) return cardContent;
+
+    return GestureDetector(
+      onTap: () => _irADetalle(context),
+      child: cardContent,
     );
   }
 
@@ -444,44 +459,90 @@ class _TarjetaUsuario extends StatelessWidget {
     );
   }
 
-  void _mostrarMenu(BuildContext context) {
-    final provider = context.read<AdminProvider>();
-    showModalBottomSheet(
+  void _mostrarMenuDestacado(BuildContext context) {
+    final renderBox = context.findRenderObject() as RenderBox;
+    final size = renderBox.size;
+    final position = renderBox.localToGlobal(Offset.zero);
+
+    showGeneralDialog(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+      barrierDismissible: true,
+      barrierLabel: 'Cerrar menú',
+      barrierColor: Colors.black.withOpacity(0.55),
+      transitionDuration: const Duration(milliseconds: 180),
+      pageBuilder: (ctx, anim1, anim2) {
+        return Stack(
           children: [
-            ListTile(
-              leading: Icon(Icons.visibility_outlined, color: AppColors.primary),
-              title: const Text('Ver detalle'),
-              onTap: () { Navigator.pop(context); _irADetalle(context); },
-            ),
-            if (usuario.estaEliminado)
-              ListTile(
-                leading: const Icon(Icons.restore, color: AK.accent),
-                title: const Text('Restaurar usuario'),
-                onTap: () {
-                  Navigator.pop(context);
-                  provider.restaurarUsuario(usuario.id);
-                },
-              )
-            else
-              ListTile(
-                leading: const Icon(Icons.delete_outline, color: AK.error),
-                title: const Text('Eliminar usuario',
-                    style: TextStyle(color: AK.error)),
-                onTap: () {
-                  Navigator.pop(context);
-                  _confirmarEliminar(context, provider);
-                },
+            // Tarjeta clonada encima de la barrera oscura
+            Positioned(
+              left: position.dx,
+              top: position.dy,
+              width: size.width,
+              child: Material(
+                color: Colors.transparent,
+                child: _TarjetaUsuario(usuario: usuario, estatica: true),
               ),
+            ),
+            
+            // Opciones del menú flotante alineadas debajo de la tarjeta
+            Positioned(
+              left: position.dx + size.width - 170,
+              top: position.dy + size.height + 6,
+              width: 160,
+              child: FadeTransition(
+                opacity: anim1,
+                child: Material(
+                  elevation: 8,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: const BorderSide(color: AK.border),
+                  ),
+                  color: Colors.white,
+                  surfaceTintColor: Colors.white,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ListTile(
+                          leading: Icon(Icons.visibility_outlined, color: AppColors.primary, size: 18),
+                          title: const Text('Ver detalle', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AK.text)),
+                          dense: true,
+                          onTap: () {
+                            Navigator.pop(ctx);
+                            _irADetalle(context);
+                          },
+                        ),
+                        const Divider(height: 1, color: AK.border),
+                        if (usuario.estaEliminado)
+                          ListTile(
+                            leading: const Icon(Icons.restore, color: AK.accent, size: 18),
+                            title: const Text('Restaurar', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AK.text)),
+                            dense: true,
+                            onTap: () {
+                              Navigator.pop(ctx);
+                              context.read<AdminProvider>().restaurarUsuario(usuario.id);
+                            },
+                          )
+                        else
+                          ListTile(
+                            leading: const Icon(Icons.delete_outline, color: AK.error, size: 18),
+                            title: const Text('Eliminar', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AK.error)),
+                            dense: true,
+                            onTap: () {
+                              Navigator.pop(ctx);
+                              _confirmarEliminar(context, context.read<AdminProvider>());
+                            },
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ],
-        ),
-      ),
+        );
+      },
     );
   }
 

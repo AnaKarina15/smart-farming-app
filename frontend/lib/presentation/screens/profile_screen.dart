@@ -29,6 +29,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final profileImage = context.watch<ProfileImageProvider>();
     final name = user?.nombreCompleto ?? 'Usuario';
     final email = user?.email ?? 'usuario@correo.com';
+    final role = user?.roleLegible ?? 'Usuario';
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -88,7 +89,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 16),
             Text(name, style: AppText.h2()),
             const SizedBox(height: 4),
-            Text(email, style: AppText.bodyLg(color: AppColors.outline)),
+            Text(role, style: AppText.bodyLg(color: AppColors.outline)),
             const SizedBox(height: 32),
 
             // Información Personal

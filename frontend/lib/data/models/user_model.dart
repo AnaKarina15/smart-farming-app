@@ -71,13 +71,16 @@ class UserModel {
   String get roleLegible {
     switch (role) {
       case 'pequeno_productor':
-        return 'Pequeno Productor';
+        return 'Pequeño Productor';
       case 'trabajador':
         return 'Trabajador';
       case 'gestor':
         return 'Gestor';
+      case 'administrador':
+        return 'Administrador';
       default:
-        return role;
+        if (role.isEmpty) return role;
+        return role[0].toUpperCase() + role.substring(1);
     }
   }
 }

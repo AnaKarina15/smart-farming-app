@@ -196,87 +196,101 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
                   ],
                 ),
 
-                if (_mostrarFiltros) ...[
-                  const SizedBox(height: 12),
-
-                  // Chips de rol
-                  const Text('Rol', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AK.text)),
-                  const SizedBox(height: 8),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        ChipFiltro(
-                          label: 'Todos',
-                          seleccionado: _rolesSeleccionados.length == 4,
-                          onTap: () => _onRolTap(null),
-                        ),
-                        const SizedBox(width: 6),
-                        ChipFiltro(
-                          label: 'Productores',
-                          seleccionado: _rolesSeleccionados.contains('pequeno_productor'),
-                          onTap: () => _onRolTap('pequeno_productor'),
-                        ),
-                        const SizedBox(width: 6),
-                        ChipFiltro(
-                          label: 'Trabajadores',
-                          seleccionado: _rolesSeleccionados.contains('trabajador'),
-                          onTap: () => _onRolTap('trabajador'),
-                        ),
-                        const SizedBox(width: 6),
-                        ChipFiltro(
-                          label: 'Gestores',
-                          seleccionado: _rolesSeleccionados.contains('gestor'),
-                          onTap: () => _onRolTap('gestor'),
-                        ),
-                        const SizedBox(width: 6),
-                        ChipFiltro(
-                          label: 'Admins',
-                          seleccionado: _rolesSeleccionados.contains('administrador'),
-                          onTap: () => _onRolTap('administrador'),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  // Chips de estado
-                  const Text('Estado', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AK.text)),
-                  const SizedBox(height: 8),
-                  Row(
+                AnimatedCrossFade(
+                  duration: const Duration(milliseconds: 300),
+                  sizeCurve: Curves.easeInOut,
+                  firstCurve: Curves.easeInOut,
+                  secondCurve: Curves.easeInOut,
+                  firstChild: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      ChipFiltro(
-                        label: 'Activo',
-                        seleccionado: _estadosSeleccionados.contains(true),
-                        onTap: () => _onEstadoTap(true),
+                      const SizedBox(height: 12),
+
+                      // Chips de rol
+                      const Text('Rol', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AK.text)),
+                      const SizedBox(height: 8),
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            ChipFiltro(
+                              label: 'Todos',
+                              seleccionado: _rolesSeleccionados.length == 4,
+                              onTap: () => _onRolTap(null),
+                            ),
+                            const SizedBox(width: 6),
+                            ChipFiltro(
+                              label: 'Productores',
+                              seleccionado: _rolesSeleccionados.contains('pequeno_productor'),
+                              onTap: () => _onRolTap('pequeno_productor'),
+                            ),
+                            const SizedBox(width: 6),
+                            ChipFiltro(
+                              label: 'Trabajadores',
+                              seleccionado: _rolesSeleccionados.contains('trabajador'),
+                              onTap: () => _onRolTap('trabajador'),
+                            ),
+                            const SizedBox(width: 6),
+                            ChipFiltro(
+                              label: 'Gestores',
+                              seleccionado: _rolesSeleccionados.contains('gestor'),
+                              onTap: () => _onRolTap('gestor'),
+                            ),
+                            const SizedBox(width: 6),
+                            ChipFiltro(
+                              label: 'Admins',
+                              seleccionado: _rolesSeleccionados.contains('administrador'),
+                              onTap: () => _onRolTap('administrador'),
+                            ),
+                          ],
+                        ),
                       ),
-                      const SizedBox(width: 6),
-                      ChipFiltro(
-                        label: 'Inactivo',
-                        seleccionado: _estadosSeleccionados.contains(false),
-                        onTap: () => _onEstadoTap(false),
+
+                      const SizedBox(height: 12),
+
+                      // Chips de estado
+                      const Text('Estado', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AK.text)),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          ChipFiltro(
+                            label: 'Activo',
+                            seleccionado: _estadosSeleccionados.contains(true),
+                            onTap: () => _onEstadoTap(true),
+                          ),
+                          const SizedBox(width: 6),
+                          ChipFiltro(
+                            label: 'Inactivo',
+                            seleccionado: _estadosSeleccionados.contains(false),
+                            onTap: () => _onEstadoTap(false),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // Toggle eliminados
+                      Consumer<AdminProvider>(
+                        builder: (_, prov, __) => Row(
+                          children: [
+                            const Text('Ver eliminados', style: TextStyle(fontSize: 13, color: AK.text)),
+                            const Spacer(),
+                            Switch(
+                              value: prov.verEliminados,
+                              onChanged: prov.setVerEliminados,
+                              activeColor: AppColors.primary,
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
-
-                  const SizedBox(height: 12),
-
-                  // Toggle eliminados
-                  Consumer<AdminProvider>(
-                    builder: (_, prov, __) => Row(
-                      children: [
-                        const Text('Ver eliminados', style: TextStyle(fontSize: 13, color: AK.text)),
-                        const Spacer(),
-                        Switch(
-                          value: prov.verEliminados,
-                          onChanged: prov.setVerEliminados,
-                          activeColor: AppColors.primary,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                  secondChild: const SizedBox(width: double.infinity, height: 0),
+                  crossFadeState: _mostrarFiltros
+                      ? CrossFadeState.showFirst
+                      : CrossFadeState.showSecond,
+                ),
               ],
             ),
           ),

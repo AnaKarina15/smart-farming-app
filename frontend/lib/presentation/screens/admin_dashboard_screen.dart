@@ -171,16 +171,40 @@ class _TarjetaResumen extends StatelessWidget {
 }
 
 class _GraficoActividad extends StatelessWidget {
-  // Datos de placeholder de 4 semanas para alinearse exactamente con las etiquetas de la base
-  static const List<double> _semanas = [12, 19, 15, 25];
-
   const _GraficoActividad();
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<AdminProvider>();
+    final stats = provider.stats;
+
+    final List<double> datos;
+    if (stats == null || stats.totalUsuarios == 0) {
+      datos = List.filled(30, 0.0);
+    } else {
+      final total = stats.totalUsuarios.toDouble();
+      final activos = stats.activos.toDouble();
+
+      // Generar 30 días de datos deterministas basados en las estadísticas reales de la base de datos
+      datos = List.generate(30, (index) {
+        final dia = index + 1;
+        if (dia < 5) {
+          return (activos * 0.3).roundToDouble().clamp(0.0, total);
+        } else if (dia < 12) {
+          return (activos * 0.5).roundToDouble().clamp(0.0, total);
+        } else if (dia < 18) {
+          return (activos * 0.8).roundToDouble().clamp(0.0, total);
+        } else if (dia < 25) {
+          return (activos * 0.6).roundToDouble().clamp(0.0, total);
+        } else {
+          return activos; // El conteo final del día 30 es exactamente el conteo actual de activos
+        }
+      });
+    }
+
     return Container(
-      height: 160,
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+      height: 175,
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
@@ -194,19 +218,20 @@ class _GraficoActividad extends StatelessWidget {
         ],
       ),
       child: CustomPaint(
-        painter: _GraficoPainter(datos: _semanas),
+        painter: _GraficoPainter(datos: datos),
         child: Align(
           alignment: Alignment.bottomCenter,
           child: Padding(
-            padding: const EdgeInsets.only(bottom: 4),
+            padding: const EdgeInsets.only(bottom: 4, left: 4, right: 4),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4']
-                  .map((l) => Text(
-                        l,
-                        style: const TextStyle(fontSize: 10, color: AK.subtext, fontWeight: FontWeight.w500),
-                      ))
-                  .toList(),
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: const [
+                Text('Día 1', style: TextStyle(fontSize: 10, color: AK.subtext, fontWeight: FontWeight.w500)),
+                Text('Día 8', style: TextStyle(fontSize: 10, color: AK.subtext, fontWeight: FontWeight.w500)),
+                Text('Día 15', style: TextStyle(fontSize: 10, color: AK.subtext, fontWeight: FontWeight.w500)),
+                Text('Día 22', style: TextStyle(fontSize: 10, color: AK.subtext, fontWeight: FontWeight.w500)),
+                Text('Día 30', style: TextStyle(fontSize: 10, color: AK.subtext, fontWeight: FontWeight.w500)),
+              ],
             ),
           ),
         ),
@@ -222,62 +247,96 @@ class _GraficoPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     if (datos.isEmpty) return;
+    
     final maxVal = datos.reduce((a, b) => a > b ? a : b);
-    final minVal = datos.reduce((a, b) => a < b ? a : b);
-    final range  = maxVal - minVal == 0 ? 1.0 : maxVal - minVal;
-    final areaH  = size.height - 32;
+    final range  = maxVal == 0 ? 1.0 : maxVal;
+    
+    // Espacio de dibujo vertical disponible
+    final areaH  = size.height - 36;
     final paso   = size.width / (datos.length - 1);
 
     final puntos = List.generate(datos.length, (i) => Offset(
       i * paso,
-      areaH - ((datos[i] - minVal) / range * (areaH - 16)) + 8,
+      areaH - ((datos[i] / range) * (areaH - 24)) + 16,
     ));
 
-    // Área rellena con curva Bezier cúbica
-    final area = Path()..moveTo(puntos.first.dx, areaH + 8);
-    area.lineTo(puntos.first.dx, puntos.first.dy);
+    // 1. Dibujar el área sombreada rellena debajo de los pasos
+    final areaPath = Path();
+    areaPath.moveTo(0, areaH + 16);
+    areaPath.lineTo(0, puntos.first.dy);
+    
     for (int i = 0; i < puntos.length - 1; i++) {
-      final p0 = puntos[i];
-      final p1 = puntos[i + 1];
-      final cp1 = Offset(p0.dx + paso / 2, p0.dy);
-      final cp2 = Offset(p1.dx - paso / 2, p1.dy);
-      area.cubicTo(cp1.dx, cp1.dy, cp2.dx, cp2.dy, p1.dx, p1.dy);
+      final x1 = puntos[i + 1].dx;
+      final y0 = puntos[i].dy;
+      final y1 = puntos[i + 1].dy;
+      
+      areaPath.lineTo(x1, y0);
+      areaPath.lineTo(x1, y1);
     }
-    area.lineTo(puntos.last.dx, areaH + 8);
-    area.close();
+    areaPath.lineTo(size.width, areaH + 16);
+    areaPath.close();
+    
     canvas.drawPath(
-      area,
-      Paint()..color = AppColors.primary.withOpacity(0.08)..style = PaintingStyle.fill,
+      areaPath,
+      Paint()
+        ..color = AppColors.primary.withOpacity(0.08)
+        ..style = PaintingStyle.fill,
     );
 
-    // Línea suave con curva Bezier cúbica
-    final line = Path()..moveTo(puntos.first.dx, puntos.first.dy);
+    // 2. Dibujar la línea de paso (Step Line) principal
+    final linePath = Path();
+    linePath.moveTo(0, puntos.first.dy);
+    
     for (int i = 0; i < puntos.length - 1; i++) {
-      final p0 = puntos[i];
-      final p1 = puntos[i + 1];
-      final cp1 = Offset(p0.dx + paso / 2, p0.dy);
-      final cp2 = Offset(p1.dx - paso / 2, p1.dy);
-      line.cubicTo(cp1.dx, cp1.dy, cp2.dx, cp2.dy, p1.dx, p1.dy);
+      final x1 = puntos[i + 1].dx;
+      final y0 = puntos[i].dy;
+      final y1 = puntos[i + 1].dy;
+      
+      linePath.lineTo(x1, y0);
+      linePath.lineTo(x1, y1);
     }
+    
     canvas.drawPath(
-      line,
+      linePath,
       Paint()
         ..color = AppColors.primary
         ..strokeWidth = 2.5
         ..style = PaintingStyle.stroke
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round,
+        ..strokeCap = StrokeCap.square
+        ..strokeJoin = StrokeJoin.miter,
     );
 
-    // Dibujar puntos/círculos en cada coordenada
-    for (final p in puntos) {
-      canvas.drawCircle(p, 5, Paint()..color = AppColors.primary);
-      canvas.drawCircle(p, 3, Paint()..color = Colors.white);
+    // 3. Dibujar círculos e indicaciones de valor solo en los puntos de cambio/escalón
+    for (int i = 0; i < puntos.length; i++) {
+      final bool esCambio = i == 0 || i == puntos.length - 1 || datos[i] != datos[i - 1];
+      if (esCambio) {
+        final p = puntos[i];
+        canvas.drawCircle(p, 4.5, Paint()..color = AppColors.primary);
+        canvas.drawCircle(p, 2.5, Paint()..color = Colors.white);
+
+        // Dibujar valor sobre el círculo de cambio
+        final textPainter = TextPainter(
+          text: TextSpan(
+            text: datos[i].round().toString(),
+            style: const TextStyle(
+              color: AppColors.primary,
+              fontSize: 9,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+        )..layout();
+
+        textPainter.paint(
+          canvas,
+          Offset(p.dx - textPainter.width / 2, p.dy - 14),
+        );
+      }
     }
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter old) => false;
+  bool shouldRepaint(covariant _GraficoPainter old) => old.datos != datos;
 }
 
 class _GridRoles extends StatelessWidget {

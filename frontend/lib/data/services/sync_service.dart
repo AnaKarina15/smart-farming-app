@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:dio/dio.dart';
 import '../../core/network/dio_client.dart';
 import '../../core/storage/database_helper.dart';
+import '../../core/network/api_endpoints.dart';
 import '../providers/lotes_provider.dart';
 
 /// Servicio de sincronización offline → backend.
@@ -34,6 +36,9 @@ class SyncService {
     if (lotesProvider != null) {
       await lotesProvider.recargar();
     }
+
+    // 3. Sincronizar módulos operativos (Sprint 3)
+    await _syncOperaciones();
 
     return !huboErrores;
   }
@@ -76,20 +81,106 @@ class SyncService {
     }
   }
 
-  // ─── Para Sprint 2 ────────────────────────────────────────
-  // Cuando el backend tenga los endpoints de siembras, riego, etc.,
-  // se llamarán aquí automáticamente al sincronizar.
+  // ─── Módulos Operativos (Sprint 3) ───────────────────────
 
-  /// Sincroniza registros de cualquier tabla local contra un endpoint REST.
-  /// Usar cuando el backend Sprint 2 esté listo.
-  Future<void> sincronizarTabla({
+  Future<void> _syncOperaciones() async {
+    // Orden estricto según la guía:
+    // 1. siembras, 2. riego, 3. fertilizacion, 4. hallazgos, 5. tratamientos, 6. observaciones
+    await _syncModuloOperativo(
+      tabla: DatabaseHelper.tableSiembras,
+      endpointBase: ApiEndpoints.siembras,
+      mapper: (row) => {
+        'loteId': row['loteId'],
+        if (row['cultivoId'] != null) 'cultivoId': row['cultivoId'],
+        if (row['cultivoOtro'] != null) 'cultivoOtro': row['cultivoOtro'],
+        if (row['variedad'] != null) 'variedad': row['variedad'],
+        'fecha': row['fecha'],
+        if (row['cantidadSemillas'] != null) 'cantidadSemillas': row['cantidadSemillas'],
+        if (row['unidad'] != null) 'unidad': row['unidad'],
+        if (row['distanciaEntreFilas'] != null) 'distanciaEntreFilas': row['distanciaEntreFilas'],
+        if (row['distanciaEntrePlantas'] != null) 'distanciaEntrePlantas': row['distanciaEntrePlantas'],
+        if (row['observaciones'] != null) 'observaciones': row['observaciones'],
+      },
+    );
+
+    await _syncModuloOperativo(
+      tabla: DatabaseHelper.tableRiego,
+      endpointBase: ApiEndpoints.riego,
+      mapper: (row) => {
+        'loteId': row['loteId'],
+        'tipo': row['tipo'],
+        if (row['duracionMinutos'] != null) 'duracionMinutos': row['duracionMinutos'],
+        if (row['cantidadLitros'] != null) 'cantidadLitros': row['cantidadLitros'],
+        'fecha': row['fecha'],
+        if (row['humedad'] != null) 'humedad': row['humedad'],
+        if (row['observaciones'] != null) 'observaciones': row['observaciones'],
+      },
+    );
+
+    await _syncModuloOperativo(
+      tabla: DatabaseHelper.tableFertilizacion,
+      endpointBase: ApiEndpoints.fertilizacion,
+      mapper: (row) => {
+        'loteId': row['loteId'],
+        if (row['fertilizanteId'] != null) 'fertilizanteId': row['fertilizanteId'],
+        if (row['fertilizanteOtro'] != null) 'fertilizanteOtro': row['fertilizanteOtro'],
+        if (row['dosis'] != null) 'dosis': row['dosis'],
+        if (row['unidad'] != null) 'unidad': row['unidad'],
+        if (row['metodoAplicacion'] != null) 'metodoAplicacion': row['metodoAplicacion'],
+        'fecha': row['fecha'],
+        if (row['observaciones'] != null) 'observaciones': row['observaciones'],
+      },
+    );
+
+    await _syncModuloOperativo(
+      tabla: DatabaseHelper.tableHallazgos,
+      endpointBase: ApiEndpoints.hallazgos,
+      mapper: (row) => {
+        'loteId': row['loteId'],
+        if (row['plagaId'] != null) 'plagaId': row['plagaId'],
+        if (row['plagaOtro'] != null) 'plagaOtro': row['plagaOtro'],
+        'severidad': row['severidad'],
+        if (row['descripcion'] != null) 'descripcion': row['descripcion'],
+        if (row['fotoPath'] != null) 'fotoPath': row['fotoPath'],
+        'fecha': row['fecha'],
+      },
+    );
+
+    await _syncModuloOperativo(
+      tabla: DatabaseHelper.tableTratamientos,
+      endpointBase: ApiEndpoints.tratamientos,
+      mapper: (row) => {
+        'loteId': row['loteId'],
+        if (row['hallazgoId'] != null) 'hallazgoId': row['hallazgoId'],
+        'producto': row['producto'],
+        if (row['dosis'] != null) 'dosis': row['dosis'],
+        if (row['unidad'] != null) 'unidad': row['unidad'],
+        if (row['metodoAplicacion'] != null) 'metodoAplicacion': row['metodoAplicacion'],
+        'fecha': row['fecha'],
+        if (row['observaciones'] != null) 'observaciones': row['observaciones'],
+      },
+    );
+
+    await _syncModuloOperativo(
+      tabla: DatabaseHelper.tableObservaciones,
+      endpointBase: ApiEndpoints.observaciones,
+      mapper: (row) => {
+        'loteId': row['loteId'],
+        'descripcion': row['descripcion'],
+        if (row['tipo'] != null) 'tipo': row['tipo'],
+        'fecha': row['fecha'],
+      },
+    );
+  }
+
+  Future<void> _syncModuloOperativo({
     required String tabla,
     required String endpointBase,
     required Map<String, dynamic> Function(Map<String, dynamic>) mapper,
   }) async {
     final pendientes = await _db.queryWhere(
       tabla,
-      'isPendingSync = ?',
+      'isPendingSync = ? AND syncError IS NULL',
       [1],
     );
 
@@ -98,17 +189,41 @@ class SyncService {
     for (final row in pendientes) {
       try {
         final payload = mapper(row);
-        await _dioClient.dio.post(endpointBase, data: payload);
+        final response = await _dioClient.dio.post(endpointBase, data: payload);
+        
+        // 201 Created -> Marcar como sincronizado y guardar serverId
+        if (response.statusCode == 201) {
+          await db.update(
+            tabla,
+            {
+              'isPendingSync': 0,
+              'serverId': response.data['data']['id'],
+              'syncError': null,
+            },
+            where: 'id = ?',
+            whereArgs: [row['id']],
+          );
+        }
+      } on DioException catch (e) {
+        // Manejo de error específico (400, 403)
+        if (e.response != null && (e.response!.statusCode == 400 || e.response!.statusCode == 403)) {
+          final errorData = e.response!.data;
+          String errorMsg = 'Error desconocido';
+          if (errorData is Map && errorData.containsKey('message')) {
+            final msg = errorData['message'];
+            errorMsg = msg is List ? msg.join('\n') : msg.toString();
+          }
 
-        // Marcar como sincronizado
-        await db.update(
-          tabla,
-          {'isPendingSync': 0},
-          where: 'id = ?',
-          whereArgs: [row['id']],
-        );
+          // Marcar con syncError para revisión manual
+          await db.update(
+            tabla,
+            {'syncError': errorMsg},
+            where: 'id = ?',
+            whereArgs: [row['id']],
+          );
+        }
       } catch (_) {
-        // Dejar para el próximo intento
+        // Fallos de red se dejan para el siguiente intento
       }
     }
   }

@@ -15,7 +15,7 @@ import 'package:path_provider/path_provider.dart';
 /// - observaciones  → observaciones generales del campo
 class DatabaseHelper {
   static const _databaseName = 'AgroField.db';
-  static const _databaseVersion = 4;
+  static const _databaseVersion = 5;
 
   // Nombres de tablas
   static const tableLotes = 'lotes';
@@ -87,6 +87,30 @@ class DatabaseHelper {
       await db.execute('ALTER TABLE $tableSiembras ADD COLUMN cultivoId TEXT');
       await db.execute('ALTER TABLE $tableFertilizacion ADD COLUMN fertilizanteId TEXT');
     }
+    if (oldVersion < 5) {
+      // Sprint 3: Agregar serverId, syncError, y campos 'Otro'
+      await db.execute('ALTER TABLE $tableSiembras ADD COLUMN cultivoOtro TEXT');
+      await db.execute('ALTER TABLE $tableSiembras ADD COLUMN serverId TEXT');
+      await db.execute('ALTER TABLE $tableSiembras ADD COLUMN syncError TEXT');
+
+      await db.execute('ALTER TABLE $tableRiego ADD COLUMN serverId TEXT');
+      await db.execute('ALTER TABLE $tableRiego ADD COLUMN syncError TEXT');
+
+      await db.execute('ALTER TABLE $tableFertilizacion ADD COLUMN fertilizanteOtro TEXT');
+      await db.execute('ALTER TABLE $tableFertilizacion ADD COLUMN serverId TEXT');
+      await db.execute('ALTER TABLE $tableFertilizacion ADD COLUMN syncError TEXT');
+
+      await db.execute('ALTER TABLE $tableHallazgos ADD COLUMN plagaId TEXT');
+      await db.execute('ALTER TABLE $tableHallazgos ADD COLUMN plagaOtro TEXT');
+      await db.execute('ALTER TABLE $tableHallazgos ADD COLUMN serverId TEXT');
+      await db.execute('ALTER TABLE $tableHallazgos ADD COLUMN syncError TEXT');
+
+      await db.execute('ALTER TABLE $tableTratamientos ADD COLUMN serverId TEXT');
+      await db.execute('ALTER TABLE $tableTratamientos ADD COLUMN syncError TEXT');
+
+      await db.execute('ALTER TABLE $tableObservaciones ADD COLUMN serverId TEXT');
+      await db.execute('ALTER TABLE $tableObservaciones ADD COLUMN syncError TEXT');
+    }
   }
 
   Future<void> _createAllTables(Database db) async {
@@ -147,6 +171,7 @@ class DatabaseHelper {
         loteNombre TEXT NOT NULL,
         cultivo TEXT NOT NULL,
         cultivoId TEXT,
+        cultivoOtro TEXT,
         variedad TEXT,
         fecha TEXT NOT NULL,
         cantidadSemillas REAL,
@@ -156,7 +181,9 @@ class DatabaseHelper {
         observaciones TEXT,
         userId TEXT NOT NULL,
         createdAt TEXT NOT NULL,
-        isPendingSync INTEGER NOT NULL DEFAULT 1
+        isPendingSync INTEGER NOT NULL DEFAULT 1,
+        serverId TEXT,
+        syncError TEXT
       )
     ''');
   }
@@ -175,7 +202,9 @@ class DatabaseHelper {
         observaciones TEXT,
         userId TEXT NOT NULL,
         createdAt TEXT NOT NULL,
-        isPendingSync INTEGER NOT NULL DEFAULT 1
+        isPendingSync INTEGER NOT NULL DEFAULT 1,
+        serverId TEXT,
+        syncError TEXT
       )
     ''');
   }
@@ -188,6 +217,7 @@ class DatabaseHelper {
         loteNombre TEXT NOT NULL,
         tipoFertilizante TEXT NOT NULL,
         fertilizanteId TEXT,
+        fertilizanteOtro TEXT,
         nombre TEXT,
         dosis REAL,
         unidad TEXT,
@@ -196,7 +226,9 @@ class DatabaseHelper {
         observaciones TEXT,
         userId TEXT NOT NULL,
         createdAt TEXT NOT NULL,
-        isPendingSync INTEGER NOT NULL DEFAULT 1
+        isPendingSync INTEGER NOT NULL DEFAULT 1,
+        serverId TEXT,
+        syncError TEXT
       )
     ''');
   }
@@ -208,13 +240,17 @@ class DatabaseHelper {
         loteId TEXT NOT NULL,
         loteNombre TEXT NOT NULL,
         tipo TEXT NOT NULL,
+        plagaId TEXT,
+        plagaOtro TEXT,
         severidad TEXT NOT NULL,
         descripcion TEXT,
         fotoPath TEXT,
         fecha TEXT NOT NULL,
         userId TEXT NOT NULL,
         createdAt TEXT NOT NULL,
-        isPendingSync INTEGER NOT NULL DEFAULT 1
+        isPendingSync INTEGER NOT NULL DEFAULT 1,
+        serverId TEXT,
+        syncError TEXT
       )
     ''');
   }
@@ -234,7 +270,9 @@ class DatabaseHelper {
         observaciones TEXT,
         userId TEXT NOT NULL,
         createdAt TEXT NOT NULL,
-        isPendingSync INTEGER NOT NULL DEFAULT 1
+        isPendingSync INTEGER NOT NULL DEFAULT 1,
+        serverId TEXT,
+        syncError TEXT
       )
     ''');
   }
@@ -250,7 +288,9 @@ class DatabaseHelper {
         fecha TEXT NOT NULL,
         userId TEXT NOT NULL,
         createdAt TEXT NOT NULL,
-        isPendingSync INTEGER NOT NULL DEFAULT 1
+        isPendingSync INTEGER NOT NULL DEFAULT 1,
+        serverId TEXT,
+        syncError TEXT
       )
     ''');
   }

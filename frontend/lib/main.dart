@@ -14,6 +14,8 @@ import 'data/services/sync_service.dart';
 import 'data/services/catalogos_service.dart';
 import 'data/services/catalogos_sync_service.dart';
 import 'data/providers/catalogos_provider.dart';
+import 'data/services/operaciones_service.dart';
+import 'data/providers/operaciones_provider.dart';
 import 'presentation/screens/welcome_screen.dart';
 import 'presentation/widgets/offline_banner.dart';
 
@@ -31,6 +33,7 @@ void main() async {
   final syncService = SyncService(dioClient);
   final catalogosService = CatalogosService(dioClient.dio);
   final catalogosSyncService = CatalogosSyncService(catalogosService);
+  final operacionesService = OperacionesService(dioClient.dio);
 
   // Sincronizar catálogos en segundo plano al arrancar
   catalogosSyncService.sincronizarCatalogos();
@@ -41,6 +44,7 @@ void main() async {
     lotesService: lotesService,
     syncService: syncService,
     catalogosSyncService: catalogosSyncService,
+    operacionesService: operacionesService,
     dioClient: dioClient,
   ));
 }
@@ -51,6 +55,7 @@ class SmartFarmingApp extends StatelessWidget {
   final LotesService lotesService;
   final SyncService syncService;
   final CatalogosSyncService catalogosSyncService;
+  final OperacionesService operacionesService;
   final DioClient dioClient;
 
   const SmartFarmingApp({
@@ -60,6 +65,7 @@ class SmartFarmingApp extends StatelessWidget {
     required this.lotesService,
     required this.syncService,
     required this.catalogosSyncService,
+    required this.operacionesService,
     required this.dioClient,
   });
 
@@ -71,6 +77,7 @@ class SmartFarmingApp extends StatelessWidget {
         Provider<AuthService>.value(value: authService),
         Provider<LotesService>.value(value: lotesService),
         Provider<SyncService>.value(value: syncService),
+        Provider<OperacionesService>.value(value: operacionesService),
 
         // Provider de autenticacion (state management)
         ChangeNotifierProvider<AuthProvider>(
@@ -90,6 +97,11 @@ class SmartFarmingApp extends StatelessWidget {
         // Provider de catálogos (Sprint 2)
         ChangeNotifierProvider<CatalogosProvider>(
           create: (_) => CatalogosProvider()..cargarCatalogos(),
+        ),
+
+        // Provider de operaciones (Sprint 3)
+        ChangeNotifierProvider<OperacionesProvider>(
+          create: (_) => OperacionesProvider(operacionesService),
         ),
       ],
       child: MaterialApp(

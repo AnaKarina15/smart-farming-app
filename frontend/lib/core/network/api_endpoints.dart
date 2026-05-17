@@ -30,4 +30,12 @@ class ApiEndpoints {
   static String loteById(String id) => '/lotes/$id';
   static const String health = '/health';
   static const String weather = '/weather/current';
+
+  // Sprint 3
+  static const String siembras = '/siembras';
+  static const String riego = '/riego';
+  static const String fertilizacion = '/fertilizacion';
+  static const String hallazgos = '/hallazgos';
+  static const String tratamientos = '/tratamientos';
+  static const String observaciones = '/observaciones';
 }

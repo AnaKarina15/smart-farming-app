@@ -48,8 +48,20 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Left: Avatar
-              if (showAvatar)
+              // Left: Back button or Avatar
+              if (showBack)
+                IconButton(
+                  onPressed: onBackTap ?? () => Navigator.maybePop(context),
+                  icon: const Icon(
+                    Icons.arrow_back_ios_new,
+                    color: AppColors.primary,
+                    size: 24,
+                  ),
+                  splashRadius: 24,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                )
+              else if (showAvatar)
                 GestureDetector(
                   onTap: onAvatarTap ?? () => profileImage.pickImage(context),
                   child: Container(

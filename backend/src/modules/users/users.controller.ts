@@ -66,7 +66,8 @@ export class UsersController {
   @Post('me/avatar')
   @ApiOperation({
     summary: 'Subir foto de perfil',
-    description: 'Permite al usuario subir una foto de perfil. Retorna la URL del archivo guardado.',
+    description:
+      'Permite al usuario subir una foto de perfil. Retorna la URL del archivo guardado.',
   })
   @UseInterceptors(
     FileInterceptor('file', {

@@ -17,6 +17,12 @@ import { AuthModule } from './modules/auth/auth.module';
 import { CatalogosModule } from './modules/catalogos/catalogos.module';
 import { HealthModule } from './modules/health/health.module';
 import { LotesModule } from './modules/lotes/lotes.module';
+import { FertilizacionModule } from './modules/fertilizacion/fertilizacion.module';
+import { ObservacionesModule } from './modules/observaciones/observaciones.module';
+import { HallazgosModule } from './modules/hallazgos/hallazgos.module';
+import { RiegoModule } from './modules/riego/riego.module';
+import { SiembrasModule } from './modules/siembras/siembras.module';
+import { TratamientosModule } from './modules/tratamientos/tratamientos.module';
 import { UsersModule } from './modules/users/users.module';
 import { WeatherModule } from './modules/weather/weather.module';
 
@@ -70,6 +76,12 @@ import { WeatherModule } from './modules/weather/weather.module';
     UsersModule,
     LotesModule,
     CatalogosModule,
+    FertilizacionModule,
+    HallazgosModule,
+    ObservacionesModule,
+    RiegoModule,
+    SiembrasModule,
+    TratamientosModule,
     HealthModule,
     WeatherModule,
   ],

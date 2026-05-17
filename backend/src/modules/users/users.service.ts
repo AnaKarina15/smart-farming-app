@@ -98,7 +98,7 @@ export class UsersService {
     // Actually, we can just save the base64 string or a local path.
     // If we use local storage in Multer, `file.filename` is the name.
     const url = `/uploads/avatars/${file.filename}`;
-    
+
     user.fotoPerfilUrl = url;
     await this.usersRepo.save(user);
 

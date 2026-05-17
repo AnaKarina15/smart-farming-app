@@ -96,8 +96,13 @@ class SmartFarmingApp extends StatelessWidget {
         ),
 
         // Provider de imagen de perfil
-        ChangeNotifierProvider<ProfileImageProvider>(
+        ChangeNotifierProxyProvider<AuthProvider, ProfileImageProvider>(
           create: (_) => ProfileImageProvider(dioClient),
+          update: (_, auth, prev) {
+            final provider = prev ?? ProfileImageProvider(dioClient);
+            provider.setInitialAvatarUrl(auth.currentUser?.fotoPerfilUrl);
+            return provider;
+          },
         ),
 
         // Provider de catálogos (Sprint 2)

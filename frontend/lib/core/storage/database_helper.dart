@@ -15,7 +15,7 @@ import 'package:path_provider/path_provider.dart';
 /// - observaciones  → observaciones generales del campo
 class DatabaseHelper {
   static const _databaseName = 'AgroField.db';
-  static const _databaseVersion = 5;
+  static const _databaseVersion = 6;
 
   // Nombres de tablas
   static const tableLotes = 'lotes';
@@ -59,6 +59,7 @@ class DatabaseHelper {
 
   Future<void> _onCreate(Database db, int version) async {
     await _createAllTables(db);
+    await _seedCatalogos(db);
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -111,6 +112,13 @@ class DatabaseHelper {
       await db.execute('ALTER TABLE $tableObservaciones ADD COLUMN serverId TEXT');
       await db.execute('ALTER TABLE $tableObservaciones ADD COLUMN syncError TEXT');
     }
+    if (oldVersion < 6) {
+      // Sprint 3: Datos semilla para catálogos offline + tipo de suelo en lotes
+      try {
+        await db.execute('ALTER TABLE $tableLotes ADD COLUMN tipoSueloId TEXT');
+      } catch (_) {} // Columna ya existe
+      await _seedCatalogos(db);
+    }
   }
 
   Future<void> _createAllTables(Database db) async {
@@ -130,6 +138,151 @@ class DatabaseHelper {
     await _createCatalogoTiposSuelo(db);
   }
 
+  // ─── Datos semilla (offline-first) ────────────────────────
+  Future<void> _seedCatalogos(Database db) async {
+    // Solo insertar si las tablas están vacías
+    final existing = await db.rawQuery('SELECT COUNT(*) as c FROM $tableCatMunicipios');
+    if ((existing.first['c'] as int? ?? 0) > 0) return;
+
+    final batch = db.batch();
+    final now = DateTime.now().toIso8601String();
+
+    // ── 30 Municipios del Magdalena (DANE) ──────────────────
+    final municipios = [
+      {'id': 'mun-001', 'codigoDane': '47001', 'nombre': 'Santa Marta', 'subregion': 'Santa Marta', 'latitud': 11.2408, 'longitud': -74.1990},
+      {'id': 'mun-002', 'codigoDane': '47030', 'nombre': 'Algarrobo', 'subregion': 'Río Ariguaní', 'latitud': 10.1600, 'longitud': -74.0850},
+      {'id': 'mun-003', 'codigoDane': '47053', 'nombre': 'Aracataca', 'subregion': 'Zona Bananera', 'latitud': 10.5922, 'longitud': -74.1889},
+      {'id': 'mun-004', 'codigoDane': '47058', 'nombre': 'Ariguaní', 'subregion': 'Río Ariguaní', 'latitud': 9.8500, 'longitud': -74.0667},
+      {'id': 'mun-005', 'codigoDane': '47161', 'nombre': 'Cerro de San Antonio', 'subregion': 'Sur', 'latitud': 10.3250, 'longitud': -74.8625},
+      {'id': 'mun-006', 'codigoDane': '47170', 'nombre': 'Chibolo', 'subregion': 'Sur', 'latitud': 10.0239, 'longitud': -74.6264},
+      {'id': 'mun-007', 'codigoDane': '47189', 'nombre': 'Ciénaga', 'subregion': 'Zona Bananera', 'latitud': 11.0069, 'longitud': -74.2486},
+      {'id': 'mun-008', 'codigoDane': '47205', 'nombre': 'Concordia', 'subregion': 'Sur', 'latitud': 10.2900, 'longitud': -74.7750},
+      {'id': 'mun-009', 'codigoDane': '47245', 'nombre': 'El Banco', 'subregion': 'Sur', 'latitud': 9.0008, 'longitud': -73.9786},
+      {'id': 'mun-010', 'codigoDane': '47258', 'nombre': 'El Piñón', 'subregion': 'Sur', 'latitud': 10.3994, 'longitud': -74.9592},
+      {'id': 'mun-011', 'codigoDane': '47268', 'nombre': 'El Retén', 'subregion': 'Zona Bananera', 'latitud': 10.6117, 'longitud': -74.2694},
+      {'id': 'mun-012', 'codigoDane': '47288', 'nombre': 'Fundación', 'subregion': 'Zona Bananera', 'latitud': 10.5206, 'longitud': -74.1847},
+      {'id': 'mun-013', 'codigoDane': '47318', 'nombre': 'Guamal', 'subregion': 'Sur', 'latitud': 9.1456, 'longitud': -74.2231},
+      {'id': 'mun-014', 'codigoDane': '47460', 'nombre': 'Nueva Granada', 'subregion': 'Río Ariguaní', 'latitud': 10.0333, 'longitud': -74.3833},
+      {'id': 'mun-015', 'codigoDane': '47541', 'nombre': 'Pedraza', 'subregion': 'Sur', 'latitud': 10.1872, 'longitud': -74.9103},
+      {'id': 'mun-016', 'codigoDane': '47545', 'nombre': 'Pijiño del Carmen', 'subregion': 'Sur', 'latitud': 9.3292, 'longitud': -74.4553},
+      {'id': 'mun-017', 'codigoDane': '47551', 'nombre': 'Pivijay', 'subregion': 'Río Ariguaní', 'latitud': 10.4622, 'longitud': -74.6158},
+      {'id': 'mun-018', 'codigoDane': '47555', 'nombre': 'Plato', 'subregion': 'Sur', 'latitud': 9.7933, 'longitud': -74.7861},
+      {'id': 'mun-019', 'codigoDane': '47570', 'nombre': 'Pueblo Viejo', 'subregion': 'Zona Bananera', 'latitud': 10.9939, 'longitud': -74.2833},
+      {'id': 'mun-020', 'codigoDane': '47605', 'nombre': 'Remolino', 'subregion': 'Sur', 'latitud': 10.6833, 'longitud': -74.7167},
+      {'id': 'mun-021', 'codigoDane': '47660', 'nombre': 'Sabanas de San Ángel', 'subregion': 'Río Ariguaní', 'latitud': 10.0000, 'longitud': -74.2167},
+      {'id': 'mun-022', 'codigoDane': '47675', 'nombre': 'Salamina', 'subregion': 'Sur', 'latitud': 10.4972, 'longitud': -74.7925},
+      {'id': 'mun-023', 'codigoDane': '47692', 'nombre': 'San Sebastián de Buenavista', 'subregion': 'Sur', 'latitud': 9.2403, 'longitud': -74.3803},
+      {'id': 'mun-024', 'codigoDane': '47703', 'nombre': 'San Zenón', 'subregion': 'Sur', 'latitud': 9.2394, 'longitud': -74.5000},
+      {'id': 'mun-025', 'codigoDane': '47707', 'nombre': 'Santa Ana', 'subregion': 'Sur', 'latitud': 9.3247, 'longitud': -74.5714},
+      {'id': 'mun-026', 'codigoDane': '47720', 'nombre': 'Santa Bárbara de Pinto', 'subregion': 'Sur', 'latitud': 9.4428, 'longitud': -74.6972},
+      {'id': 'mun-027', 'codigoDane': '47745', 'nombre': 'Sitionuevo', 'subregion': 'Sur', 'latitud': 10.7764, 'longitud': -74.8681},
+      {'id': 'mun-028', 'codigoDane': '47798', 'nombre': 'Tenerife', 'subregion': 'Sur', 'latitud': 9.8994, 'longitud': -74.8575},
+      {'id': 'mun-029', 'codigoDane': '47960', 'nombre': 'Zapayán', 'subregion': 'Sur', 'latitud': 10.2036, 'longitud': -74.8508},
+      {'id': 'mun-030', 'codigoDane': '47980', 'nombre': 'Zona Bananera', 'subregion': 'Zona Bananera', 'latitud': 10.7500, 'longitud': -74.1500},
+    ];
+
+    for (final m in municipios) {
+      batch.insert(tableCatMunicipios, {...m, 'activo': 1, 'syncedAt': now},
+          conflictAlgorithm: ConflictAlgorithm.ignore);
+    }
+
+    // ── Cultivos comunes del Magdalena ───────────────────────
+    final cultivos = [
+      {'id': 'cul-001', 'nombre': 'Banano', 'categoria': 'Fruta', 'descripcion': 'Cultivo principal de la Zona Bananera'},
+      {'id': 'cul-002', 'nombre': 'Palma de aceite', 'categoria': 'Oleaginosa', 'descripcion': 'Palma africana para extracción de aceite'},
+      {'id': 'cul-003', 'nombre': 'Café', 'categoria': 'Bebida', 'descripcion': 'Café arábica de la Sierra Nevada'},
+      {'id': 'cul-004', 'nombre': 'Cacao', 'categoria': 'Bebida', 'descripcion': 'Cacao fino de aroma'},
+      {'id': 'cul-005', 'nombre': 'Arroz', 'categoria': 'Cereal', 'descripcion': 'Arroz paddy riego y secano'},
+      {'id': 'cul-006', 'nombre': 'Maíz', 'categoria': 'Cereal', 'descripcion': 'Maíz tradicional y tecnificado'},
+      {'id': 'cul-007', 'nombre': 'Yuca', 'categoria': 'Tubérculo', 'descripcion': 'Yuca para consumo y agroindustria'},
+      {'id': 'cul-008', 'nombre': 'Mango', 'categoria': 'Fruta', 'descripcion': 'Mango de azúcar, Tommy, Keitt'},
+      {'id': 'cul-009', 'nombre': 'Tomate', 'categoria': 'Hortaliza', 'descripcion': 'Tomate bajo invernadero y a campo abierto'},
+      {'id': 'cul-010', 'nombre': 'Ají', 'categoria': 'Hortaliza', 'descripcion': 'Ají dulce y picante'},
+      {'id': 'cul-011', 'nombre': 'Plátano', 'categoria': 'Fruta', 'descripcion': 'Plátano hartón y dominico'},
+      {'id': 'cul-012', 'nombre': 'Sorgo', 'categoria': 'Cereal', 'descripcion': 'Sorgo para alimentación animal'},
+      {'id': 'cul-013', 'nombre': 'Algodón', 'categoria': 'Fibra', 'descripcion': 'Algodón upland'},
+      {'id': 'cul-014', 'nombre': 'Frijol', 'categoria': 'Leguminosa', 'descripcion': 'Frijol zaragoza y caupí'},
+      {'id': 'cul-015', 'nombre': 'Aguacate', 'categoria': 'Fruta', 'descripcion': 'Aguacate Hass y criollo'},
+      {'id': 'cul-016', 'nombre': 'Limón', 'categoria': 'Cítrico', 'descripcion': 'Limón Tahití'},
+      {'id': 'cul-017', 'nombre': 'Naranja', 'categoria': 'Cítrico', 'descripcion': 'Naranja Valencia'},
+      {'id': 'cul-018', 'nombre': 'Guayaba', 'categoria': 'Fruta', 'descripcion': 'Guayaba pera y agria'},
+      {'id': 'cul-019', 'nombre': 'Papaya', 'categoria': 'Fruta', 'descripcion': 'Papaya maradol'},
+      {'id': 'cul-020', 'nombre': 'Ñame', 'categoria': 'Tubérculo', 'descripcion': 'Ñame espino y diamante'},
+    ];
+
+    for (final c in cultivos) {
+      batch.insert(tableCatCultivos, {...c, 'activo': 1, 'syncedAt': now},
+          conflictAlgorithm: ConflictAlgorithm.ignore);
+    }
+
+    // ── Plagas comunes del Magdalena ─────────────────────────
+    final plagas = [
+      {'id': 'pla-001', 'nombre': 'Sigatoka negra', 'nombreCientifico': 'Mycosphaerella fijiensis', 'tipo': 'hongo', 'severidadTipica': 'alta', 'sintomas': 'Manchas oscuras en hojas, necrosis foliar', 'cultivosAfectados': 'Banano, Plátano'},
+      {'id': 'pla-002', 'nombre': 'Picudo negro del banano', 'nombreCientifico': 'Cosmopolites sordidus', 'tipo': 'insecto', 'severidadTipica': 'alta', 'sintomas': 'Galerías en el cormo, marchitamiento', 'cultivosAfectados': 'Banano, Plátano'},
+      {'id': 'pla-003', 'nombre': 'Gusano cogollero', 'nombreCientifico': 'Spodoptera frugiperda', 'tipo': 'insecto', 'severidadTipica': 'alta', 'sintomas': 'Defoliación del cogollo, perforaciones', 'cultivosAfectados': 'Maíz, Sorgo, Arroz'},
+      {'id': 'pla-004', 'nombre': 'Mosca blanca', 'nombreCientifico': 'Bemisia tabaci', 'tipo': 'insecto', 'severidadTipica': 'media', 'sintomas': 'Amarillamiento, fumagina, transmite virus', 'cultivosAfectados': 'Tomate, Ají, Yuca'},
+      {'id': 'pla-005', 'nombre': 'Monilia del cacao', 'nombreCientifico': 'Moniliophthora roreri', 'tipo': 'hongo', 'severidadTipica': 'alta', 'sintomas': 'Pudrición de mazorcas, manchas café', 'cultivosAfectados': 'Cacao'},
+      {'id': 'pla-006', 'nombre': 'Broca del café', 'nombreCientifico': 'Hypothenemus hampei', 'tipo': 'insecto', 'severidadTipica': 'alta', 'sintomas': 'Perforación del grano, pérdida de calidad', 'cultivosAfectados': 'Café'},
+      {'id': 'pla-007', 'nombre': 'Roya del café', 'nombreCientifico': 'Hemileia vastatrix', 'tipo': 'hongo', 'severidadTipica': 'alta', 'sintomas': 'Pústulas anaranjadas en envés de hojas', 'cultivosAfectados': 'Café'},
+      {'id': 'pla-008', 'nombre': 'Trips', 'nombreCientifico': 'Thrips palmi', 'tipo': 'insecto', 'severidadTipica': 'media', 'sintomas': 'Deformación de hojas, manchas plateadas', 'cultivosAfectados': 'Tomate, Ají, Mango'},
+      {'id': 'pla-009', 'nombre': 'Ácaros', 'nombreCientifico': 'Tetranychus urticae', 'tipo': 'acaro', 'severidadTipica': 'media', 'sintomas': 'Puntos amarillos en hojas, telarañas', 'cultivosAfectados': 'Yuca, Tomate, Frijol'},
+      {'id': 'pla-010', 'nombre': 'Antracnosis', 'nombreCientifico': 'Colletotrichum spp.', 'tipo': 'hongo', 'severidadTipica': 'media', 'sintomas': 'Lesiones oscuras hundidas en frutos', 'cultivosAfectados': 'Mango, Aguacate, Papaya'},
+      {'id': 'pla-011', 'nombre': 'Marchitez bacteriana', 'nombreCientifico': 'Ralstonia solanacearum', 'tipo': 'bacteria', 'severidadTipica': 'alta', 'sintomas': 'Marchitamiento súbito, oscurecimiento vascular', 'cultivosAfectados': 'Tomate, Banano, Plátano'},
+      {'id': 'pla-012', 'nombre': 'Minador de hojas', 'nombreCientifico': 'Liriomyza spp.', 'tipo': 'insecto', 'severidadTipica': 'baja', 'sintomas': 'Galerías serpenteantes en hojas', 'cultivosAfectados': 'Tomate, Frijol'},
+      {'id': 'pla-013', 'nombre': 'Hormiga arriera', 'nombreCientifico': 'Atta spp.', 'tipo': 'insecto', 'severidadTipica': 'media', 'sintomas': 'Defoliación severa', 'cultivosAfectados': 'Yuca, Cítricos, Cacao'},
+      {'id': 'pla-014', 'nombre': 'Pudrición del cogollo', 'nombreCientifico': 'Phytophthora palmivora', 'tipo': 'hongo', 'severidadTipica': 'alta', 'sintomas': 'Necrosis del meristemo, muerte de la palma', 'cultivosAfectados': 'Palma de aceite'},
+      {'id': 'pla-015', 'nombre': 'Virus del mosaico', 'nombreCientifico': 'CMV / TMV', 'tipo': 'virus', 'severidadTipica': 'media', 'sintomas': 'Mosaico foliar, deformación, enanismo', 'cultivosAfectados': 'Tomate, Ají, Yuca'},
+    ];
+
+    for (final p in plagas) {
+      batch.insert(tableCatPlagas, {...p, 'activo': 1, 'syncedAt': now},
+          conflictAlgorithm: ConflictAlgorithm.ignore);
+    }
+
+    // ── Fertilizantes comunes ────────────────────────────────
+    final fertilizantes = [
+      {'id': 'fer-001', 'nombre': 'Urea', 'tipo': 'químico', 'composicionNpk': '46-0-0', 'presentacion': 'Granulado', 'dosisRecomendadaKgHa': 150.0, 'descripcion': 'Fuente concentrada de nitrógeno'},
+      {'id': 'fer-002', 'nombre': 'DAP', 'tipo': 'químico', 'composicionNpk': '18-46-0', 'presentacion': 'Granulado', 'dosisRecomendadaKgHa': 100.0, 'descripcion': 'Fosfato diamónico, arranque de cultivos'},
+      {'id': 'fer-003', 'nombre': 'KCl (Cloruro de potasio)', 'tipo': 'químico', 'composicionNpk': '0-0-60', 'presentacion': 'Granulado', 'dosisRecomendadaKgHa': 120.0, 'descripcion': 'Fuente de potasio para fructificación'},
+      {'id': 'fer-004', 'nombre': 'Triple 15', 'tipo': 'químico', 'composicionNpk': '15-15-15', 'presentacion': 'Granulado', 'dosisRecomendadaKgHa': 200.0, 'descripcion': 'Fórmula balanceada NPK'},
+      {'id': 'fer-005', 'nombre': '10-30-10', 'tipo': 'químico', 'composicionNpk': '10-30-10', 'presentacion': 'Granulado', 'dosisRecomendadaKgHa': 150.0, 'descripcion': 'Alto fósforo para floración'},
+      {'id': 'fer-006', 'nombre': 'Sulfato de amonio', 'tipo': 'químico', 'composicionNpk': '21-0-0', 'presentacion': 'Cristalino', 'dosisRecomendadaKgHa': 200.0, 'descripcion': 'Nitrógeno + azufre para suelos alcalinos'},
+      {'id': 'fer-007', 'nombre': 'Nitrato de potasio', 'tipo': 'químico', 'composicionNpk': '13-0-46', 'presentacion': 'Cristalino', 'dosisRecomendadaKgHa': 80.0, 'descripcion': 'Fertirrigación, libre de cloro'},
+      {'id': 'fer-008', 'nombre': 'Cal dolomita', 'tipo': 'enmienda', 'composicionNpk': '0-0-0', 'presentacion': 'Polvo', 'dosisRecomendadaKgHa': 1000.0, 'descripcion': 'Corrector de pH, aporta Ca y Mg'},
+      {'id': 'fer-009', 'nombre': 'Gallinaza', 'tipo': 'orgánico', 'composicionNpk': '3-3-2', 'presentacion': 'Sólido', 'dosisRecomendadaKgHa': 2000.0, 'descripcion': 'Abono orgánico de alta disponibilidad'},
+      {'id': 'fer-010', 'nombre': 'Compost', 'tipo': 'orgánico', 'composicionNpk': '1.5-1-1', 'presentacion': 'Sólido', 'dosisRecomendadaKgHa': 3000.0, 'descripcion': 'Materia orgánica descompuesta'},
+      {'id': 'fer-011', 'nombre': 'Bocashi', 'tipo': 'orgánico', 'composicionNpk': '2-2-1', 'presentacion': 'Sólido', 'dosisRecomendadaKgHa': 2500.0, 'descripcion': 'Abono fermentado japonés'},
+      {'id': 'fer-012', 'nombre': 'Humus de lombriz', 'tipo': 'orgánico', 'composicionNpk': '1-1-1', 'presentacion': 'Sólido', 'dosisRecomendadaKgHa': 2000.0, 'descripcion': 'Lombricompuesto, mejora estructura'},
+      {'id': 'fer-013', 'nombre': 'Sulfato de zinc', 'tipo': 'químico', 'composicionNpk': '0-0-0', 'presentacion': 'Polvo', 'dosisRecomendadaKgHa': 15.0, 'descripcion': 'Micronutriente para arroz y maíz'},
+      {'id': 'fer-014', 'nombre': 'Boro (Bórax)', 'tipo': 'químico', 'composicionNpk': '0-0-0', 'presentacion': 'Polvo', 'dosisRecomendadaKgHa': 10.0, 'descripcion': 'Micronutriente para palma y frutales'},
+      {'id': 'fer-015', 'nombre': 'Fosforita Huila', 'tipo': 'enmienda', 'composicionNpk': '0-20-0', 'presentacion': 'Polvo', 'dosisRecomendadaKgHa': 500.0, 'descripcion': 'Roca fosfórica de liberación lenta'},
+    ];
+
+    for (final f in fertilizantes) {
+      batch.insert(tableCatFertilizantes, {...f, 'activo': 1, 'syncedAt': now},
+          conflictAlgorithm: ConflictAlgorithm.ignore);
+    }
+
+    // ── Tipos de suelo del Magdalena ─────────────────────────
+    final tiposSuelo = [
+      {'id': 'sue-001', 'nombre': 'Franco', 'clase': 'Clase II', 'drenaje': 'Bueno', 'retencionHumedadPct': 45.0, 'phTipico': 6.5, 'cultivosRecomendados': 'Banano, Maíz, Hortalizas', 'descripcion': 'Equilibrio ideal de arena, limo y arcilla'},
+      {'id': 'sue-002', 'nombre': 'Franco arcilloso', 'clase': 'Clase III', 'drenaje': 'Moderado', 'retencionHumedadPct': 55.0, 'phTipico': 6.2, 'cultivosRecomendados': 'Arroz, Palma, Cacao', 'descripcion': 'Alta retención de humedad y nutrientes'},
+      {'id': 'sue-003', 'nombre': 'Franco arenoso', 'clase': 'Clase II', 'drenaje': 'Rápido', 'retencionHumedadPct': 30.0, 'phTipico': 6.8, 'cultivosRecomendados': 'Yuca, Sandía, Melón', 'descripcion': 'Buen drenaje, baja retención de agua'},
+      {'id': 'sue-004', 'nombre': 'Arcilloso', 'clase': 'Clase IV', 'drenaje': 'Lento', 'retencionHumedadPct': 65.0, 'phTipico': 5.8, 'cultivosRecomendados': 'Arroz, Pastos', 'descripcion': 'Alta retención pero difícil laboreo'},
+      {'id': 'sue-005', 'nombre': 'Arenoso', 'clase': 'Clase V', 'drenaje': 'Muy rápido', 'retencionHumedadPct': 15.0, 'phTipico': 7.0, 'cultivosRecomendados': 'Coco, Marañón', 'descripcion': 'Zonas costeras, requiere riego frecuente'},
+      {'id': 'sue-006', 'nombre': 'Aluvial', 'clase': 'Clase I', 'drenaje': 'Bueno', 'retencionHumedadPct': 50.0, 'phTipico': 6.5, 'cultivosRecomendados': 'Banano, Palma, Cacao, Frutales', 'descripcion': 'Suelos fértiles de llanuras de inundación'},
+      {'id': 'sue-007', 'nombre': 'Orgánico (turba)', 'clase': 'Clase VI', 'drenaje': 'Pobre', 'retencionHumedadPct': 80.0, 'phTipico': 5.0, 'cultivosRecomendados': 'Pastos, Arroz', 'descripcion': 'Zonas de ciénaga, alto contenido orgánico'},
+      {'id': 'sue-008', 'nombre': 'Vertisol', 'clase': 'Clase III', 'drenaje': 'Moderado', 'retencionHumedadPct': 60.0, 'phTipico': 7.2, 'cultivosRecomendados': 'Algodón, Sorgo, Maíz', 'descripcion': 'Arcillas expansivas, grietas en sequía'},
+    ];
+
+    for (final s in tiposSuelo) {
+      batch.insert(tableCatTiposSuelo, {...s, 'activo': 1, 'syncedAt': now},
+          conflictAlgorithm: ConflictAlgorithm.ignore);
+    }
+
+    await batch.commit(noResult: true);
+  }
+
   // ─── Tablas ───────────────────────────────────────────────
 
   Future<void> _createLotes(Database db) async {
@@ -140,6 +293,9 @@ class DatabaseHelper {
         descripcion TEXT,
         superficieHectareas REAL NOT NULL,
         cultivoActual TEXT,
+        cultivoActualId TEXT,
+        municipioId TEXT,
+        tipoSueloId TEXT,
         latitud REAL,
         longitud REAL,
         estado TEXT NOT NULL DEFAULT 'saludable',

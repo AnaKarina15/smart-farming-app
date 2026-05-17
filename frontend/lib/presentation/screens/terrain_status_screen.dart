@@ -65,7 +65,7 @@ class _TerrainStatusScreenState extends State<TerrainStatusScreen> {
             _statusCard('CON MALEZA', Icons.grass),
             const SizedBox(height: 32),
             Text('CARACTERIZACIÓN DEL SUELO',
-                style: AppText.labelCaps(color: const Color(0xFF1E5266))),
+                style: AppText.labelCaps(color: AppColors.onSurface)),
             const SizedBox(height: 8),
             Container(
               height: 56,
@@ -86,6 +86,7 @@ class _TerrainStatusScreenState extends State<TerrainStatusScreen> {
                   return DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
                       value: _selectedSueloId,
+                      menuMaxHeight: 220,
                       isExpanded: true,
                       icon: const Icon(Icons.keyboard_arrow_down,
                           color: AppColors.onSurfaceVariant),
@@ -125,7 +126,7 @@ class _TerrainStatusScreenState extends State<TerrainStatusScreen> {
                       child: Text(
                         'Cultivos recomendados: $_recomendaciones',
                         style:
-                            AppText.bodyMd(color: AppColors.onPrimaryContainer),
+                            AppText.bodyMd(color: AppColors.primary).copyWith(fontWeight: FontWeight.w600),
                       ),
                     ),
                   ],
@@ -134,7 +135,7 @@ class _TerrainStatusScreenState extends State<TerrainStatusScreen> {
             ],
             const SizedBox(height: 24),
             Text('NOTAS ADICIONALES',
-                style: AppText.labelCaps(color: const Color(0xFF1E5266))),
+                style: AppText.labelCaps(color: AppColors.onSurface)),
             const SizedBox(height: 8),
             TextField(
               controller: _notesController,

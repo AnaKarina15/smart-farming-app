@@ -49,7 +49,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (success) {
         final prefs = await SharedPreferences.getInstance();
         final hasLotes = prefs.getBool('has_lotes') ?? false;
-        
+
         if (!mounted) return;
         final user = authProvider.currentUser;
         if (user != null && user.role == 'administrador') {
@@ -63,7 +63,8 @@ class _LoginScreenState extends State<LoginScreen> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (_) => hasLotes ? const HomeScreen() : const MapOnboardingScreen(),
+              builder: (_) =>
+                  hasLotes ? const HomeScreen() : const MapOnboardingScreen(),
             ),
           );
         }
@@ -241,7 +242,47 @@ class _LoginScreenState extends State<LoginScreen> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 32),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              title: const Text('Recuperar contraseña'),
+                              content: const Text(
+                                'Falta implementar esta funcionalidad',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx),
+                                  child: Text(
+                                    'Entendido',
+                                    style: TextStyle(
+                                        color: AppColors.primary,
+                                        fontWeight: FontWeight.w600),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                        child: Text(
+                          '¿Olvidaste tu contraseña?',
+                          style: AppText.bodyMd(color: AppColors.primary)
+                              .copyWith(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
                     isLoading
                         ? const Center(
                             child: CircularProgressIndicator(

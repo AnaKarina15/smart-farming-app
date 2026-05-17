@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -41,53 +42,125 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
   String? _locationLabel;
   bool _loadingLocation = false;
   bool _saving = false;
+  bool _editingZone = false;
+  final TextEditingController _searchCtrl = TextEditingController();
+  final TextEditingController _manualLocationCtrl = TextEditingController();
+  final TextEditingController _manualMunicipioCtrl = TextEditingController();
+
+  BitmapDescriptor? _dotMarker;
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.loteToEdit?.nombre ?? ' ');
-    _areaController = TextEditingController(text: widget.loteToEdit != null ? widget.loteToEdit!.superficieHectareas.toString() : ' ');
+    _initDotMarker();
+    _nameController =
+        TextEditingController(text: widget.loteToEdit?.nombre ?? ' ');
+    _areaController = TextEditingController(
+        text: widget.loteToEdit != null
+            ? widget.loteToEdit!.superficieHectareas.toString()
+            : ' ');
     _lat = widget.loteToEdit?.latitud;
     _lng = widget.loteToEdit?.longitud;
     _locationLabel = widget.loteToEdit?.descripcion;
-    _selectedCultivoId = widget.loteToEdit?.cultivoActualId;
     _selectedMunicipioId = widget.loteToEdit?.municipioId;
+    _selectedTipoSueloId = widget.loteToEdit?.tipoSueloId;
+    if (_lat != null && _lng != null) {
+      _initializePolygon(_lat!, _lng!, ha: widget.loteToEdit?.superficieHectareas);
+    }
+    // Cargar catálogos (municipios) si no están cargados
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final catalogos = context.read<CatalogosProvider>();
+      if (catalogos.municipios.isEmpty) {
+        catalogos.cargarCatalogos();
+      }
+    });
+  }
+
+  Future<void> _initDotMarker() async {
+    final int size = 60;
+    final dart_ui.PictureRecorder pictureRecorder = dart_ui.PictureRecorder();
+    final Canvas canvas = Canvas(pictureRecorder);
+    final Paint paint1 = Paint()..color = const Color(0xFFFF6B00);
+    final Paint paint2 = Paint()..color = Colors.white;
+
+    canvas.drawCircle(Offset(size / 2, size / 2), size / 2.0, paint1);
+    canvas.drawCircle(Offset(size / 2, size / 2), size / 3.0, paint2);
+    canvas.drawCircle(Offset(size / 2, size / 2), size / 4.0, paint1);
+
+    final dart_ui.Image image = await pictureRecorder.endRecording().toImage(size, size);
+    final ByteData? byteData = await image.toByteData(format: dart_ui.ImageByteFormat.png);
+    final Uint8List uint8List = byteData!.buffer.asUint8List();
+
+    if (mounted) {
+      setState(() {
+        _dotMarker = BitmapDescriptor.bytes(uint8List);
+      });
+    }
+  }
+
+  void _initializePolygon(double lat, double lng, {double? ha}) {
+    final areaHa = ha ?? double.tryParse(_areaController.text) ?? 1.0;
+    final totalAreaM2 = areaHa * 10000.0;
+    final sideMeters = math.sqrt(totalAreaM2);
+    
+    final latRad = lat * math.pi / 180.0;
+    final metersPerLat = 111132.95;
+    final metersPerLng = 111132.95 * math.cos(latRad);
+    
+    final dLat = (sideMeters / 2.0) / metersPerLat;
+    final dLng = (sideMeters / 2.0) / metersPerLng;
+    
+    setState(() {
+      _polygonLatLngs = [
+        LatLng(lat + dLat, lng - dLng),
+        LatLng(lat + dLat, lng + dLng),
+        LatLng(lat - dLat, lng + dLng),
+        LatLng(lat - dLat, lng - dLng),
+      ];
+    });
+  }
+
+  void _calculateAreaFromLatLngs() {
+    if (_polygonLatLngs.length < 3) return;
+    if (_lat == null || _lng == null) return;
+    final latRad = _lat! * math.pi / 180.0;
+    const metersPerLat = 111132.95;
+    final metersPerLng = 111132.95 * math.cos(latRad);
+
+    final points = _polygonLatLngs.map((ll) {
+      return Offset(
+        (ll.longitude - _lng!) * metersPerLng,
+        (ll.latitude - _lat!) * metersPerLat,
+      );
+    }).toList();
+
+    double area = 0.0;
+    for (int i = 0; i < points.length; i++) {
+      int j = (i + 1) % points.length;
+      area += points[i].dx * points[j].dy;
+      area -= points[j].dx * points[i].dy;
+    }
+    area = (area.abs() / 2.0); // Area in square meters
+    double ha = area / 10000.0; // 1 Hectare = 10,000 m²
+    if (ha < 0.1) ha = 0.1;
+    _areaController.text = ha.toStringAsFixed(1);
   }
 
   String? _selectedMunicipioId;
-  String? _selectedCultivoId;
+  String? _selectedTipoSueloId;
 
-  int? _draggingPointIndex;
-  final List<Offset> _polygonPoints = [
-    const Offset(0.22, 0.22),
-    const Offset(0.78, 0.12),
-    const Offset(0.88, 0.78),
-    const Offset(0.18, 0.88),
-  ];
+  List<LatLng> _polygonLatLngs = [];
 
   @override
   void dispose() {
     _nameController.dispose();
     _areaController.dispose();
+    _searchCtrl.dispose();
+    _manualLocationCtrl.dispose();
+    _manualMunicipioCtrl.dispose();
     super.dispose();
   }
 
-  // ─── AREA ─────────────────────────────────────────────────────────────────
-  void _calculateArea() {
-    if (_polygonPoints.length < 3) return;
-    double area = 0.0;
-    for (int i = 0; i < _polygonPoints.length; i++) {
-      int j = (i + 1) % _polygonPoints.length;
-      area += _polygonPoints[i].dx * _polygonPoints[j].dy;
-      area -= _polygonPoints[j].dx * _polygonPoints[i].dy;
-    }
-    area = (area.abs() / 2.0);
-    // Fake scale: 1.0 area = 10 Ha
-    double ha = area * 10.0;
-    // ensure at least 0.1
-    if (ha < 0.1) ha = 0.1;
-    _areaController.text = ha.toStringAsFixed(1);
-  }
 
   // ─── GPS ──────────────────────────────────────────────────────────────────
   Future<void> _getLocation() async {
@@ -114,8 +187,13 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
       _lat = pos.latitude;
       _lng = pos.longitude;
 
+      // Auto-inicializar polígono de 4 puntos y habilitar modo de edición inmediato
+      _initializePolygon(_lat!, _lng!);
+      _editingZone = true;
+
       if (_mapController != null) {
-        _mapController!.animateCamera(CameraUpdate.newLatLngZoom(LatLng(_lat!, _lng!), 16.0));
+        _mapController!.animateCamera(
+            CameraUpdate.newLatLngZoom(LatLng(_lat!, _lng!), 16.0));
       }
 
       try {
@@ -125,9 +203,14 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
           final parts = [p.street, p.subLocality, p.locality]
               .where((s) => s != null && s.isNotEmpty)
               .toList();
-          _locationLabel = parts.isNotEmpty
+          final streetAddress = parts.isNotEmpty
               ? parts.join(', ')
               : '${_lat!.toStringAsFixed(5)}, ${_lng!.toStringAsFixed(5)}';
+
+          setState(() {
+            _locationLabel = streetAddress;
+            _manualLocationCtrl.text = streetAddress;
+          });
 
           // Auto-seleccionar municipio si coincide con el catálogo
           final locality = p.locality;
@@ -138,15 +221,25 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
               final match = catalogos.municipios.firstWhere(
                 (m) => m.nombre.toLowerCase().contains(locality.toLowerCase()),
               );
-              _selectedMunicipioId = match.id;
+              setState(() {
+                _selectedMunicipioId = match.id;
+                _manualMunicipioCtrl.clear();
+              });
             } catch (_) {
-              // No hay coincidencia exacta, se queda manual
+              // No hay coincidencia exacta, se coloca en manual de forma automática en el layout
+              setState(() {
+                _selectedMunicipioId = null;
+                _manualMunicipioCtrl.text = locality;
+              });
             }
           }
         }
       } catch (_) {
-        _locationLabel =
-            '${_lat!.toStringAsFixed(5)}, ${_lng!.toStringAsFixed(5)}';
+        final fallbackAddress = '${_lat!.toStringAsFixed(5)}, ${_lng!.toStringAsFixed(5)}';
+        setState(() {
+          _locationLabel = fallbackAddress;
+          _manualLocationCtrl.text = fallbackAddress;
+        });
       }
 
       setState(() => _loadingLocation = false);
@@ -160,22 +253,60 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
   Future<void> _saveLote() async {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
-      _showSnack('Por favor ingresa un nombre para el lote.');
+      _showSnack('Por favor ingresa el nombre de tu lote.');
       return;
     }
+
+    final areaStr = _areaController.text.trim();
+    final areaVal = double.tryParse(areaStr);
+    if (areaStr.isEmpty || areaVal == null || areaVal <= 0.0) {
+      _showSnack('Por favor ingresa un área válida (mayor a 0 hectáreas).');
+      return;
+    }
+
+    if (_selectedMunicipioId == null && _manualMunicipioCtrl.text.trim().isEmpty) {
+      _showSnack('Por favor selecciona un municipio o colócalo manualmente.');
+      return;
+    }
+
+    if (_manualLocationCtrl.text.trim().isEmpty) {
+      _showSnack('Por favor ingresa la dirección o ubicación de tu lote.');
+      return;
+    }
+
+    if (_selectedTipoSueloId == null) {
+      _showSnack('Por favor selecciona el tipo de suelo de tu lote.');
+      return;
+    }
+
+    setState(() => _saving = true);
     // ─── REAL SAVE ─────────────────────────────────────────
     final auth = context.read<AuthProvider>();
     final lotesProvider = context.read<LotesProvider>();
 
+    // Construir descripción completa para offline
+    final partes = <String>[];
+    if (_manualLocationCtrl.text.trim().isNotEmpty) {
+      partes.add(_manualLocationCtrl.text.trim());
+    }
+    if (_manualMunicipioCtrl.text.trim().isNotEmpty) {
+      partes.add(_manualMunicipioCtrl.text.trim());
+    }
+    if (_locationLabel != null && partes.isEmpty) {
+      partes.add(_locationLabel!);
+    }
+    final descripcionFinal =
+        partes.isNotEmpty ? partes.join(' – ') : _locationLabel;
+
     final success = await lotesProvider.crearLote(
       nombre: name,
-      descripcion: _locationLabel,
+      descripcion: descripcionFinal,
       superficieHectareas: double.tryParse(_areaController.text) ?? 0.0,
       latitud: _lat,
       longitud: _lng,
       propietarioId: auth.currentUser?.id ?? 'unknown',
-      cultivoActualId: _selectedCultivoId,
       municipioId: _selectedMunicipioId,
+      tipoSueloId: _selectedTipoSueloId,
     );
 
     setState(() => _saving = false);
@@ -251,6 +382,31 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
     );
   }
 
+  // ─── SEARCH LOCATION ──────────────────────────────────────────────────────
+  Future<void> _searchLocation(String query) async {
+    if (query.trim().isEmpty) return;
+    try {
+      final locations = await locationFromAddress(query);
+      if (locations.isEmpty) {
+        _showSnack('No se encontró "$query". Intenta con otro nombre.');
+        return;
+      }
+      final loc = locations.first;
+      setState(() {
+        _lat = loc.latitude;
+        _lng = loc.longitude;
+        _locationLabel = query;
+        _editingZone = true;
+      });
+      _initializePolygon(loc.latitude, loc.longitude);
+      _mapController?.animateCamera(
+        CameraUpdate.newLatLngZoom(LatLng(_lat!, _lng!), 15.0),
+      );
+    } catch (_) {
+      _showSnack('No se pudo buscar esa ubicación.');
+    }
+  }
+
   // ─── BUILD ────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
@@ -262,7 +418,6 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
       body: Column(
         children: [
           const OfflineBanner(),
-
           Expanded(
             child: Stack(
               children: [
@@ -272,7 +427,7 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                     initialCameraPosition: CameraPosition(
                       target: _lat != null && _lng != null
                           ? LatLng(_lat!, _lng!)
-                          : const LatLng(10.46314, -73.25322), // Centro del Magdalena
+                          : const LatLng(10.46314, -73.25322),
                       zoom: 14.0,
                     ),
                     mapType: MapType.hybrid,
@@ -280,105 +435,245 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                     myLocationEnabled: true,
                     myLocationButtonEnabled: false,
                     zoomControlsEnabled: false,
-                    onTap: (LatLng location) async {
-                      setState(() {
-                        _lat = location.latitude;
-                        _lng = location.longitude;
-                        _locationLabel = "Buscando dirección...";
-                      });
-                      try {
-                        List<Placemark> placemarks = await placemarkFromCoordinates(location.latitude, location.longitude);
-                        if (placemarks.isNotEmpty) {
-                          final place = placemarks.first;
-                          setState(() {
-                            _locationLabel = "${place.locality ?? place.subAdministrativeArea}, ${place.administrativeArea}";
-                          });
-                        }
-                      } catch(e) {
-                         setState(() { _locationLabel = "Ubicación en mapa"; });
-                      }
-                    },
-                    markers: _lat != null && _lng != null ? {
-                      Marker(
-                        markerId: const MarkerId('lote_marker'),
-                        position: LatLng(_lat!, _lng!),
-                        infoWindow: InfoWindow(title: _locationLabel ?? 'Lote'),
-                      )
-                    } : {},
-                  ),
-                ),
-                // Polygon overlay when location known
-                if (_lat != null)
-                  Positioned(
-                    left: 40,
-                    right: 40,
-                    top: 30,
-                    bottom: 50,
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        return GestureDetector(
-                          onPanUpdate: (details) {
-                            if (_draggingPointIndex == null) {
-                              // Find closest point to start dragging
-                              double minD = double.infinity;
-                              int minIdx = 0;
-                              for (int i = 0; i < _polygonPoints.length; i++) {
-                                final p = Offset(
-                                  _polygonPoints[i].dx * constraints.maxWidth,
-                                  _polygonPoints[i].dy * constraints.maxHeight,
-                                );
-                                final d = (p - details.localPosition).distance;
-                                if (d < minD) {
-                                  minD = d;
-                                  minIdx = i;
-                                }
+                    // Tap solo activo cuando NO estamos editando la zona
+                    onTap: _editingZone
+                        ? null
+                        : (LatLng location) async {
+                            setState(() {
+                              _lat = location.latitude;
+                              _lng = location.longitude;
+                              _locationLabel = 'Buscando dirección...';
+                            });
+                            _initializePolygon(location.latitude, location.longitude);
+                            try {
+                              final placemarks = await placemarkFromCoordinates(
+                                  location.latitude, location.longitude);
+                              if (placemarks.isNotEmpty) {
+                                final place = placemarks.first;
+                                setState(() {
+                                  _locationLabel =
+                                      '${place.locality ?? place.subAdministrativeArea}, ${place.administrativeArea}';
+                                });
                               }
-                              // Only start drag if within 40 pixels
-                              if (minD < 40) {
-                                _draggingPointIndex = minIdx;
-                              }
-                            }
-
-                            if (_draggingPointIndex != null) {
-                              setState(() {
-                                double newX =
-                                    _polygonPoints[_draggingPointIndex!].dx +
-                                        details.delta.dx / constraints.maxWidth;
-                                double newY =
-                                    _polygonPoints[_draggingPointIndex!].dy +
-                                        details.delta.dy /
-                                            constraints.maxHeight;
-                                // Clamp to 0..1
-                                newX = newX.clamp(0.0, 1.0);
-                                newY = newY.clamp(0.0, 1.0);
-                                _polygonPoints[_draggingPointIndex!] =
-                                    Offset(newX, newY);
-                              });
-                              _calculateArea();
+                            } catch (_) {
+                              setState(
+                                  () => _locationLabel = 'Ubicación en mapa');
                             }
                           },
-                          onPanEnd: (_) => _draggingPointIndex = null,
-                          onPanCancel: () => _draggingPointIndex = null,
-                          child: CustomPaint(
-                            size: Size(
-                                constraints.maxWidth, constraints.maxHeight),
-                            painter: _PolygonPainter(points: _polygonPoints),
-                          ),
-                        );
-                      },
+                    markers: {
+                      if (_lat != null && _lng != null && !_editingZone)
+                        Marker(
+                          markerId: const MarkerId('lote_marker'),
+                          position: LatLng(_lat!, _lng!),
+                          infoWindow: InfoWindow(title: _locationLabel ?? 'Lote'),
+                        ),
+                      if (_editingZone && _polygonLatLngs.isNotEmpty)
+                        ..._polygonLatLngs.asMap().entries.map((entry) {
+                          final idx = entry.key;
+                          final latLng = entry.value;
+                          return Marker(
+                            markerId: MarkerId('vertex_$idx'),
+                            position: latLng,
+                            draggable: true,
+                            anchor: const Offset(0.5, 0.5),
+                            icon: _dotMarker ?? BitmapDescriptor.defaultMarkerWithHue(
+                                BitmapDescriptor.hueOrange),
+                            onDrag: (newLatLng) {
+                              setState(() {
+                                _polygonLatLngs[idx] = newLatLng;
+                              });
+                              _calculateAreaFromLatLngs();
+                            },
+                            onDragEnd: (newLatLng) {
+                              setState(() {
+                                _polygonLatLngs[idx] = newLatLng;
+                              });
+                              _calculateAreaFromLatLngs();
+                            },
+                          );
+                        }),
+                    },
+                    polygons: {
+                      if (_polygonLatLngs.isNotEmpty)
+                        Polygon(
+                          polygonId: const PolygonId('lote_poly'),
+                          points: _polygonLatLngs,
+                          strokeColor: const Color(0xFFFF6B00),
+                          strokeWidth: 3,
+                          fillColor: const Color(0xFFFF6B00).withValues(alpha: 0.15),
+                        ),
+                    },
+                  ),
+                ),
+
+                // ── Buscador flotante de ubicación ─────────────────────────
+                Positioned(
+                  top: 12,
+                  left: 16,
+                  right: 16,
+                  child: Material(
+                    elevation: 4,
+                    borderRadius: BorderRadius.circular(14),
+                    child: TextField(
+                      controller: _searchCtrl,
+                      textInputAction: TextInputAction.search,
+                      onSubmitted: _searchLocation,
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Colors.white,
+                        hintText: 'Buscar ubicación del lote...',
+                        hintStyle:
+                            const TextStyle(color: Colors.grey, fontSize: 14),
+                        prefixIcon:
+                            const Icon(Icons.search, color: AppColors.primary),
+                        suffixIcon: IconButton(
+                          icon: const Icon(Icons.arrow_forward,
+                              color: AppColors.primary),
+                          onPressed: () => _searchLocation(_searchCtrl.text),
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding:
+                            const EdgeInsets.symmetric(vertical: 14),
+                      ),
                     ),
                   ),
-              
+                ),
+
+                // ── Métrica de Área (m² y Ha) ──────────────────────────────────
+                if (_polygonLatLngs.isNotEmpty && _areaController.text.isNotEmpty)
+                  Positioned(
+                    top: 76,
+                    left: 16,
+                    right: 64, // Da espacio al botón X
+                    child: Center(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryContainer.withValues(alpha: 0.95),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: const [
+                            BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 2))
+                          ],
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '${((double.tryParse(_areaController.text) ?? 0.0) * 10000).toStringAsFixed(0)} m² (${_areaController.text} Ha)',
+                              style: AppText.labelCaps(color: AppColors.onPrimaryContainer)
+                                  .copyWith(fontWeight: FontWeight.w800, fontSize: 13),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Mantén presionado un punto para arrastrarlo',
+                              style: AppText.bodyMd(color: AppColors.onPrimaryContainer)
+                                  .copyWith(fontSize: 10, fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                // ── Botón X (Borrar Ubicación) ──────────────────────────────────
+                if (_lat != null)
+                  Positioned(
+                    top: 76,
+                    right: 16,
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        color: AppColors.errorContainer,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 2))
+                        ],
+                      ),
+                      child: IconButton(
+                        icon: const Icon(Icons.close, color: AppColors.onErrorContainer, size: 20),
+                        tooltip: 'Borrar ubicación y área',
+                        onPressed: () {
+                          setState(() {
+                            _lat = null;
+                            _lng = null;
+                            _locationLabel = null;
+                            _polygonLatLngs.clear();
+                            _areaController.clear();
+                            _manualLocationCtrl.clear();
+                            _manualMunicipioCtrl.clear();
+                            _selectedMunicipioId = null;
+                            _searchCtrl.clear();
+                            _editingZone = false;
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+
+                // ── Botones de control de zona flotantes ───────────────────
+                if (_lat != null)
+                  Positioned(
+                    bottom: 12,
+                    right: 16,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (_polygonLatLngs.isNotEmpty) ...[
+                          FloatingActionButton.small(
+                            heroTag: 'zone_clear',
+                            onPressed: () {
+                              setState(() {
+                                _polygonLatLngs.clear();
+                                _editingZone = false;
+                                _areaController.clear();
+                              });
+                              _showSnack('Zona del polígono quitada del mapa.');
+                            },
+                            backgroundColor: AppColors.errorContainer,
+                            foregroundColor: AppColors.onErrorContainer,
+                            tooltip: 'Eliminar polígono de área',
+                            child: const Icon(Icons.delete_sweep),
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+                        FloatingActionButton.extended(
+                          heroTag: 'zone_toggle',
+                          onPressed: () {
+                            if (!_editingZone && _polygonLatLngs.isEmpty) {
+                              _initializePolygon(_lat!, _lng!);
+                            }
+                            setState(() => _editingZone = !_editingZone);
+                          },
+                          backgroundColor: _editingZone
+                              ? Colors.green.shade700
+                              : const Color(0xFFFF6B00),
+                          icon: Icon(
+                            _editingZone ? Icons.check : Icons.edit_location_alt,
+                            color: Colors.white,
+                          ),
+                          label: Text(
+                            _editingZone ? 'Confirmar zona' : 'Definir / Editar zona',
+                            style: const TextStyle(
+                                color: Colors.white, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
                 // ── FORM (Draggable Bottom Sheet) ──────────────────────────
                 DraggableScrollableSheet(
-                  initialChildSize: 0.55,
-                  minChildSize: 0.15,
+                  initialChildSize: 0.48,
+                  minChildSize: 0.12,
                   maxChildSize: 0.9,
                   builder: (context, scrollController) {
                     return Container(
                       decoration: const BoxDecoration(
                         color: AppColors.surfaceContainerLowest,
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                        borderRadius:
+                            BorderRadius.vertical(top: Radius.circular(24)),
                         boxShadow: [
                           BoxShadow(
                               color: Colors.black12,
@@ -388,359 +683,427 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                       ),
                       child: SingleChildScrollView(
                         controller: scrollController,
-                        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                        keyboardDismissBehavior:
+                            ScrollViewKeyboardDismissBehavior.onDrag,
                         padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                    // Drag handle
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: AppColors.outlineVariant,
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    Text(widget.loteToEdit != null ? 'Configurar Lote' : 'Registrar Lote', style: AppText.h2()),
-                    const SizedBox(height: 20),
-
-                    // ── Nombre ────────────────────────────────────────────
-                    Text('NOMBRE DEL LOTE', style: AppText.labelCaps()),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: _nameController,
-                      textCapitalization: TextCapitalization.words,
-                      decoration: InputDecoration(
-                        filled: true,
-                        fillColor: AppColors.surface,
-                        hintText: 'Ej: Lote Norte, Parcela 3...',
-                        prefixIcon: const Icon(Icons.landscape,
-                            color: AppColors.primary, size: 20),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide:
-                              const BorderSide(color: AppColors.outlineVariant),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide:
-                              const BorderSide(color: AppColors.outlineVariant),
-                        ),
-                        contentPadding: const EdgeInsets.all(14),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // ── Área ──────────────────────────────────────────────
-                    Text('ÁREA ESTIMADA', style: AppText.labelCaps()),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: _areaController,
-                      keyboardType:
-                          const TextInputType.numberWithOptions(decimal: true),
-                      decoration: InputDecoration(
-                        filled: true,
-                        fillColor: AppColors.surface,
-                        hintText: 'Ej: 2.5',
-                        prefixIcon: const Icon(Icons.straighten,
-                            color: AppColors.primary, size: 20),
-                        suffixText: 'hectáreas',
-                        suffixStyle:
-                            AppText.bodyMd(color: AppColors.onSurfaceVariant),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide:
-                              const BorderSide(color: AppColors.outlineVariant),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide:
-                              const BorderSide(color: AppColors.outlineVariant),
-                        ),
-                        contentPadding: const EdgeInsets.all(14),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // ── Cultivo (Catálogo) ──────────────────────────────
-                    Text('CULTIVO ACTUAL (OPCIONAL)', style: AppText.labelCaps()),
-                    const SizedBox(height: 8),
-                    Consumer<CatalogosProvider>(
-                      builder: (context, provider, child) {
-                        final list = provider.cultivos;
-                        if (list.isEmpty) {
-                          return Text('Cargando cultivos...', style: AppText.bodyMd(color: AppColors.outline));
-                        }
-
-                        String currentNombre = '';
-                        if (_selectedCultivoId != null) {
-                          try {
-                            currentNombre = list.firstWhere((c) => c.id == _selectedCultivoId).nombre;
-                          } catch (_) {}
-                        }
-
-                        return Container(
-                          height: 56,
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          decoration: BoxDecoration(
-                            color: AppColors.surface,
-                            border: Border.all(color: AppColors.outlineVariant),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Autocomplete<Object>(
-                            key: ValueKey('auto_cul_$_selectedCultivoId'),
-                            initialValue: TextEditingValue(text: currentNombre),
-                            optionsBuilder: (TextEditingValue textEditingValue) {
-                              if (textEditingValue.text == '') return list;
-                              return list.where((c) => c.nombre.toLowerCase().contains(textEditingValue.text.toLowerCase()));
-                            },
-                            displayStringForOption: (option) => (option as dynamic).nombre,
-                            onSelected: (option) {
-                              setState(() {
-                                _selectedCultivoId = (option as dynamic).id;
-                              });
-                            },
-                            fieldViewBuilder: (ctx, controller, focusNode, onSubmitted) {
-                              return TextField(
-                                controller: controller,
-                                focusNode: focusNode,
-                                decoration: InputDecoration(
-                                  hintText: 'Buscar cultivo...',
-                                  hintStyle: AppText.bodyMd(color: AppColors.outline),
-                                  prefixIcon: const Icon(Icons.grass, color: AppColors.primary, size: 20),
-                                  border: InputBorder.none,
-                                  contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                            // Drag handle
+                            Center(
+                              child: Container(
+                                width: 40,
+                                height: 4,
+                                decoration: BoxDecoration(
+                                  color: AppColors.outlineVariant,
+                                  borderRadius: BorderRadius.circular(999),
                                 ),
-                              );
-                            },
-                            optionsViewBuilder: (ctx, onSelected, options) {
-                              return Align(
-                                alignment: Alignment.topLeft,
-                                child: Material(
-                                  elevation: 8.0,
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: Container(
-                                    width: MediaQuery.of(context).size.width - 80,
-                                    constraints: const BoxConstraints(maxHeight: 250),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: ListView.separated(
-                                      padding: EdgeInsets.zero,
-                                      shrinkWrap: true,
-                                      itemCount: options.length,
-                                      separatorBuilder: (c, i) => const Divider(height: 1),
-                                      itemBuilder: (ctx, index) {
-                                        final option = options.elementAt(index);
-                                        return ListTile(
-                                          title: Text((option as dynamic).nombre, style: AppText.bodyMd()),
-                                          subtitle: Text((option as dynamic).categoria ?? '', style: AppText.bodyMd(color: AppColors.outline).copyWith(fontSize: 14)),
-                                          onTap: () => onSelected(option),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 16),
-
-                    // ── Municipio (Catálogo) ──────────────────────────────
-                    Text('MUNICIPIO (OPCIONAL)', style: AppText.labelCaps()),
-                    const SizedBox(height: 8),
-                    Consumer<CatalogosProvider>(
-                      builder: (context, provider, child) {
-                        final list = provider.municipios;
-                        if (list.isEmpty) {
-                          return Text('Cargando municipios...',
-                              style: AppText.bodyMd(color: AppColors.outline));
-                        }
-
-                        String currentNombre = '';
-                        if (_selectedMunicipioId != null) {
-                          try {
-                            currentNombre = list
-                                .firstWhere((m) => m.id == _selectedMunicipioId)
-                                .nombre;
-                          } catch (_) {}
-                        }
-
-                        return Container(
-                          height: 56,
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          decoration: BoxDecoration(
-                            color: AppColors.surface,
-                            border: Border.all(color: AppColors.outlineVariant),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Autocomplete<Object>(
-                            key: ValueKey('auto_mun_$_selectedMunicipioId'),
-                            initialValue: TextEditingValue(text: currentNombre),
-                            optionsBuilder:
-                                (TextEditingValue textEditingValue) {
-                              if (textEditingValue.text == '') return list;
-                              return list.where((m) => m.nombre
-                                  .toLowerCase()
-                                  .contains(
-                                      textEditingValue.text.toLowerCase()));
-                            },
-                            displayStringForOption: (option) =>
-                                (option as dynamic).nombre,
-                            onSelected: (option) {
-                              setState(() {
-                                _selectedMunicipioId = (option as dynamic).id;
-                              });
-                            },
-                            fieldViewBuilder:
-                                (ctx, controller, focusNode, onSubmitted) {
-                              return TextField(
-                                controller: controller,
-                                focusNode: focusNode,
-                                decoration: InputDecoration(
-                                  hintText: 'Buscar municipio...',
-                                  hintStyle:
-                                      AppText.bodyMd(color: AppColors.outline),
-                                  prefixIcon: const Icon(Icons.location_city,
-                                      color: AppColors.primary, size: 20),
-                                  border: InputBorder.none,
-                                  contentPadding:
-                                      const EdgeInsets.symmetric(vertical: 16),
-                                ),
-                              );
-                            },
-                            optionsViewBuilder: (ctx, onSelected, options) {
-                              return Align(
-                                alignment: Alignment.topLeft,
-                                child: Material(
-                                  elevation: 8.0,
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: Container(
-                                    width:
-                                        MediaQuery.of(context).size.width - 80,
-                                    constraints:
-                                        const BoxConstraints(maxHeight: 250),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: ListView.separated(
-                                      padding: EdgeInsets.zero,
-                                      shrinkWrap: true,
-                                      itemCount: options.length,
-                                      separatorBuilder: (c, i) =>
-                                          const Divider(height: 1),
-                                      itemBuilder: (ctx, index) {
-                                        final option = options.elementAt(index);
-                                        return ListTile(
-                                          title: Text(
-                                              (option as dynamic).nombre,
-                                              style: AppText.bodyMd()),
-                                          onTap: () => onSelected(option),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 16),
-
-                    // ── Ubicación capturada ───────────────────────────────
-                    if (_locationLabel != null) ...[
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.secondaryContainer,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.location_on,
-                                color: AppColors.onSecondaryContainer,
-                                size: 20),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                _locationLabel!,
-                                style: AppText.bodyMd(
-                                    color: AppColors.onSecondaryContainer),
-                                maxLines: 2,
                               ),
                             ),
+                            const SizedBox(height: 16),
+
+                            Text(
+                                widget.loteToEdit != null
+                                    ? 'Configurar Lote'
+                                    : 'Registrar Lote',
+                                style: AppText.h2()),
+                            const SizedBox(height: 20),
+
+                            // ── Nombre ────────────────────────────────────────────
+                            Text('NOMBRE DEL LOTE', style: AppText.labelCaps()),
+                            const SizedBox(height: 8),
+                            TextField(
+                              controller: _nameController,
+                              textCapitalization: TextCapitalization.words,
+                              decoration: InputDecoration(
+                                filled: true,
+                                fillColor: AppColors.surface,
+                                hintText: 'Escribe el nombre de tu lote',
+                                prefixIcon: const Icon(Icons.landscape,
+                                    color: AppColors.primary, size: 20),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                      color: AppColors.outlineVariant),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                      color: AppColors.outlineVariant),
+                                ),
+                                contentPadding: const EdgeInsets.all(14),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+
+                            // ── Área ──────────────────────────────────────────────
+                            Text('ÁREA ESTIMADA', style: AppText.labelCaps()),
+                            const SizedBox(height: 8),
+                            TextField(
+                              controller: _areaController,
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                      decimal: true),
+                              decoration: InputDecoration(
+                                filled: true,
+                                fillColor: AppColors.surface,
+                                hintText: 'Ej: 2.5',
+                                prefixIcon: const Icon(Icons.straighten,
+                                    color: AppColors.primary, size: 20),
+                                suffixText: 'hectáreas',
+                                suffixStyle: AppText.bodyMd(
+                                    color: AppColors.onSurfaceVariant),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                      color: AppColors.outlineVariant),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                      color: AppColors.outlineVariant),
+                                ),
+                                contentPadding: const EdgeInsets.all(14),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+
+                            // ── Municipio (Catálogo) ──────────────────────────────
+                            Text('MUNICIPIO', style: AppText.labelCaps()),
+                            const SizedBox(height: 8),
+                            Consumer<CatalogosProvider>(
+                              builder: (context, provider, child) {
+                                final list = provider.municipios;
+                                if (provider.isLoading && list.isEmpty) {
+                                  return Container(
+                                    height: 56,
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.surface,
+                                      border: Border.all(
+                                          color: AppColors.outlineVariant),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        SizedBox(
+                                            width: 16,
+                                            height: 16,
+                                            child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: AppColors.primary)),
+                                        SizedBox(width: 10),
+                                        Text('Cargando municipios...'),
+                                      ],
+                                    ),
+                                  );
+                                }
+                                if (list.isEmpty) {
+                                  // Sin conexión / catálogo vacío: campo manual
+                                  return TextField(
+                                    controller: _manualMunicipioCtrl,
+                                    textCapitalization:
+                                        TextCapitalization.words,
+                                    decoration: InputDecoration(
+                                      filled: true,
+                                      fillColor: AppColors.surface,
+                                      hintText:
+                                          'Escribe el municipio manualmente...',
+                                      prefixIcon: const Icon(
+                                          Icons.location_city,
+                                          color: AppColors.primary,
+                                          size: 20),
+                                      suffixIcon: IconButton(
+                                        icon: const Icon(Icons.refresh,
+                                            color: AppColors.primary, size: 20),
+                                        tooltip: 'Reintentar carga',
+                                        onPressed: () =>
+                                            provider.cargarCatalogos(),
+                                      ),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: const BorderSide(
+                                            color: AppColors.outlineVariant),
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: const BorderSide(
+                                            color: AppColors.outlineVariant),
+                                      ),
+                                      contentPadding: const EdgeInsets.all(14),
+                                    ),
+                                  );
+                                }
+
+                                String currentNombre = '';
+                                if (_selectedMunicipioId != null) {
+                                  try {
+                                    currentNombre = list
+                                        .firstWhere(
+                                            (m) => m.id == _selectedMunicipioId)
+                                        .nombre;
+                                  } catch (_) {}
+                                }
+
+                                return Container(
+                                  height: 56,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.surface,
+                                    border: Border.all(
+                                        color: AppColors.outlineVariant),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Autocomplete<Object>(
+                                    key: ValueKey(
+                                        'auto_mun_$_selectedMunicipioId'),
+                                    initialValue:
+                                        TextEditingValue(text: currentNombre),
+                                    optionsBuilder:
+                                        (TextEditingValue textEditingValue) {
+                                      if (textEditingValue.text == '') {
+                                        return list;
+                                      }
+                                      return list.where((m) => m.nombre
+                                          .toLowerCase()
+                                          .contains(textEditingValue.text
+                                              .toLowerCase()));
+                                    },
+                                    displayStringForOption: (option) =>
+                                        (option as dynamic).nombre,
+                                    onSelected: (option) {
+                                      setState(() {
+                                        _selectedMunicipioId =
+                                            (option as dynamic).id;
+                                      });
+                                      // Volar al municipio en el mapa
+                                      _searchLocation((option as dynamic).nombre);
+                                    },
+                                    fieldViewBuilder: (ctx, controller,
+                                        focusNode, onSubmitted) {
+                                      return TextField(
+                                        controller: controller,
+                                        focusNode: focusNode,
+                                        decoration: InputDecoration(
+                                          hintText: 'Buscar municipio...',
+                                          hintStyle: AppText.bodyMd(
+                                              color: AppColors.outline),
+                                          prefixIcon: const Icon(
+                                              Icons.location_city,
+                                              color: AppColors.primary,
+                                              size: 20),
+                                          border: InputBorder.none,
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                                  vertical: 16),
+                                        ),
+                                      );
+                                    },
+                                    optionsViewBuilder:
+                                        (ctx, onSelected, options) {
+                                      return Align(
+                                        alignment: Alignment.topLeft,
+                                        child: Material(
+                                          elevation: 8.0,
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                          child: Container(
+                                            width: MediaQuery.of(context)
+                                                    .size
+                                                    .width -
+                                                80,
+                                            constraints: const BoxConstraints(
+                                                maxHeight: 250),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                            child: NotificationListener<ScrollNotification>(
+                                              onNotification: (notification) {
+                                                if (notification is ScrollUpdateNotification) {
+                                                  SystemChannels.textInput.invokeMethod('TextInput.hide');
+                                                }
+                                                return true; // Evita propagar el scroll al BottomSheet
+                                              },
+                                              child: ListView.separated(
+                                                padding: EdgeInsets.zero,
+                                                shrinkWrap: true,
+                                                itemCount: options.length,
+                                                separatorBuilder: (c, i) =>
+                                                    const Divider(height: 1),
+                                                itemBuilder: (ctx, index) {
+                                                  final option =
+                                                      options.elementAt(index);
+                                                  return ListTile(
+                                                    title: Text(
+                                                        (option as dynamic)
+                                                            .nombre,
+                                                        style: AppText.bodyMd()),
+                                                    onTap: () =>
+                                                        onSelected(option),
+                                                  );
+                                                },
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 16),
+
+                            // ── Dirección / ubicación manual ──────────────────────
+                            Text('DIRECCIÓN O UBICACIÓN',
+                                style: AppText.labelCaps()),
+                            const SizedBox(height: 8),
+                            TextField(
+                              controller: _manualLocationCtrl,
+                              textCapitalization: TextCapitalization.sentences,
+                              onSubmitted: (value) {
+                                if (value.trim().isNotEmpty) {
+                                  _searchLocation(value.trim());
+                                }
+                              },
+                              decoration: InputDecoration(
+                                filled: true,
+                                fillColor: AppColors.surface,
+                                hintText: 'Ej: Vereda El Carmen, Km 5 vía...',
+                                prefixIcon: const Icon(
+                                    Icons.edit_location_outlined,
+                                    color: AppColors.primary,
+                                    size: 20),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                      color: AppColors.outlineVariant),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                      color: AppColors.outlineVariant),
+                                ),
+                                contentPadding: const EdgeInsets.all(14),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+
+                            // ── Tipo de Suelo ──────────────────────
+                            Text('TIPO DE SUELO', style: AppText.labelCaps()),
+                            const SizedBox(height: 8),
+                            Consumer<CatalogosProvider>(
+                              builder: (context, catalogos, child) {
+                                final list = catalogos.tiposSuelo;
+                                return Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.surface,
+                                    border: Border.all(
+                                        color: AppColors.outlineVariant),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: DropdownButtonHideUnderline(
+                                    child: DropdownButtonFormField<String>(
+                                      initialValue: _selectedTipoSueloId,
+                                      menuMaxHeight: 220,
+                                      hint: Text(
+                                        'Seleccionar tipo de suelo...',
+                                        style: AppText.bodyMd(
+                                            color: AppColors.outline),
+                                      ),
+                                      decoration: const InputDecoration(
+                                        border: InputBorder.none,
+                                        icon: Icon(Icons.layers_outlined,
+                                            color: AppColors.primary, size: 20),
+                                      ),
+                                      isExpanded: true,
+                                      items: list.map((suelo) {
+                                        return DropdownMenuItem<String>(
+                                          value: suelo.id,
+                                          child: Text(
+                                            '${suelo.nombre} (${suelo.drenaje != null ? "Drenaje ${suelo.drenaje}" : ""})',
+                                            style: AppText.bodyMd(),
+                                          ),
+                                        );
+                                      }).toList(),
+                                      onChanged: (val) {
+                                        setState(() {
+                                          _selectedTipoSueloId = val;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 16),
+
+
+
+                            // ── GPS button ────────────────────────────────────────
+                            SizedBox(
+                              width: double.infinity,
+                              height: 52,
+                              child: OutlinedButton.icon(
+                                onPressed:
+                                    _loadingLocation ? null : _getLocation,
+                                icon: _loadingLocation
+                                    ? const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: AppColors.primary),
+                                      )
+                                    : const Icon(Icons.my_location,
+                                        color: AppColors.primary),
+                                label: Text(
+                                  _loadingLocation
+                                      ? 'OBTENIENDO UBICACIÓN...'
+                                      : _lat != null
+                                          ? 'ACTUALIZAR UBICACIÓN'
+                                          : 'USAR MI UBICACIÓN ACTUAL',
+                                  style: AppText.labelCapsLg(
+                                      color: AppColors.primary),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  side: const BorderSide(
+                                      color: AppColors.primary, width: 1.5),
+                                  shape: const StadiumBorder(),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+
+                            // ── Save ──────────────────────────────────────────────
+                            RuggedButton(
+                              text: _saving ? 'GUARDANDO...' : 'GUARDAR LOTE',
+                              icon: Icons.save,
+                              onPressed: _saving
+                                  ? null
+                                  : () {
+                                      _saveLote();
+                                    },
+                            ),
+                            const SizedBox(height: 8),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 12),
-                    ],
-
-                    // ── GPS button ────────────────────────────────────────
-                    SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: OutlinedButton.icon(
-                        onPressed: _loadingLocation ? null : _getLocation,
-                        icon: _loadingLocation
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: AppColors.primary),
-                              )
-                            : const Icon(Icons.my_location,
-                                color: AppColors.primary),
-                        label: Text(
-                          _loadingLocation
-                              ? 'OBTENIENDO UBICACIÓN...'
-                              : _lat != null
-                                  ? 'ACTUALIZAR UBICACIÓN'
-                                  : 'USAR MI UBICACIÓN ACTUAL',
-                          style: AppText.labelCapsLg(color: AppColors.primary),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(
-                              color: AppColors.primary, width: 1.5),
-                          shape: const StadiumBorder(),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // ── Save ──────────────────────────────────────────────
-                    RuggedButton(
-                      text: _saving ? 'GUARDANDO...' : 'GUARDAR LOTE',
-                      icon: Icons.save,
-                      onPressed: _saving
-                          ? null
-                          : () {
-                              _saveLote();
-                            },
-                    ),
-                    const SizedBox(height: 8),
-                  ],
+                    );
+                  },
                 ),
-              ),
-            );
-          },
-        ),
-      ],
-    ),
-  ),
-],
-),
+              ],
+            ),
+          ),
+        ],
+      ),
       bottomNavigationBar: AgroBottomNav(
         current: AgroTab.lotes,
         onTap: (tab) {
@@ -763,52 +1126,3 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
   }
 }
 
-// ─── Painters ────────────────────────────────────────────────────────────────
-
-class _PolygonPainter extends CustomPainter {
-  final List<Offset> points;
-  _PolygonPainter({required this.points});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (points.isEmpty) return;
-
-    final fill = Paint()
-      ..color = AppColors.primary.withValues(alpha: 0.22)
-      ..style = PaintingStyle.fill;
-    final stroke = Paint()
-      ..color = AppColors.primary
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-
-    final path = Path();
-    path.moveTo(points[0].dx * size.width, points[0].dy * size.height);
-    for (int i = 1; i < points.length; i++) {
-      path.lineTo(points[i].dx * size.width, points[i].dy * size.height);
-    }
-    path.close();
-
-    canvas.drawPath(path, fill);
-    canvas.drawPath(path, stroke);
-
-    final handle = Paint()..color = Colors.white;
-    final handleStroke = Paint()
-      ..color = AppColors.primary
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-
-    for (final p in points) {
-      final center = Offset(p.dx * size.width, p.dy * size.height);
-      canvas.drawCircle(
-          center, 9, handle); // slightly larger handle for dragging
-      canvas.drawCircle(center, 9, handleStroke);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _PolygonPainter oldDelegate) =>
-      true; // simplistic repaint
-}
-
-// ignore: unused_element
-double _deg2rad(double deg) => deg * math.pi / 180;

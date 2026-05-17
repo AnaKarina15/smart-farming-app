@@ -35,6 +35,13 @@ export class UsersService {
       throw new ConflictException('Ya existe un usuario con ese correo electronico');
     }
 
+    if (dto.telefono) {
+      const phoneExists = await this.usersRepo.existsByTelefono(dto.telefono);
+      if (phoneExists) {
+        throw new ConflictException('Ese número de teléfono ya está registrado por otro usuario');
+      }
+    }
+
     const passwordHash = await this.hashPassword(dto.password);
 
     const user = await this.usersRepo.create({
@@ -173,6 +180,12 @@ export class UsersService {
       user.nombreCompleto = dto.nombreCompleto;
     }
     if (dto.telefono !== undefined && dto.telefono !== user.telefono) {
+      if (dto.telefono) {
+        const phoneExists = await this.usersRepo.existsByTelefono(dto.telefono);
+        if (phoneExists) {
+          throw new ConflictException('Ese número de teléfono ya está registrado por otro usuario');
+        }
+      }
       changes.telefono = { from: user.telefono, to: dto.telefono };
       user.telefono = dto.telefono;
     }

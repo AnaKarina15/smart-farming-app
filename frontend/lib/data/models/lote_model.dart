@@ -12,6 +12,7 @@ class LoteModel {
   final String? cultivoActual;
   final String? cultivoActualId;
   final String? municipioId;
+  final String? tipoSueloId;
   final double? latitud;
   final double? longitud;
   final String estado;
@@ -27,6 +28,7 @@ class LoteModel {
     this.cultivoActual,
     this.cultivoActualId,
     this.municipioId,
+    this.tipoSueloId,
     this.latitud,
     this.longitud,
     required this.estado,
@@ -44,6 +46,7 @@ class LoteModel {
       cultivoActual: json['cultivoActual'] as String?,
       cultivoActualId: json['cultivoActualId'] as String?,
       municipioId: json['municipioId'] as String?,
+      tipoSueloId: json['tipoSueloId'] as String?,
       latitud: json['latitud'] != null ? (json['latitud'] as num).toDouble() : null,
       longitud: json['longitud'] != null ? (json['longitud'] as num).toDouble() : null,
       estado: json['estado'] as String? ?? 'saludable',
@@ -61,6 +64,7 @@ class LoteModel {
       if (cultivoActual != null) 'cultivoActual': cultivoActual,
       if (cultivoActualId != null) 'cultivoActualId': cultivoActualId,
       if (municipioId != null) 'municipioId': municipioId,
+      if (tipoSueloId != null) 'tipoSueloId': tipoSueloId,
       if (latitud != null) 'latitud': latitud,
       if (longitud != null) 'longitud': longitud,
     };

@@ -55,6 +55,11 @@ export class UsersRepository {
     return count > 0;
   }
 
+  async existsByTelefono(telefono: string): Promise<boolean> {
+    const count = await this.repo.count({ where: { telefono } });
+    return count > 0;
+  }
+
   async create(data: Partial<User>): Promise<User> {
     const user = this.repo.create({
       ...data,

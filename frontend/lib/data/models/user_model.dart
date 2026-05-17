@@ -13,6 +13,7 @@ class UserModel {
   final DateTime updatedAt;
   /// Optional field indicating who created the user record in the backend.
   final String? createdBy;
+  final String? fotoPerfilUrl;
 
   UserModel({
     required this.id,
@@ -25,7 +26,7 @@ class UserModel {
     required this.createdAt,
     required this.updatedAt,
     this.createdBy,
-
+    this.fotoPerfilUrl,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -42,6 +43,7 @@ class UserModel {
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
       createdBy: json['createdBy'] as String?,
+      fotoPerfilUrl: json['fotoPerfilUrl'] as String?,
     );
   }
 
@@ -57,7 +59,7 @@ class UserModel {
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
       if (createdBy != null) 'createdBy': createdBy,
-
+      if (fotoPerfilUrl != null) 'fotoPerfilUrl': fotoPerfilUrl,
     };
   }
 

@@ -20,6 +20,13 @@ class ProfileImageProvider extends ChangeNotifier {
   bool get isUploading => _isUploading;
   String? get backendAvatarUrl => _backendAvatarUrl;
 
+  void setInitialAvatarUrl(String? url) {
+    if (url != null && url.isNotEmpty && _backendAvatarUrl != url) {
+      _backendAvatarUrl = url;
+      notifyListeners();
+    }
+  }
+
   /// Opens a bottom sheet for the user to choose camera or gallery,
   /// then picks the image, shows a confirmation dialog, and saves it.
   Future<void> pickImage(BuildContext context) async {

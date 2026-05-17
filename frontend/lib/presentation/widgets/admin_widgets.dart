@@ -6,28 +6,27 @@ import '../../core/theme/app_text.dart';
 // Se definen aquí como constantes locales para no duplicar AppColors.
 // El verde primario (AppColors.primary) se reutiliza directamente.
 
-const Color _kError    = Color(0xFFD32F2F);
-const Color _kErrorBg  = Color(0xFFFFEBEE);
-const Color _kWarning  = Color(0xFFFF8F00);
-const Color _kAccent   = Color(0xFF4CAF50);
+const Color _kError = Color(0xFFD32F2F);
+const Color _kErrorBg = Color(0xFFFFEBEE);
+const Color _kWarning = Color(0xFFFF8F00);
+const Color _kAccent = Color(0xFF4CAF50);
 const Color _kInactive = Color(0xFF9E9E9E);
-const Color _kBorder   = Color(0xFFE5E7EB);
-const Color _kBg       = Color(0xFFF5F5F0);
-const Color _kText     = Color(0xFF1A1A1A);
-const Color _kSubtext  = Color(0xFF6B7280);
+const Color _kBorder = Color(0xFFE5E7EB);
+const Color _kText = Color(0xFF1A1A1A);
+const Color _kSubtext = Color(0xFF6B7280);
 
 // Expuestos para que las pantallas los usen sin redefinir
 class AK {
   AK._();
-  static Color get primary   => AppColors.primary;
-  static const Color error   = _kError;
+  static Color get primary => AppColors.primary;
+  static const Color error = _kError;
   static const Color errorBg = _kErrorBg;
   static const Color warning = _kWarning;
-  static const Color accent  = _kAccent;
+  static const Color accent = _kAccent;
   static const Color inactive = _kInactive;
-  static const Color border  = _kBorder;
-  static Color get bg      => AppColors.background;
-  static const Color text    = _kText;
+  static const Color border = _kBorder;
+  static Color get bg => AppColors.background;
+  static const Color text = _kText;
   static const Color subtext = _kSubtext;
 }
 
@@ -40,8 +39,8 @@ class RolChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fontSize  = small ? 10.0 : 11.0;
-    final padding   = small
+    final fontSize = small ? 10.0 : 11.0;
+    final padding = small
         ? const EdgeInsets.symmetric(horizontal: 8, vertical: 2)
         : const EdgeInsets.symmetric(horizontal: 10, vertical: 4);
     return Container(
@@ -64,21 +63,31 @@ class RolChip extends StatelessWidget {
 
   static Color _colorRol(String r) {
     switch (r.toLowerCase().trim()) {
-      case 'administrador':    return _kError;
-      case 'gestor':           return AppColors.primary;
-      case 'pequeno_productor': return const Color(0xFF1A7A52);
-      case 'trabajador':       return _kInactive;
-      default:                 return _kInactive;
+      case 'administrador':
+        return _kError;
+      case 'gestor':
+        return AppColors.primary;
+      case 'pequeno_productor':
+        return const Color(0xFF1A7A52);
+      case 'trabajador':
+        return _kInactive;
+      default:
+        return _kInactive;
     }
   }
 
   static String labelRol(String r) {
     switch (r.toLowerCase().trim()) {
-      case 'administrador':    return 'Admin';
-      case 'pequeno_productor': return 'Productor';
-      case 'trabajador':       return 'Trabajador';
-      case 'gestor':           return 'Gestor';
-      default:                 return r;
+      case 'administrador':
+        return 'Admin';
+      case 'pequeno_productor':
+        return 'Productor';
+      case 'trabajador':
+        return 'Trabajador';
+      case 'gestor':
+        return 'Gestor';
+      default:
+        return r;
     }
   }
 }
@@ -114,19 +123,27 @@ class AvatarIniciales extends StatelessWidget {
 
   static Color _fondo(String r) {
     switch (r.toLowerCase().trim()) {
-      case 'administrador':    return const Color(0xFFFFEBEE);
-      case 'gestor':           return const Color(0xFFE8F5E9);
-      case 'pequeno_productor': return const Color(0xFFE3F2FD);
-      default:                 return const Color(0xFFF5F5F5);
+      case 'administrador':
+        return const Color(0xFFFFEBEE);
+      case 'gestor':
+        return const Color(0xFFE8F5E9);
+      case 'pequeno_productor':
+        return const Color(0xFFE3F2FD);
+      default:
+        return const Color(0xFFF5F5F5);
     }
   }
 
   static Color _texto(String r) {
     switch (r.toLowerCase().trim()) {
-      case 'administrador':    return _kError;
-      case 'gestor':           return AppColors.primary;
-      case 'pequeno_productor': return const Color(0xFF1565C0);
-      default:                 return _kInactive;
+      case 'administrador':
+        return _kError;
+      case 'gestor':
+        return AppColors.primary;
+      case 'pequeno_productor':
+        return const Color(0xFF1565C0);
+      default:
+        return _kInactive;
     }
   }
 }
@@ -140,17 +157,28 @@ class PuntoEstado extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = eliminado ? _kError : activo ? _kAccent : _kInactive;
-    final label = eliminado ? 'Eliminado' : activo ? 'Activo' : 'Inactivo';
+    final color = eliminado
+        ? _kError
+        : activo
+            ? _kAccent
+            : _kInactive;
+    final label = eliminado
+        ? 'Eliminado'
+        : activo
+            ? 'Activo'
+            : 'Inactivo';
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 8, height: 8,
+          width: 8,
+          height: 8,
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 4),
-        Text(label, style: TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.w500)),
+        Text(label,
+            style: TextStyle(
+                fontSize: 12, color: color, fontWeight: FontWeight.w500)),
       ],
     );
   }
@@ -172,14 +200,16 @@ class DropdownRol extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DropdownButtonFormField<String>(
-      value: valor,
+      initialValue: valor,
       hint: const Text('Seleccione un rol...'),
       items: [
-        const DropdownMenuItem(value: 'pequeno_productor', child: Text('Pequeño Productor')),
-        const DropdownMenuItem(value: 'trabajador',        child: Text('Trabajador')),
-        const DropdownMenuItem(value: 'gestor',            child: Text('Gestor')),
+        const DropdownMenuItem(
+            value: 'pequeno_productor', child: Text('Pequeño Productor')),
+        const DropdownMenuItem(value: 'trabajador', child: Text('Trabajador')),
+        const DropdownMenuItem(value: 'gestor', child: Text('Gestor')),
         if (incluirAdmin)
-          const DropdownMenuItem(value: 'administrador',  child: Text('Administrador')),
+          const DropdownMenuItem(
+              value: 'administrador', child: Text('Administrador')),
       ],
       onChanged: onChanged,
       decoration: _inputDeco(),
@@ -219,8 +249,10 @@ class AdminTextField extends StatelessWidget {
         Text(
           label.toUpperCase(),
           style: const TextStyle(
-            fontSize: 11, fontWeight: FontWeight.w700,
-            color: _kSubtext, letterSpacing: 0.8,
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: _kSubtext,
+            letterSpacing: 0.8,
           ),
         ),
         const SizedBox(height: 6),
@@ -243,7 +275,8 @@ class AdminTextField extends StatelessWidget {
 class AdminBottomNav extends StatelessWidget {
   final int indiceActivo;
   final ValueChanged<int> onTap;
-  const AdminBottomNav({super.key, required this.indiceActivo, required this.onTap});
+  const AdminBottomNav(
+      {super.key, required this.indiceActivo, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -312,9 +345,8 @@ class _AdminNavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = active
-        ? AppColors.onSecondaryContainer
-        : AppColors.onSurfaceVariant;
+    final color =
+        active ? AppColors.onSecondaryContainer : AppColors.onSurfaceVariant;
 
     return InkWell(
       onTap: onTap,
@@ -328,9 +360,8 @@ class _AdminNavItem extends StatelessWidget {
               width: 64,
               height: 32,
               decoration: BoxDecoration(
-                color: active
-                    ? AppColors.secondaryContainer
-                    : Colors.transparent,
+                color:
+                    active ? AppColors.secondaryContainer : Colors.transparent,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Icon(active ? iconActive : icon, color: color, size: 22),
@@ -406,20 +437,23 @@ class BotonAccion extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg   = color ?? Colors.white;
-    final fg   = textColor ?? _kText;
+    final bg = color ?? Colors.white;
+    final fg = textColor ?? _kText;
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton.icon(
         icon: Icon(icono, color: fg, size: 18),
-        label: Text(label, style: TextStyle(color: fg, fontWeight: FontWeight.w600)),
+        label: Text(label,
+            style: TextStyle(color: fg, fontWeight: FontWeight.w600)),
         style: ElevatedButton.styleFrom(
           backgroundColor: bg,
           foregroundColor: fg,
           elevation: 0,
-          side: BorderSide(color: bg == Colors.white ? _kBorder : Colors.transparent),
+          side: BorderSide(
+              color: bg == Colors.white ? _kBorder : Colors.transparent),
           padding: const EdgeInsets.symmetric(vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
         onPressed: onTap,
       ),
@@ -460,7 +494,9 @@ class SeccionCard extends StatelessWidget {
                 Text(
                   titulo,
                   style: const TextStyle(
-                    fontSize: 16, fontWeight: FontWeight.w700, color: _kText,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: _kText,
                   ),
                 ),
               ],
@@ -495,14 +531,17 @@ class FilaInfo extends StatelessWidget {
             child: Text(
               label,
               style: const TextStyle(
-                fontSize: 11, color: _kSubtext,
-                fontWeight: FontWeight.w700, letterSpacing: 0.8,
+                fontSize: 11,
+                color: _kSubtext,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.8,
               ),
             ),
           ),
           Expanded(
             flex: 3,
-            child: Text(valor, style: const TextStyle(fontSize: 14, color: _kText)),
+            child: Text(valor,
+                style: const TextStyle(fontSize: 14, color: _kText)),
           ),
         ],
       ),
@@ -525,14 +564,15 @@ class ErrorBanner extends StatelessWidget {
       decoration: BoxDecoration(
         color: _kErrorBg,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: _kError.withOpacity(0.3)),
+        border: Border.all(color: _kError.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
           const Icon(Icons.error_outline, color: _kError, size: 18),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(mensaje, style: const TextStyle(color: _kError, fontSize: 13)),
+            child: Text(mensaje,
+                style: const TextStyle(color: _kError, fontSize: 13)),
           ),
           if (onDismiss != null)
             GestureDetector(
@@ -550,7 +590,8 @@ class ErrorBanner extends StatelessWidget {
 class ErrorView extends StatelessWidget {
   final String mensaje;
   final VoidCallback onReintentar;
-  const ErrorView({super.key, required this.mensaje, required this.onReintentar});
+  const ErrorView(
+      {super.key, required this.mensaje, required this.onReintentar});
 
   @override
   Widget build(BuildContext context) {
@@ -568,8 +609,10 @@ class ErrorView extends StatelessWidget {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: onReintentar,
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-              child: const Text('Reintentar', style: TextStyle(color: Colors.white)),
+              style:
+                  ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+              child: const Text('Reintentar',
+                  style: TextStyle(color: Colors.white)),
             ),
           ],
         ),
@@ -601,18 +644,23 @@ class BotonGuardar extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: color ?? AppColors.primary,
           padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
         onPressed: cargando ? null : onPressed,
         child: cargando
             ? const SizedBox(
-                height: 20, width: 20,
-                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                    color: Colors.white, strokeWidth: 2),
               )
             : Text(
                 label,
                 style: const TextStyle(
-                  color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
                 ),
               ),
       ),

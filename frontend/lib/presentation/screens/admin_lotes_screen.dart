@@ -255,7 +255,7 @@ class _StatRow extends StatelessWidget {
         color: colorFondo ?? Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: colorFondo != null ? color.withOpacity(0.3) : AK.border,
+          color: colorFondo != null ? color.withValues(alpha: 0.3) : AK.border,
         ),
       ),
       child: Row(
@@ -383,7 +383,7 @@ class _TarjetaLote extends StatelessWidget {
         border: Border.all(color: AK.border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -398,13 +398,14 @@ class _TarjetaLote extends StatelessWidget {
               Container(
                 height: 90,
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.12),
+                  color: AppColors.primary.withValues(alpha: 0.12),
                   borderRadius:
                       const BorderRadius.vertical(top: Radius.circular(14)),
                 ),
                 child: Center(
                   child: Icon(Icons.agriculture,
-                      size: 36, color: AppColors.primary.withOpacity(0.4)),
+                      size: 36,
+                      color: AppColors.primary.withValues(alpha: 0.4)),
                 ),
               ),
               if (lote.estado != null)
@@ -526,7 +527,7 @@ class _PillInfo extends StatelessWidget {
           margin: const EdgeInsets.only(top: 2),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.08),
+            color: AppColors.primary.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(valor,

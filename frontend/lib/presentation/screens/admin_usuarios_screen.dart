@@ -19,7 +19,7 @@ class AdminUsuariosScreen extends StatefulWidget {
 class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
   final _searchController = TextEditingController();
   bool _mostrarFiltros = true;
-  
+
   final Set<String> _rolesSeleccionados = {
     'pequeno_productor',
     'trabajador',
@@ -51,7 +51,12 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
 
   void _onRolTap(String? rol) {
     setState(() {
-      const allRoles = ['pequeno_productor', 'trabajador', 'gestor', 'administrador'];
+      const allRoles = [
+        'pequeno_productor',
+        'trabajador',
+        'gestor',
+        'administrador'
+      ];
       if (rol == null) {
         // Tapped "Todos"
         if (_rolesSeleccionados.length == allRoles.length) {
@@ -94,7 +99,7 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
   @override
   Widget build(BuildContext context) {
     final prov = context.watch<AdminProvider>();
-    
+
     // Si todos los filtros están en su estado activo por defecto
     final bool todosActivos = _rolesSeleccionados.length == 4 &&
         _estadosSeleccionados.length == 2 &&
@@ -115,7 +120,9 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
                 Text(
                   'Usuarios del Sistema',
                   style: TextStyle(
-                    fontSize: 24, fontWeight: FontWeight.w800, color: AK.text,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    color: AK.text,
                   ),
                 ),
                 SizedBox(height: 2),
@@ -147,11 +154,14 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
                     Expanded(
                       child: TextField(
                         controller: _searchController,
-                        onChanged: (v) => context.read<AdminProvider>().setBusqueda(v),
+                        onChanged: (v) =>
+                            context.read<AdminProvider>().setBusqueda(v),
                         decoration: InputDecoration(
                           hintText: 'Buscar por nombre o email...',
-                          hintStyle: const TextStyle(color: AK.inactive, fontSize: 13),
-                          prefixIcon: const Icon(Icons.search, color: AK.inactive, size: 20),
+                          hintStyle:
+                              const TextStyle(color: AK.inactive, fontSize: 13),
+                          prefixIcon: const Icon(Icons.search,
+                              color: AK.inactive, size: 20),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
                             borderSide: const BorderSide(color: AK.border),
@@ -162,11 +172,13 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
-                            borderSide: BorderSide(color: AppColors.primary, width: 1.5),
+                            borderSide: BorderSide(
+                                color: AppColors.primary, width: 1.5),
                           ),
                           filled: true,
                           fillColor: AK.bg,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                          contentPadding:
+                              const EdgeInsets.symmetric(vertical: 10),
                         ),
                       ),
                     ),
@@ -183,13 +195,17 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
                         width: 44,
                         height: 44,
                         decoration: BoxDecoration(
-                          color: todosActivos ? Colors.white : AppColors.secondaryContainer,
+                          color: todosActivos
+                              ? Colors.white
+                              : AppColors.secondaryContainer,
                           border: Border.all(color: AK.border),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Icon(
                           Icons.tune,
-                          color: todosActivos ? AK.subtext : AppColors.onSecondaryContainer,
+                          color: todosActivos
+                              ? AK.subtext
+                              : AppColors.onSecondaryContainer,
                           size: 20,
                         ),
                       ),
@@ -209,7 +225,11 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
                       const SizedBox(height: 12),
 
                       // Chips de rol
-                      const Text('Rol', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AK.text)),
+                      const Text('Rol',
+                          style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AK.text)),
                       const SizedBox(height: 8),
                       SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
@@ -223,25 +243,29 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
                             const SizedBox(width: 6),
                             ChipFiltro(
                               label: 'Productores',
-                              seleccionado: _rolesSeleccionados.contains('pequeno_productor'),
+                              seleccionado: _rolesSeleccionados
+                                  .contains('pequeno_productor'),
                               onTap: () => _onRolTap('pequeno_productor'),
                             ),
                             const SizedBox(width: 6),
                             ChipFiltro(
                               label: 'Trabajadores',
-                              seleccionado: _rolesSeleccionados.contains('trabajador'),
+                              seleccionado:
+                                  _rolesSeleccionados.contains('trabajador'),
                               onTap: () => _onRolTap('trabajador'),
                             ),
                             const SizedBox(width: 6),
                             ChipFiltro(
                               label: 'Gestores',
-                              seleccionado: _rolesSeleccionados.contains('gestor'),
+                              seleccionado:
+                                  _rolesSeleccionados.contains('gestor'),
                               onTap: () => _onRolTap('gestor'),
                             ),
                             const SizedBox(width: 6),
                             ChipFiltro(
                               label: 'Admins',
-                              seleccionado: _rolesSeleccionados.contains('administrador'),
+                              seleccionado:
+                                  _rolesSeleccionados.contains('administrador'),
                               onTap: () => _onRolTap('administrador'),
                             ),
                           ],
@@ -251,7 +275,11 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
                       const SizedBox(height: 12),
 
                       // Chips de estado
-                      const Text('Estado', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AK.text)),
+                      const Text('Estado',
+                          style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AK.text)),
                       const SizedBox(height: 8),
                       Row(
                         children: [
@@ -275,19 +303,21 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
                       Consumer<AdminProvider>(
                         builder: (_, prov, __) => Row(
                           children: [
-                            const Text('Ver eliminados', style: TextStyle(fontSize: 13, color: AK.text)),
+                            const Text('Ver eliminados',
+                                style: TextStyle(fontSize: 13, color: AK.text)),
                             const Spacer(),
                             Switch(
                               value: prov.verEliminados,
                               onChanged: prov.setVerEliminados,
-                              activeColor: AppColors.primary,
+                              activeThumbColor: AppColors.primary,
                             ),
                           ],
                         ),
                       ),
                     ],
                   ),
-                  secondChild: const SizedBox(width: double.infinity, height: 0),
+                  secondChild:
+                      const SizedBox(width: double.infinity, height: 0),
                   crossFadeState: _mostrarFiltros
                       ? CrossFadeState.showFirst
                       : CrossFadeState.showSecond,
@@ -329,7 +359,8 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
                 }
                 return ListView.separated(
                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-                  itemCount: prov.usuarios.length + (prov.hayMasPaginas ? 1 : 0),
+                  itemCount:
+                      prov.usuarios.length + (prov.hayMasPaginas ? 1 : 0),
                   separatorBuilder: (_, __) => const SizedBox(height: 10),
                   itemBuilder: (_, i) {
                     if (i == prov.usuarios.length) {
@@ -360,7 +391,7 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
 class _TarjetaUsuario extends StatelessWidget {
   final UsuarioAdmin usuario;
   final bool estatica;
-  
+
   const _TarjetaUsuario({
     required this.usuario,
     this.estatica = false,
@@ -393,7 +424,9 @@ class _TarjetaUsuario extends StatelessWidget {
                     Text(
                       usuario.nombreCompleto,
                       style: const TextStyle(
-                        fontWeight: FontWeight.w700, fontSize: 15, color: AK.text,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                        color: AK.text,
                       ),
                     ),
                     Text(
@@ -410,7 +443,8 @@ class _TarjetaUsuario extends StatelessWidget {
             children: [
               RolChip(role: usuario.role),
               const SizedBox(width: 8),
-              PuntoEstado(activo: usuario.activo, eliminado: usuario.estaEliminado),
+              PuntoEstado(
+                  activo: usuario.activo, eliminado: usuario.estaEliminado),
               const Spacer(),
               if (estatica) ...[
                 const Icon(Icons.edit_outlined, size: 20, color: AK.subtext),
@@ -418,22 +452,25 @@ class _TarjetaUsuario extends StatelessWidget {
                 const Icon(Icons.more_vert, size: 20, color: AK.subtext),
               ] else ...[
                 GestureDetector(
-                  onTap: () {
-                    Navigator.push(
+                  onTap: () async {
+                    await Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) =>
                             AdminEditarUsuarioScreen(usuarioId: usuario.id),
                       ),
-                    ).then((_) =>
-                        context.read<AdminProvider>().cargarUsuarios());
+                    );
+                    if (!context.mounted) return;
+                    context.read<AdminProvider>().cargarUsuarios();
                   },
-                  child: const Icon(Icons.edit_outlined, size: 20, color: AK.subtext),
+                  child: const Icon(Icons.edit_outlined,
+                      size: 20, color: AK.subtext),
                 ),
                 const SizedBox(width: 12),
                 GestureDetector(
                   onTap: () => _mostrarMenuDestacado(context),
-                  child: const Icon(Icons.more_vert, size: 20, color: AK.subtext),
+                  child:
+                      const Icon(Icons.more_vert, size: 20, color: AK.subtext),
                 ),
               ],
             ],
@@ -468,7 +505,7 @@ class _TarjetaUsuario extends StatelessWidget {
       context: context,
       barrierDismissible: true,
       barrierLabel: 'Cerrar menú',
-      barrierColor: Colors.black.withOpacity(0.55),
+      barrierColor: Colors.black.withValues(alpha: 0.55),
       transitionDuration: const Duration(milliseconds: 180),
       pageBuilder: (ctx, anim1, anim2) {
         return Stack(
@@ -483,7 +520,7 @@ class _TarjetaUsuario extends StatelessWidget {
                 child: _TarjetaUsuario(usuario: usuario, estatica: true),
               ),
             ),
-            
+
             // Opciones del menú flotante alineadas debajo de la tarjeta
             Positioned(
               left: position.dx + size.width - 170,
@@ -505,8 +542,13 @@ class _TarjetaUsuario extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         ListTile(
-                          leading: Icon(Icons.visibility_outlined, color: AppColors.primary, size: 18),
-                          title: const Text('Ver detalle', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AK.text)),
+                          leading: Icon(Icons.visibility_outlined,
+                              color: AppColors.primary, size: 18),
+                          title: const Text('Ver detalle',
+                              style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: AK.text)),
                           dense: true,
                           onTap: () {
                             Navigator.pop(ctx);
@@ -516,22 +558,35 @@ class _TarjetaUsuario extends StatelessWidget {
                         const Divider(height: 1, color: AK.border),
                         if (usuario.estaEliminado)
                           ListTile(
-                            leading: const Icon(Icons.restore, color: AK.accent, size: 18),
-                            title: const Text('Restaurar', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AK.text)),
+                            leading: const Icon(Icons.restore,
+                                color: AK.accent, size: 18),
+                            title: const Text('Restaurar',
+                                style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: AK.text)),
                             dense: true,
                             onTap: () {
                               Navigator.pop(ctx);
-                              context.read<AdminProvider>().restaurarUsuario(usuario.id);
+                              context
+                                  .read<AdminProvider>()
+                                  .restaurarUsuario(usuario.id);
                             },
                           )
                         else
                           ListTile(
-                            leading: const Icon(Icons.delete_outline, color: AK.error, size: 18),
-                            title: const Text('Eliminar', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AK.error)),
+                            leading: const Icon(Icons.delete_outline,
+                                color: AK.error, size: 18),
+                            title: const Text('Eliminar',
+                                style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: AK.error)),
                             dense: true,
                             onTap: () {
                               Navigator.pop(ctx);
-                              _confirmarEliminar(context, context.read<AdminProvider>());
+                              _confirmarEliminar(
+                                  context, context.read<AdminProvider>());
                             },
                           ),
                       ],
@@ -555,14 +610,17 @@ class _TarjetaUsuario extends StatelessWidget {
           '¿Eliminar a ${usuario.nombreCompleto}? Su información se conservará pero ya no podrá acceder.',
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AK.error),
             onPressed: () {
               Navigator.pop(context);
               provider.eliminarUsuario(usuario.id);
             },
-            child: const Text('Eliminar', style: TextStyle(color: Colors.white)),
+            child:
+                const Text('Eliminar', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -583,7 +641,8 @@ class _PaginacionControles extends StatelessWidget {
         children: [
           IconButton(
             icon: const Icon(Icons.chevron_left),
-            onPressed: provider.paginaActual > 0 ? provider.paginaAnterior : null,
+            onPressed:
+                provider.paginaActual > 0 ? provider.paginaAnterior : null,
             color: AppColors.primary,
           ),
           Container(
@@ -594,7 +653,8 @@ class _PaginacionControles extends StatelessWidget {
             ),
             child: Text(
               '${provider.paginaActual + 1}',
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+              style: const TextStyle(
+                  color: Colors.white, fontWeight: FontWeight.w700),
             ),
           ),
           IconButton(

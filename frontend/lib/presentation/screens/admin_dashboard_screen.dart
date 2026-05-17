@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/models/stats_admin.dart';
 import '../../data/providers/admin_provider.dart';
-import '../../data/providers/auth_provider.dart';
 import '../widgets/admin_widgets.dart';
 import '../widgets/custom_app_bar.dart';
 
@@ -25,10 +24,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final auth = context.watch<AuthProvider>();
-    // Nombre del admin logueado (campo según user_model.dart del proyecto)
-    final nombreAdmin = auth.currentUser?.nombreCompleto ?? 'Administrador';
-
     return Scaffold(
       backgroundColor: AK.bg,
       appBar: const CustomAppBar(),
@@ -111,14 +106,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       ),
     );
   }
-
-  String _iniciales(String nombre) {
-    final partes = nombre.trim().split(' ');
-    if (partes.length >= 2)
-      return '${partes[0][0]}${partes[1][0]}'.toUpperCase();
-    if (nombre.length >= 2) return nombre.substring(0, 2).toUpperCase();
-    return nombre.toUpperCase();
-  }
 }
 
 // ─── Subwidgets ───────────────────────────────────────────────────────────────
@@ -140,7 +127,7 @@ class _TarjetaResumen extends StatelessWidget {
         border: Border.all(color: AK.border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -193,7 +180,7 @@ class _GraficoActividad extends StatelessWidget {
         border: Border.all(color: AK.border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -259,7 +246,7 @@ class _GraficoPainter extends CustomPainter {
     canvas.drawPath(
       area,
       Paint()
-        ..color = AppColors.primary.withOpacity(0.08)
+        ..color = AppColors.primary.withValues(alpha: 0.08)
         ..style = PaintingStyle.fill,
     );
 
@@ -343,7 +330,7 @@ class _TarjetaRol extends StatelessWidget {
         border: Border.all(color: AK.border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -357,7 +344,7 @@ class _TarjetaRol extends StatelessWidget {
                 width: 28,
                 height: 28,
                 decoration: BoxDecoration(
-                  color: item.color.withOpacity(0.12),
+                  color: item.color.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(item.icono, color: item.color, size: 16),

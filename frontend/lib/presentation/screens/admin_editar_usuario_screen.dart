@@ -177,7 +177,7 @@ class _AdminEditarUsuarioScreenState
                         Switch(
                           value: _activo,
                           onChanged: (v) => setState(() => _activo = v),
-                          activeColor: AppColors.primary,
+                          activeThumbColor: AppColors.primary,
                         ),
                       ],
                     ),

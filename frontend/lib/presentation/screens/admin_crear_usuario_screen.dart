@@ -152,9 +152,12 @@ class _AdminCrearUsuarioScreenState
                         setState(() => _obscurePass = !_obscurePass),
                   ),
                   validator: (v) {
-                    if (v == null || v.isEmpty)
+                    if (v == null || v.isEmpty) {
                       return 'Ingresa una contraseña temporal';
-                    if (v.length < 8) return 'Mínimo 8 caracteres';
+                    }
+                    if (v.length < 8) {
+                      return 'Mínimo 8 caracteres';
+                    }
                     return null;
                   },
                 ),

@@ -208,14 +208,17 @@ class _AdminDetalleUsuarioScreenState
                 BotonAccion(
                   icono: Icons.edit_outlined,
                   label: 'Editar Usuario',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          AdminEditarUsuarioScreen(usuarioId: u.id),
-                    ),
-                  ).then((_) =>
-                      context.read<AdminProvider>().cargarUsuario(u.id)),
+                  onTap: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            AdminEditarUsuarioScreen(usuarioId: u.id),
+                      ),
+                    );
+                    if (!context.mounted) return;
+                    context.read<AdminProvider>().cargarUsuario(u.id);
+                  },
                 ),
                 const SizedBox(height: 10),
 

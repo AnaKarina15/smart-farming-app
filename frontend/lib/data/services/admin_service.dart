@@ -68,11 +68,18 @@ class AdminService {
       'nombreCompleto': nombreCompleto,
       'email':          email,
       'password':       password,
-      'role':           role,
+      'role':           role.toUpperCase(),
     };
     if (telefono != null && telefono.isNotEmpty) body['telefono'] = telefono;
 
     final response = await _dioClient.dio.post('/users', data: body);
+    
+    if (response.statusCode != null && response.statusCode! >= 400) {
+      final data = response.data is Map ? response.data : {};
+      final msg = data['message'] ?? 'Error al crear usuario';
+      throw Exception(msg is List ? msg.join(', ') : msg.toString());
+    }
+
     final data = response.data['data'] ?? response.data;
     return UsuarioAdmin.fromJson(data as Map<String, dynamic>);
   }
@@ -87,11 +94,18 @@ class AdminService {
     final body = <String, dynamic>{};
     if (nombreCompleto != null) body['nombreCompleto'] = nombreCompleto;
     if (telefono       != null) body['telefono']       = telefono;
-    if (role           != null) body['role']           = role;
+    if (role           != null) body['role']           = role.toUpperCase();
     if (activo         != null) body['activo']         = activo;
 
     final response =
         await _dioClient.dio.patch('/users/$id', data: body);
+        
+    if (response.statusCode != null && response.statusCode! >= 400) {
+      final data = response.data is Map ? response.data : {};
+      final msg = data['message'] ?? 'Error al actualizar usuario';
+      throw Exception(msg is List ? msg.join(', ') : msg.toString());
+    }
+
     final data = response.data['data'] ?? response.data;
     return UsuarioAdmin.fromJson(data as Map<String, dynamic>);
   }

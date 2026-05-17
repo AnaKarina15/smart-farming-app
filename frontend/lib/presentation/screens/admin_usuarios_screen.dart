@@ -7,6 +7,7 @@ import '../widgets/admin_widgets.dart';
 import '../widgets/custom_app_bar.dart';
 import 'admin_detalle_usuario_screen.dart';
 import 'admin_crear_usuario_screen.dart';
+import 'admin_editar_usuario_screen.dart';
 
 class AdminUsuariosScreen extends StatefulWidget {
   const AdminUsuariosScreen({super.key});
@@ -409,7 +410,16 @@ class _TarjetaUsuario extends StatelessWidget {
                 PuntoEstado(activo: usuario.activo, eliminado: usuario.estaEliminado),
                 const Spacer(),
                 GestureDetector(
-                  onTap: () => _irADetalle(context),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            AdminEditarUsuarioScreen(usuarioId: usuario.id),
+                      ),
+                    ).then((_) =>
+                        context.read<AdminProvider>().cargarUsuarios());
+                  },
                   child: const Icon(Icons.edit_outlined, size: 20, color: AK.subtext),
                 ),
                 const SizedBox(width: 12),

@@ -17,13 +17,20 @@ class AdminUsuariosScreen extends StatefulWidget {
 
 class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
   final _searchController = TextEditingController();
-  String? _rolSeleccionado;
-  bool?   _activoSeleccionado;
+  
+  final Set<String> _rolesSeleccionados = {
+    'pequeno_productor',
+    'trabajador',
+    'gestor',
+    'administrador'
+  };
+  final Set<bool> _estadosSeleccionados = {true, false};
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _actualizarFiltros();
       context.read<AdminProvider>().cargarUsuarios();
     });
   }
@@ -32,6 +39,48 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _actualizarFiltros() {
+    final prov = context.read<AdminProvider>();
+    prov.setFiltroRoles(Set.from(_rolesSeleccionados));
+    prov.setFiltroEstados(Set.from(_estadosSeleccionados));
+  }
+
+  void _onRolTap(String? rol) {
+    setState(() {
+      const allRoles = ['pequeno_productor', 'trabajador', 'gestor', 'administrador'];
+      if (rol == null) {
+        // Tapped "Todos"
+        if (_rolesSeleccionados.length == allRoles.length) {
+          // "Al hacer clic en 'Todos' con todas las categorías activas, se deben desactivar todas las categorías de rol."
+          _rolesSeleccionados.clear();
+        } else {
+          // "Al seleccionar 'Todos', se marcan todas las categorías en verde."
+          _rolesSeleccionados.addAll(allRoles);
+        }
+      } else {
+        // Tapped specific role
+        if (_rolesSeleccionados.contains(rol)) {
+          // "Al quitar selección de alguna se desmarca 'Todos' pero quedan las demás marcadas."
+          _rolesSeleccionados.remove(rol);
+        } else {
+          _rolesSeleccionados.add(rol);
+        }
+      }
+      _actualizarFiltros();
+    });
+  }
+
+  void _onEstadoTap(bool estado) {
+    setState(() {
+      if (_estadosSeleccionados.contains(estado)) {
+        _estadosSeleccionados.remove(estado);
+      } else {
+        _estadosSeleccionados.add(estado);
+      }
+      _actualizarFiltros();
+    });
   }
 
   @override
@@ -112,15 +161,35 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      ChipFiltro(label: 'Todos',       seleccionado: _rolSeleccionado == null,                onTap: () => _setRol(null)),
+                      ChipFiltro(
+                        label: 'Todos',
+                        seleccionado: _rolesSeleccionados.length == 4,
+                        onTap: () => _onRolTap(null),
+                      ),
                       const SizedBox(width: 6),
-                      ChipFiltro(label: 'Productores', seleccionado: _rolSeleccionado == 'pequeno_productor', onTap: () => _setRol('pequeno_productor')),
+                      ChipFiltro(
+                        label: 'Productores',
+                        seleccionado: _rolesSeleccionados.contains('pequeno_productor'),
+                        onTap: () => _onRolTap('pequeno_productor'),
+                      ),
                       const SizedBox(width: 6),
-                      ChipFiltro(label: 'Trabajadores',seleccionado: _rolSeleccionado == 'trabajador',        onTap: () => _setRol('trabajador')),
+                      ChipFiltro(
+                        label: 'Trabajadores',
+                        seleccionado: _rolesSeleccionados.contains('trabajador'),
+                        onTap: () => _onRolTap('trabajador'),
+                      ),
                       const SizedBox(width: 6),
-                      ChipFiltro(label: 'Gestores',    seleccionado: _rolSeleccionado == 'gestor',            onTap: () => _setRol('gestor')),
+                      ChipFiltro(
+                        label: 'Gestores',
+                        seleccionado: _rolesSeleccionados.contains('gestor'),
+                        onTap: () => _onRolTap('gestor'),
+                      ),
                       const SizedBox(width: 6),
-                      ChipFiltro(label: 'Admins',      seleccionado: _rolSeleccionado == 'administrador',     onTap: () => _setRol('administrador')),
+                      ChipFiltro(
+                        label: 'Admins',
+                        seleccionado: _rolesSeleccionados.contains('administrador'),
+                        onTap: () => _onRolTap('administrador'),
+                      ),
                     ],
                   ),
                 ),
@@ -132,9 +201,17 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    ChipFiltro(label: 'Activo',   seleccionado: _activoSeleccionado == true,  onTap: () => _setActivo(true)),
+                    ChipFiltro(
+                      label: 'Activo',
+                      seleccionado: _estadosSeleccionados.contains(true),
+                      onTap: () => _onEstadoTap(true),
+                    ),
                     const SizedBox(width: 6),
-                    ChipFiltro(label: 'Inactivo', seleccionado: _activoSeleccionado == false, onTap: () => _setActivo(false)),
+                    ChipFiltro(
+                      label: 'Inactivo',
+                      seleccionado: _estadosSeleccionados.contains(false),
+                      onTap: () => _onEstadoTap(false),
+                    ),
                   ],
                 ),
 
@@ -202,16 +279,6 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
-  }
-
-  void _setRol(String? rol) {
-    setState(() => _rolSeleccionado = _rolSeleccionado == rol ? null : rol);
-    context.read<AdminProvider>().setFiltroRol(_rolSeleccionado);
-  }
-
-  void _setActivo(bool valor) {
-    setState(() => _activoSeleccionado = _activoSeleccionado == valor ? null : valor);
-    context.read<AdminProvider>().setFiltroActivo(_activoSeleccionado);
   }
 }
 

@@ -33,18 +33,30 @@ class AdminProvider extends ChangeNotifier {
 
   // ─── Lista de usuarios ───────────────────────────────────────────────────
   List<UsuarioAdmin> _usuarios = [];
-  List<UsuarioAdmin> get usuarios => _usuarios;
-
-  String? _filtroRol;
-  bool?   _filtroActivo;
+  
+  Set<String> _filtroRoles = {
+    'pequeno_productor',
+    'trabajador',
+    'gestor',
+    'administrador'
+  };
+  Set<bool> _filtroEstados = {true, false};
   String  _busqueda       = '';
   bool    _verEliminados  = false;
   int     _paginaActual   = 0;
   static const int _porPagina = 20;
   bool    _hayMasPaginas  = false;
 
-  String? get filtroRol      => _filtroRol;
-  bool?   get filtroActivo   => _filtroActivo;
+  List<UsuarioAdmin> get usuarios {
+    return _usuarios.where((u) {
+      final matchesRole = _filtroRoles.contains(u.role);
+      final matchesEstado = _filtroEstados.contains(u.activo);
+      return matchesRole && matchesEstado;
+    }).toList();
+  }
+
+  Set<String> get filtroRoles => _filtroRoles;
+  Set<bool> get filtroEstados => _filtroEstados;
   String  get busqueda       => _busqueda;
   bool    get verEliminados  => _verEliminados;
   int     get paginaActual   => _paginaActual;
@@ -55,15 +67,13 @@ class AdminProvider extends ChangeNotifier {
     _setLoading(true);
     try {
       final lista = await _adminService.listarUsuarios(
-        role:           _filtroRol,
-        activo:         _filtroActivo,
         search:         _busqueda.isEmpty ? null : _busqueda,
         includeDeleted: _verEliminados,
-        limit:          _porPagina,
-        offset:         _paginaActual * _porPagina,
+        limit:          100,
+        offset:         0,
       );
-      _usuarios       = reset ? lista : [..._usuarios, ...lista];
-      _hayMasPaginas  = lista.length == _porPagina;
+      _usuarios       = lista;
+      _hayMasPaginas  = false;
       _error          = null;
     } catch (e) {
       _error = _msg(e);
@@ -72,8 +82,16 @@ class AdminProvider extends ChangeNotifier {
     }
   }
 
-  void setFiltroRol(String? rol)    { _filtroRol   = rol;   cargarUsuarios(); }
-  void setFiltroActivo(bool? activo) { _filtroActivo = activo; cargarUsuarios(); }
+  void setFiltroRoles(Set<String> roles) {
+    _filtroRoles = roles;
+    notifyListeners();
+  }
+
+  void setFiltroEstados(Set<bool> estados) {
+    _filtroEstados = estados;
+    notifyListeners();
+  }
+
   void setBusqueda(String valor)     { _busqueda     = valor; cargarUsuarios(); }
   void setVerEliminados(bool valor)  { _verEliminados = valor; cargarUsuarios(); }
 

@@ -102,7 +102,7 @@ class SmartFarmingApp extends StatelessWidget {
 
         // Provider de catálogos (Sprint 2)
         ChangeNotifierProvider<CatalogosProvider>(
-          create: (_) => CatalogosProvider()..cargarCatalogos(),
+          create: (_) => CatalogosProvider(catalogosSyncService)..cargarCatalogos(),
         ),
 
         // Provider de operaciones (Sprint 3)

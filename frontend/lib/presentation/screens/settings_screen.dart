@@ -161,8 +161,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
                         color: _mensajeSync!.startsWith('✓')
-                            ? AppColors.primary.withOpacity(0.1)
-                            : AppColors.error.withOpacity(0.1),
+                            ? AppColors.primary.withValues(alpha: 0.1)
+                            : AppColors.error.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -201,7 +201,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         disabledBackgroundColor:
-                            AppColors.primary.withOpacity(0.6),
+                            AppColors.primary.withValues(alpha: 0.6),
                         shape: const StadiumBorder(),
                       ),
                     ),

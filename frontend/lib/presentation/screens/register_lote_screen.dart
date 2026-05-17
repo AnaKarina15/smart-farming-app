@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math' as math;
 import 'dart:ui' as dart_ui;
@@ -18,17 +19,22 @@ import 'package:provider/provider.dart';
 import '../../data/providers/lotes_provider.dart';
 import '../../data/providers/auth_provider.dart';
 import '../../data/providers/catalogos_provider.dart';
+import '../../data/models/lote_model.dart';
 
 class RegisterLoteScreen extends StatefulWidget {
-  const RegisterLoteScreen({super.key});
+  final LoteModel? loteToEdit;
+
+  const RegisterLoteScreen({super.key, this.loteToEdit});
 
   @override
   State<RegisterLoteScreen> createState() => _RegisterLoteScreenState();
 }
 
 class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
-  final _nameController = TextEditingController(text: ' ');
-  final _areaController = TextEditingController(text: ' ');
+  late final TextEditingController _nameController;
+  late final TextEditingController _areaController;
+
+  GoogleMapController? _mapController;
 
   double? _lat;
   double? _lng;
@@ -36,10 +42,23 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
   bool _loadingLocation = false;
   bool _saving = false;
 
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.loteToEdit?.nombre ?? ' ');
+    _areaController = TextEditingController(text: widget.loteToEdit != null ? widget.loteToEdit!.superficieHectareas.toString() : ' ');
+    _lat = widget.loteToEdit?.latitud;
+    _lng = widget.loteToEdit?.longitud;
+    _locationLabel = widget.loteToEdit?.descripcion;
+    _selectedCultivoId = widget.loteToEdit?.cultivoActualId;
+    _selectedMunicipioId = widget.loteToEdit?.municipioId;
+  }
+
   String? _selectedMunicipioId;
+  String? _selectedCultivoId;
 
   int? _draggingPointIndex;
-  List<Offset> _polygonPoints = [
+  final List<Offset> _polygonPoints = [
     const Offset(0.22, 0.22),
     const Offset(0.78, 0.12),
     const Offset(0.88, 0.78),
@@ -95,6 +114,10 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
       _lat = pos.latitude;
       _lng = pos.longitude;
 
+      if (_mapController != null) {
+        _mapController!.animateCamera(CameraUpdate.newLatLngZoom(LatLng(_lat!, _lng!), 16.0));
+      }
+
       try {
         final placemarks = await placemarkFromCoordinates(_lat!, _lng!);
         if (placemarks.isNotEmpty) {
@@ -109,6 +132,7 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
           // Auto-seleccionar municipio si coincide con el catálogo
           final locality = p.locality;
           if (locality != null) {
+            if (!mounted) return;
             final catalogos = context.read<CatalogosProvider>();
             try {
               final match = catalogos.municipios.firstWhere(
@@ -150,6 +174,8 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
       latitud: _lat,
       longitud: _lng,
       propietarioId: auth.currentUser?.id ?? 'unknown',
+      cultivoActualId: _selectedCultivoId,
+      municipioId: _selectedMunicipioId,
     );
 
     setState(() => _saving = false);
@@ -167,6 +193,7 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
     await prefs.setBool('has_lotes', true);
 
     // Show success dialog
+    if (!mounted) return;
     showDialog(
         context: context,
         barrierDismissible: false,
@@ -236,70 +263,50 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
         children: [
           const OfflineBanner(),
 
-          // ── MAP (fixed height, never scrolls) ──────────────────────────
-          SizedBox(
-            height: 220,
+          Expanded(
             child: Stack(
-              fit: StackFit.expand,
               children: [
-                // Rich map background
-                CustomPaint(painter: _MapPainter(hasLocation: _lat != null)),
-                // Location pin when GPS captured
-                if (_lat != null)
-                  Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.location_pin,
-                            color: AppColors.error, size: 44),
-                        Container(
-                          margin: const EdgeInsets.only(top: 4),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.15),
-                                  blurRadius: 8)
-                            ],
-                          ),
-                          child: Text(
-                            _locationLabel ?? '',
-                            style: AppText.bodyMd(color: AppColors.onSurface)
-                                .copyWith(fontSize: 11),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ],
+                // ── MAP (Full screen, interactive) ──────────────────────────
+                Positioned.fill(
+                  child: GoogleMap(
+                    initialCameraPosition: CameraPosition(
+                      target: _lat != null && _lng != null
+                          ? LatLng(_lat!, _lng!)
+                          : const LatLng(10.46314, -73.25322), // Centro del Magdalena
+                      zoom: 14.0,
                     ),
-                  )
-                else
-                  Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.8),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.touch_app,
-                              color: AppColors.primary, size: 18),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Toca "Usar mi ubicación" para marcar',
-                            style: AppText.bodyMd(
-                                    color: AppColors.onSurfaceVariant)
-                                .copyWith(fontSize: 12),
-                          ),
-                        ],
-                      ),
-                    ),
+                    mapType: MapType.hybrid,
+                    onMapCreated: (controller) => _mapController = controller,
+                    myLocationEnabled: true,
+                    myLocationButtonEnabled: false,
+                    zoomControlsEnabled: false,
+                    onTap: (LatLng location) async {
+                      setState(() {
+                        _lat = location.latitude;
+                        _lng = location.longitude;
+                        _locationLabel = "Buscando dirección...";
+                      });
+                      try {
+                        List<Placemark> placemarks = await placemarkFromCoordinates(location.latitude, location.longitude);
+                        if (placemarks.isNotEmpty) {
+                          final place = placemarks.first;
+                          setState(() {
+                            _locationLabel = "${place.locality ?? place.subAdministrativeArea}, ${place.administrativeArea}";
+                          });
+                        }
+                      } catch(e) {
+                         setState(() { _locationLabel = "Ubicación en mapa"; });
+                      }
+                    },
+                    markers: _lat != null && _lng != null ? {
+                      Marker(
+                        markerId: const MarkerId('lote_marker'),
+                        position: LatLng(_lat!, _lng!),
+                        infoWindow: InfoWindow(title: _locationLabel ?? 'Lote'),
+                      )
+                    } : {},
                   ),
+                ),
                 // Polygon overlay when location known
                 if (_lat != null)
                   Positioned(
@@ -361,30 +368,31 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                       },
                     ),
                   ),
-              ],
-            ),
-          ),
-
-          // ── FORM (scrollable) ──────────────────────────────────────────
-          Expanded(
-            child: Container(
-              decoration: const BoxDecoration(
-                color: AppColors.surfaceContainerLowest,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                boxShadow: [
-                  BoxShadow(
-                      color: Colors.black12,
-                      offset: Offset(0, -4),
-                      blurRadius: 16)
-                ],
-              ),
-              child: SingleChildScrollView(
-                keyboardDismissBehavior:
-                    ScrollViewKeyboardDismissBehavior.onDrag,
-                padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+              
+                // ── FORM (Draggable Bottom Sheet) ──────────────────────────
+                DraggableScrollableSheet(
+                  initialChildSize: 0.55,
+                  minChildSize: 0.15,
+                  maxChildSize: 0.9,
+                  builder: (context, scrollController) {
+                    return Container(
+                      decoration: const BoxDecoration(
+                        color: AppColors.surfaceContainerLowest,
+                        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                        boxShadow: [
+                          BoxShadow(
+                              color: Colors.black12,
+                              offset: Offset(0, -4),
+                              blurRadius: 16)
+                        ],
+                      ),
+                      child: SingleChildScrollView(
+                        controller: scrollController,
+                        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                        padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
                     // Drag handle
                     Center(
                       child: Container(
@@ -398,7 +406,7 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    Text('Registrar Lote', style: AppText.h2()),
+                    Text(widget.loteToEdit != null ? 'Configurar Lote' : 'Registrar Lote', style: AppText.h2()),
                     const SizedBox(height: 20),
 
                     // ── Nombre ────────────────────────────────────────────
@@ -456,6 +464,94 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                         ),
                         contentPadding: const EdgeInsets.all(14),
                       ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // ── Cultivo (Catálogo) ──────────────────────────────
+                    Text('CULTIVO ACTUAL (OPCIONAL)', style: AppText.labelCaps()),
+                    const SizedBox(height: 8),
+                    Consumer<CatalogosProvider>(
+                      builder: (context, provider, child) {
+                        final list = provider.cultivos;
+                        if (list.isEmpty) {
+                          return Text('Cargando cultivos...', style: AppText.bodyMd(color: AppColors.outline));
+                        }
+
+                        String currentNombre = '';
+                        if (_selectedCultivoId != null) {
+                          try {
+                            currentNombre = list.firstWhere((c) => c.id == _selectedCultivoId).nombre;
+                          } catch (_) {}
+                        }
+
+                        return Container(
+                          height: 56,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            border: Border.all(color: AppColors.outlineVariant),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Autocomplete<Object>(
+                            key: ValueKey('auto_cul_$_selectedCultivoId'),
+                            initialValue: TextEditingValue(text: currentNombre),
+                            optionsBuilder: (TextEditingValue textEditingValue) {
+                              if (textEditingValue.text == '') return list;
+                              return list.where((c) => c.nombre.toLowerCase().contains(textEditingValue.text.toLowerCase()));
+                            },
+                            displayStringForOption: (option) => (option as dynamic).nombre,
+                            onSelected: (option) {
+                              setState(() {
+                                _selectedCultivoId = (option as dynamic).id;
+                              });
+                            },
+                            fieldViewBuilder: (ctx, controller, focusNode, onSubmitted) {
+                              return TextField(
+                                controller: controller,
+                                focusNode: focusNode,
+                                decoration: InputDecoration(
+                                  hintText: 'Buscar cultivo...',
+                                  hintStyle: AppText.bodyMd(color: AppColors.outline),
+                                  prefixIcon: const Icon(Icons.grass, color: AppColors.primary, size: 20),
+                                  border: InputBorder.none,
+                                  contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                                ),
+                              );
+                            },
+                            optionsViewBuilder: (ctx, onSelected, options) {
+                              return Align(
+                                alignment: Alignment.topLeft,
+                                child: Material(
+                                  elevation: 8.0,
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Container(
+                                    width: MediaQuery.of(context).size.width - 80,
+                                    constraints: const BoxConstraints(maxHeight: 250),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: ListView.separated(
+                                      padding: EdgeInsets.zero,
+                                      shrinkWrap: true,
+                                      itemCount: options.length,
+                                      separatorBuilder: (c, i) => const Divider(height: 1),
+                                      itemBuilder: (ctx, index) {
+                                        final option = options.elementAt(index);
+                                        return ListTile(
+                                          title: Text((option as dynamic).nombre, style: AppText.bodyMd()),
+                                          subtitle: Text((option as dynamic).categoria ?? '', style: AppText.bodyMd(color: AppColors.outline).copyWith(fontSize: 14)),
+                                          onTap: () => onSelected(option),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        );
+                      },
                     ),
                     const SizedBox(height: 16),
 
@@ -637,10 +733,14 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                   ],
                 ),
               ),
-            ),
-          ),
-        ],
-      ),
+            );
+          },
+        ),
+      ],
+    ),
+  ),
+],
+),
       bottomNavigationBar: AgroBottomNav(
         current: AgroTab.lotes,
         onTap: (tab) {
@@ -664,120 +764,6 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
 }
 
 // ─── Painters ────────────────────────────────────────────────────────────────
-
-/// Rich map background with terrain colors, roads, and water.
-class _MapPainter extends CustomPainter {
-  final bool hasLocation;
-  _MapPainter({required this.hasLocation});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-
-    // Base terrain — light green
-    canvas.drawRect(
-        Rect.fromLTWH(0, 0, w, h), Paint()..color = const Color(0xFFD4E8C2));
-
-    // Darker green patches (fields)
-    final fieldPaint = Paint()..color = const Color(0xFFA8CC7A);
-    canvas.drawRect(Rect.fromLTWH(0, 0, w * 0.45, h * 0.55), fieldPaint);
-    canvas.drawRect(
-        Rect.fromLTWH(w * 0.55, h * 0.4, w * 0.45, h * 0.6), fieldPaint);
-
-    // Lighter field
-    final lightField = Paint()..color = const Color(0xFFC5E09A);
-    canvas.drawRect(
-        Rect.fromLTWH(w * 0.3, h * 0.2, w * 0.4, h * 0.35), lightField);
-
-    // Water / stream — blue strip
-    final waterPaint = Paint()..color = const Color(0xFF90CAF9);
-    final waterPath = Path()
-      ..moveTo(w * 0.0, h * 0.62)
-      ..quadraticBezierTo(w * 0.35, h * 0.55, w * 0.65, h * 0.68)
-      ..quadraticBezierTo(w * 0.85, h * 0.76, w, h * 0.72)
-      ..lineTo(w, h * 0.78)
-      ..quadraticBezierTo(w * 0.85, h * 0.82, w * 0.65, h * 0.74)
-      ..quadraticBezierTo(w * 0.35, h * 0.62, w * 0.0, h * 0.68)
-      ..close();
-    canvas.drawPath(waterPath, waterPaint);
-
-    // Grid lines (faint)
-    final gridPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.35)
-      ..strokeWidth = 0.8;
-    const step = 36.0;
-    for (double x = 0; x < w; x += step) {
-      canvas.drawLine(Offset(x, 0), Offset(x, h), gridPaint);
-    }
-    for (double y = 0; y < h; y += step) {
-      canvas.drawLine(Offset(0, y), Offset(w, y), gridPaint);
-    }
-
-    // Road — horizontal
-    final roadPaint = Paint()
-      ..color = const Color(0xFFF5DEB3)
-      ..strokeWidth = 8
-      ..strokeCap = StrokeCap.round;
-    canvas.drawLine(Offset(0, h * 0.38), Offset(w, h * 0.42), roadPaint);
-
-    final roadLine = Paint()
-      ..color = Colors.white.withValues(alpha: 0.6)
-      ..strokeWidth = 1.5
-      ..strokeCap = StrokeCap.round;
-    canvas.drawLine(Offset(0, h * 0.40), Offset(w, h * 0.40), roadLine);
-
-    // Road — vertical
-    canvas.drawLine(Offset(w * 0.72, 0), Offset(w * 0.68, h * 0.38), roadPaint);
-    canvas.drawLine(Offset(w * 0.70, 0), Offset(w * 0.70, h * 0.38), roadLine);
-
-    // Trees / dots (dark green)
-    final treePaint = Paint()..color = const Color(0xFF558B2F);
-    final treePositions = [
-      Offset(w * 0.08, h * 0.15),
-      Offset(w * 0.15, h * 0.28),
-      Offset(w * 0.85, h * 0.12),
-      Offset(w * 0.92, h * 0.25),
-      Offset(w * 0.55, h * 0.85),
-      Offset(w * 0.42, h * 0.80),
-    ];
-    for (final t in treePositions) {
-      canvas.drawCircle(t, 7, treePaint);
-      canvas.drawCircle(t, 5, Paint()..color = const Color(0xFF7CB342));
-    }
-
-    // Compass rose
-    final compassPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.7)
-      ..style = PaintingStyle.fill;
-    const cx = 24.0;
-    const cy = 24.0;
-    const cs = 8.0;
-    canvas.drawCircle(const Offset(cx, cy), cs + 2,
-        Paint()..color = Colors.black.withValues(alpha: 0.15));
-    canvas.drawCircle(const Offset(cx, cy), cs, compassPaint);
-    // N arrow
-    final arrowPaint = Paint()..color = const Color(0xFF1E5266);
-    final northPath = Path()
-      ..moveTo(cx, cy - cs + 1)
-      ..lineTo(cx - 3, cy)
-      ..lineTo(cx + 3, cy)
-      ..close();
-    canvas.drawPath(northPath, arrowPaint);
-
-    // Scale bar
-    final scalePaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.85)
-      ..strokeWidth = 2;
-    canvas.drawLine(Offset(w - 70, h - 14), Offset(w - 14, h - 14), scalePaint);
-    canvas.drawLine(Offset(w - 70, h - 14), Offset(w - 70, h - 10), scalePaint);
-    canvas.drawLine(Offset(w - 14, h - 14), Offset(w - 14, h - 10), scalePaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _MapPainter oldDelegate) =>
-      oldDelegate.hasLocation != hasLocation;
-}
 
 class _PolygonPainter extends CustomPainter {
   final List<Offset> points;

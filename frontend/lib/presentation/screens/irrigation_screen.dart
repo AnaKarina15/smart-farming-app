@@ -266,7 +266,7 @@ class _IrrigationScreenState extends State<IrrigationScreen> {
                         'isPendingSync': 1,
                       });
 
-                      if (!mounted) return;
+                      if (!context.mounted) return;
                       setState(() => _guardando = false);
 
                       Navigator.pushReplacement(

@@ -10,6 +10,8 @@ class LoteModel {
   final String? descripcion;
   final double superficieHectareas;
   final String? cultivoActual;
+  final String? cultivoActualId;
+  final String? municipioId;
   final double? latitud;
   final double? longitud;
   final String estado;
@@ -23,6 +25,8 @@ class LoteModel {
     this.descripcion,
     required this.superficieHectareas,
     this.cultivoActual,
+    this.cultivoActualId,
+    this.municipioId,
     this.latitud,
     this.longitud,
     required this.estado,
@@ -38,6 +42,8 @@ class LoteModel {
       descripcion: json['descripcion'] as String?,
       superficieHectareas: (json['superficieHectareas'] as num).toDouble(),
       cultivoActual: json['cultivoActual'] as String?,
+      cultivoActualId: json['cultivoActualId'] as String?,
+      municipioId: json['municipioId'] as String?,
       latitud: json['latitud'] != null ? (json['latitud'] as num).toDouble() : null,
       longitud: json['longitud'] != null ? (json['longitud'] as num).toDouble() : null,
       estado: json['estado'] as String? ?? 'saludable',
@@ -53,6 +59,8 @@ class LoteModel {
       if (descripcion != null) 'descripcion': descripcion,
       'superficieHectareas': superficieHectareas,
       if (cultivoActual != null) 'cultivoActual': cultivoActual,
+      if (cultivoActualId != null) 'cultivoActualId': cultivoActualId,
+      if (municipioId != null) 'municipioId': municipioId,
       if (latitud != null) 'latitud': latitud,
       if (longitud != null) 'longitud': longitud,
     };

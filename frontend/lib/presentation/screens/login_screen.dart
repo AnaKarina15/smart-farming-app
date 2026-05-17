@@ -232,10 +232,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         }
                       },
                       validator: (v) {
-                        if (v == null || v.isEmpty)
+                        if (v == null || v.isEmpty) {
                           return 'Ingresa tu contraseña';
-                        if (_passwordAuthError != null)
+                        }
+                        if (_passwordAuthError != null) {
                           return _passwordAuthError;
+                        }
                         return null;
                       },
                     ),

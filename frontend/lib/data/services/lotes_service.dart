@@ -65,6 +65,8 @@ class LotesService {
     String? descripcion,
     required double superficieHectareas,
     String? cultivoActual,
+    String? cultivoActualId,
+    String? municipioId,
     double? latitud,
     double? longitud,
   }) async {
@@ -76,6 +78,8 @@ class LotesService {
           if (descripcion != null) 'descripcion': descripcion,
           'superficieHectareas': superficieHectareas,
           if (cultivoActual != null) 'cultivoActual': cultivoActual,
+          if (cultivoActualId != null) 'cultivoActualId': cultivoActualId,
+          if (municipioId != null) 'municipioId': municipioId,
           if (latitud != null) 'latitud': latitud,
           if (longitud != null) 'longitud': longitud,
         },

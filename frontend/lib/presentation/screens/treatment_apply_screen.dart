@@ -266,7 +266,7 @@ class _TreatmentApplyScreenState extends State<TreatmentApplyScreen> {
                         'isPendingSync': 1,
                       });
 
-                      if (!mounted) return;
+                      if (!context.mounted) return;
                       setState(() => _guardando = false);
 
                       Navigator.pushReplacement(

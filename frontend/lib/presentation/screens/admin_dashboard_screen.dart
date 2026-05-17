@@ -82,7 +82,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   const Text(
                     'Actividad Mensual',
                     style: TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.w700, color: AK.text,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: AK.text,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -94,7 +96,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   const Text(
                     'Usuarios por Rol',
                     style: TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.w700, color: AK.text,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: AK.text,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -110,7 +114,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   String _iniciales(String nombre) {
     final partes = nombre.trim().split(' ');
-    if (partes.length >= 2) return '${partes[0][0]}${partes[1][0]}'.toUpperCase();
+    if (partes.length >= 2)
+      return '${partes[0][0]}${partes[1][0]}'.toUpperCase();
     if (nombre.length >= 2) return nombre.substring(0, 2).toUpperCase();
     return nombre.toUpperCase();
   }
@@ -122,7 +127,8 @@ class _TarjetaResumen extends StatelessWidget {
   final IconData icono;
   final String label;
   final String valor;
-  const _TarjetaResumen({required this.icono, required this.label, required this.valor});
+  const _TarjetaResumen(
+      {required this.icono, required this.label, required this.valor});
 
   @override
   Widget build(BuildContext context) {
@@ -134,7 +140,7 @@ class _TarjetaResumen extends StatelessWidget {
         border: Border.all(color: AK.border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -187,7 +193,7 @@ class _GraficoActividad extends StatelessWidget {
         border: Border.all(color: AK.border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -204,7 +210,10 @@ class _GraficoActividad extends StatelessWidget {
               children: ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4']
                   .map((l) => Text(
                         l,
-                        style: const TextStyle(fontSize: 10, color: AK.subtext, fontWeight: FontWeight.w500),
+                        style: const TextStyle(
+                            fontSize: 10,
+                            color: AK.subtext,
+                            fontWeight: FontWeight.w500),
                       ))
                   .toList(),
             ),
@@ -224,14 +233,16 @@ class _GraficoPainter extends CustomPainter {
     if (datos.isEmpty) return;
     final maxVal = datos.reduce((a, b) => a > b ? a : b);
     final minVal = datos.reduce((a, b) => a < b ? a : b);
-    final range  = maxVal - minVal == 0 ? 1.0 : maxVal - minVal;
-    final areaH  = size.height - 32;
-    final paso   = size.width / (datos.length - 1);
+    final range = maxVal - minVal == 0 ? 1.0 : maxVal - minVal;
+    final areaH = size.height - 32;
+    final paso = size.width / (datos.length - 1);
 
-    final puntos = List.generate(datos.length, (i) => Offset(
-      i * paso,
-      areaH - ((datos[i] - minVal) / range * (areaH - 16)) + 8,
-    ));
+    final puntos = List.generate(
+        datos.length,
+        (i) => Offset(
+              i * paso,
+              areaH - ((datos[i] - minVal) / range * (areaH - 16)) + 8,
+            ));
 
     // Área rellena con curva Bezier cúbica
     final area = Path()..moveTo(puntos.first.dx, areaH + 8);
@@ -247,7 +258,9 @@ class _GraficoPainter extends CustomPainter {
     area.close();
     canvas.drawPath(
       area,
-      Paint()..color = AppColors.primary.withOpacity(0.08)..style = PaintingStyle.fill,
+      Paint()
+        ..color = AppColors.primary.withValues(alpha: 0.08)
+        ..style = PaintingStyle.fill,
     );
 
     // Línea suave con curva Bezier cúbica
@@ -287,10 +300,14 @@ class _GridRoles extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = [
-      _RolItem(Icons.agriculture,        'Pequeño Productor', stats.pequenoProductor, const Color(0xFF2E7D32)),
-      _RolItem(Icons.construction,       'Trabajador',        stats.trabajador,      const Color(0xFF00687E)),
-      _RolItem(Icons.manage_accounts,    'Gestor',            stats.gestor,           const Color(0xFF6A1B9A)),
-      _RolItem(Icons.admin_panel_settings,'Administrador',     stats.administrador,    AK.error),
+      _RolItem(Icons.agriculture, 'Pequeño Productor', stats.pequenoProductor,
+          const Color(0xFF2E7D32)),
+      _RolItem(Icons.construction, 'Trabajador', stats.trabajador,
+          const Color(0xFF00687E)),
+      _RolItem(Icons.manage_accounts, 'Gestor', stats.gestor,
+          const Color(0xFF6A1B9A)),
+      _RolItem(Icons.admin_panel_settings, 'Administrador', stats.administrador,
+          AK.error),
     ];
     return GridView.count(
       crossAxisCount: 2,
@@ -326,7 +343,7 @@ class _TarjetaRol extends StatelessWidget {
         border: Border.all(color: AK.border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -340,7 +357,7 @@ class _TarjetaRol extends StatelessWidget {
                 width: 28,
                 height: 28,
                 decoration: BoxDecoration(
-                  color: item.color.withOpacity(0.12),
+                  color: item.color.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(item.icono, color: item.color, size: 16),

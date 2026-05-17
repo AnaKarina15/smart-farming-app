@@ -14,7 +14,7 @@ class AdminLotesScreen extends StatefulWidget {
 }
 
 class _AdminLotesScreenState extends State<AdminLotesScreen> {
-  final _searchCtrl   = TextEditingController();
+  final _searchCtrl = TextEditingController();
   String? _filtroCultivo;
   String? _filtroEstado;
 
@@ -53,13 +53,16 @@ class _AdminLotesScreenState extends State<AdminLotesScreen> {
                     Text(
                       'Gestión Global de Lotes',
                       style: TextStyle(
-                        fontSize: 22, fontWeight: FontWeight.w800, color: AK.text,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: AK.text,
                       ),
                     ),
                     SizedBox(height: 4),
                     Text(
                       'Vista de supervisión: todos los lotes de todos los productores.',
-                      style: TextStyle(fontSize: 12, color: AK.subtext, height: 1.4),
+                      style: TextStyle(
+                          fontSize: 12, color: AK.subtext, height: 1.4),
                     ),
                   ],
                 ),
@@ -82,7 +85,8 @@ class _AdminLotesScreenState extends State<AdminLotesScreen> {
                       const SizedBox(height: 8),
                       _StatRow(
                         label: 'CON ALERTAS',
-                        valor: '${provider.lotes.where((l) => l.estado?.toLowerCase() == 'afectado').length}',
+                        valor:
+                            '${provider.lotes.where((l) => l.estado?.toLowerCase() == 'afectado').length}',
                         icono: Icons.warning_amber_rounded,
                         color: AK.error,
                         colorFondo: const Color(0xFFFFEBEE),
@@ -104,8 +108,10 @@ class _AdminLotesScreenState extends State<AdminLotesScreen> {
                       onChanged: (_) => setState(() {}),
                       decoration: InputDecoration(
                         hintText: 'Buscar por nombre de lote...',
-                        hintStyle: const TextStyle(color: AK.inactive, fontSize: 13),
-                        prefixIcon: const Icon(Icons.search, color: AK.inactive, size: 20),
+                        hintStyle:
+                            const TextStyle(color: AK.inactive, fontSize: 13),
+                        prefixIcon: const Icon(Icons.search,
+                            color: AK.inactive, size: 20),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
                           borderSide: const BorderSide(color: AK.border),
@@ -116,11 +122,13 @@ class _AdminLotesScreenState extends State<AdminLotesScreen> {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(color: AppColors.primary, width: 1.5),
+                          borderSide:
+                              BorderSide(color: AppColors.primary, width: 1.5),
                         ),
                         filled: true,
                         fillColor: Colors.white,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                        contentPadding:
+                            const EdgeInsets.symmetric(vertical: 10),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -140,9 +148,12 @@ class _AdminLotesScreenState extends State<AdminLotesScreen> {
                           child: _DropdownFiltro(
                             hint: 'Estado',
                             valor: _filtroEstado,
-                            opciones: const ['Saludable', 'Afectado', 'Cosechado'],
-                            onChanged: (v) =>
-                                setState(() => _filtroEstado = v),
+                            opciones: const [
+                              'Saludable',
+                              'Afectado',
+                              'Cosechado'
+                            ],
+                            onChanged: (v) => setState(() => _filtroEstado = v),
                           ),
                         ),
                       ],
@@ -157,8 +168,8 @@ class _AdminLotesScreenState extends State<AdminLotesScreen> {
               Expanded(
                 child: provider.cargando && provider.lotes.isEmpty
                     ? const Center(
-                        child: CircularProgressIndicator(
-                            color: AppColors.primary),
+                        child:
+                            CircularProgressIndicator(color: AppColors.primary),
                       )
                     : RefreshIndicator(
                         color: AppColors.primary,
@@ -171,12 +182,11 @@ class _AdminLotesScreenState extends State<AdminLotesScreen> {
                                 ),
                               )
                             : ListView.builder(
-                                padding: const EdgeInsets.fromLTRB(
-                                    20, 0, 20, 100),
+                                padding:
+                                    const EdgeInsets.fromLTRB(20, 0, 20, 100),
                                 itemCount: lotes.length,
                                 itemBuilder: (_, i) => Padding(
-                                  padding:
-                                      const EdgeInsets.only(bottom: 12),
+                                  padding: const EdgeInsets.only(bottom: 12),
                                   child: _TarjetaLote(lote: lotes[i]),
                                 ),
                               ),
@@ -201,15 +211,14 @@ class _AdminLotesScreenState extends State<AdminLotesScreen> {
     }
     if (_filtroCultivo != null) {
       lista = lista
-          .where((l) =>
-              l.cultivo?.toLowerCase() == _filtroCultivo!.toLowerCase())
+          .where(
+              (l) => l.cultivo?.toLowerCase() == _filtroCultivo!.toLowerCase())
           .toList();
     }
     if (_filtroEstado != null) {
       lista = lista
           .where((l) =>
-              l.estadoHumanizado.toLowerCase() ==
-              _filtroEstado!.toLowerCase())
+              l.estadoHumanizado.toLowerCase() == _filtroEstado!.toLowerCase())
           .toList();
     }
     return lista;
@@ -246,9 +255,7 @@ class _StatRow extends StatelessWidget {
         color: colorFondo ?? Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: colorFondo != null
-              ? color.withOpacity(0.3)
-              : AK.border,
+          color: colorFondo != null ? color.withValues(alpha: 0.3) : AK.border,
         ),
       ),
       child: Row(
@@ -258,13 +265,17 @@ class _StatRow extends StatelessWidget {
             children: [
               Text(label,
                   style: TextStyle(
-                    fontSize: 11, fontWeight: FontWeight.w700,
-                    color: color, letterSpacing: 0.8,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: color,
+                    letterSpacing: 0.8,
                   )),
               Text(valor,
                   style: TextStyle(
-                    fontSize: 28, fontWeight: FontWeight.w800,
-                    color: color, height: 1.1,
+                    fontSize: 28,
+                    fontWeight: FontWeight.w800,
+                    color: color,
+                    height: 1.1,
                   )),
             ],
           ),
@@ -363,7 +374,7 @@ class _TarjetaLote extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final estadoColor = _colorEstado(lote.estado);
-    final estadoBg    = _bgEstado(lote.estado);
+    final estadoBg = _bgEstado(lote.estado);
 
     return Container(
       decoration: BoxDecoration(
@@ -372,8 +383,9 @@ class _TarjetaLote extends StatelessWidget {
         border: Border.all(color: AK.border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 4, offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -386,22 +398,23 @@ class _TarjetaLote extends StatelessWidget {
               Container(
                 height: 90,
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.12),
-                  borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(14)),
+                  color: AppColors.primary.withValues(alpha: 0.12),
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(14)),
                 ),
                 child: Center(
                   child: Icon(Icons.agriculture,
                       size: 36,
-                      color: AppColors.primary.withOpacity(0.4)),
+                      color: AppColors.primary.withValues(alpha: 0.4)),
                 ),
               ),
               if (lote.estado != null)
                 Positioned(
-                  top: 8, right: 8,
+                  top: 8,
+                  right: 8,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: estadoBg,
                       borderRadius: BorderRadius.circular(20),
@@ -409,8 +422,10 @@ class _TarjetaLote extends StatelessWidget {
                     child: Text(
                       lote.estadoHumanizado.toUpperCase(),
                       style: TextStyle(
-                        fontSize: 10, fontWeight: FontWeight.w800,
-                        color: estadoColor, letterSpacing: 0.5,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        color: estadoColor,
+                        letterSpacing: 0.5,
                       ),
                     ),
                   ),
@@ -430,7 +445,8 @@ class _TarjetaLote extends StatelessWidget {
                         lote.nombre,
                         style: const TextStyle(
                           fontWeight: FontWeight.w700,
-                          fontSize: 16, color: AK.text,
+                          fontSize: 16,
+                          color: AK.text,
                         ),
                       ),
                     ),
@@ -442,21 +458,17 @@ class _TarjetaLote extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 2),
                     child: Text(
                       'Propietario ID: ${lote.propietarioId}',
-                      style: const TextStyle(
-                          fontSize: 11, color: AK.subtext),
+                      style: const TextStyle(fontSize: 11, color: AK.subtext),
                     ),
                   ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    _PillInfo(
-                        label: 'CULTIVO',
-                        valor: lote.cultivo ?? 'N/A'),
+                    _PillInfo(label: 'CULTIVO', valor: lote.cultivo ?? 'N/A'),
                     const SizedBox(width: 12),
                     _PillInfo(
                         label: 'SUPERFICIE',
-                        valor:
-                            '${lote.superficie.toStringAsFixed(1)} ha'),
+                        valor: '${lote.superficie.toStringAsFixed(1)} ha'),
                   ],
                 ),
               ],
@@ -469,19 +481,27 @@ class _TarjetaLote extends StatelessWidget {
 
   static Color _colorEstado(String? e) {
     switch (e?.toLowerCase()) {
-      case 'saludable': return const Color(0xFF2E7D32);
-      case 'afectado':  return AK.error;
-      case 'cosechado': return const Color(0xFF795548);
-      default:          return AK.subtext;
+      case 'saludable':
+        return const Color(0xFF2E7D32);
+      case 'afectado':
+        return AK.error;
+      case 'cosechado':
+        return const Color(0xFF795548);
+      default:
+        return AK.subtext;
     }
   }
 
   static Color _bgEstado(String? e) {
     switch (e?.toLowerCase()) {
-      case 'saludable': return const Color(0xFFE8F5E9);
-      case 'afectado':  return const Color(0xFFFFEBEE);
-      case 'cosechado': return const Color(0xFFEFEBE9);
-      default:          return AK.bg;
+      case 'saludable':
+        return const Color(0xFFE8F5E9);
+      case 'afectado':
+        return const Color(0xFFFFEBEE);
+      case 'cosechado':
+        return const Color(0xFFEFEBE9);
+      default:
+        return AK.bg;
     }
   }
 }
@@ -498,14 +518,16 @@ class _PillInfo extends StatelessWidget {
       children: [
         Text(label,
             style: const TextStyle(
-              fontSize: 10, color: AK.subtext,
-              fontWeight: FontWeight.w700, letterSpacing: 0.6,
+              fontSize: 10,
+              color: AK.subtext,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.6,
             )),
         Container(
           margin: const EdgeInsets.only(top: 2),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.08),
+            color: AppColors.primary.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(valor,

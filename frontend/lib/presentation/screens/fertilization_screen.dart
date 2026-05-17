@@ -367,7 +367,7 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
                               'isPendingSync': 1,
                             });
 
-                            if (!mounted) return;
+                            if (!context.mounted) return;
                             setState(() => _guardando = false);
 
                             Navigator.pushReplacement(

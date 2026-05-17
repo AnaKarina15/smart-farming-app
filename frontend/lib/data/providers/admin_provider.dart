@@ -44,7 +44,6 @@ class AdminProvider extends ChangeNotifier {
   String  _busqueda       = '';
   bool    _verEliminados  = false;
   int     _paginaActual   = 0;
-  static const int _porPagina = 20;
   bool    _hayMasPaginas  = false;
 
   List<UsuarioAdmin> get usuarios {

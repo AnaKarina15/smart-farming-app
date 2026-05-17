@@ -148,7 +148,7 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
                       decoration: BoxDecoration(
                         color: _isControlled == true
                             ? AppColors.primaryContainer
-                            : AppColors.primaryContainer.withOpacity(0.3),
+                            : AppColors.primaryContainer.withValues(alpha: 0.3),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: _isControlled == true
@@ -185,7 +185,7 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
                       decoration: BoxDecoration(
                         color: _isControlled == false
                             ? AppColors.errorContainer
-                            : AppColors.errorContainer.withOpacity(0.3),
+                            : AppColors.errorContainer.withValues(alpha: 0.3),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: _isControlled == false

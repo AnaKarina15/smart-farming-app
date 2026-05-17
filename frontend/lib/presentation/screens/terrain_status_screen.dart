@@ -114,7 +114,7 @@ class _TerrainStatusScreenState extends State<TerrainStatusScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryContainer.withOpacity(0.4),
+                  color: AppColors.primaryContainer.withValues(alpha: 0.4),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
@@ -124,7 +124,8 @@ class _TerrainStatusScreenState extends State<TerrainStatusScreen> {
                     Expanded(
                       child: Text(
                         'Cultivos recomendados: $_recomendaciones',
-                        style: AppText.bodyMd(color: AppColors.onPrimaryContainer),
+                        style:
+                            AppText.bodyMd(color: AppColors.onPrimaryContainer),
                       ),
                     ),
                   ],

@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../core/storage/database_helper.dart';
 import '../models/catalogos_models.dart';
+import '../services/catalogos_sync_service.dart';
 
 class CatalogosProvider extends ChangeNotifier {
   final DatabaseHelper _db = DatabaseHelper.instance;
+  final CatalogosSyncService _syncService;
+
+  CatalogosProvider(this._syncService);
 
   List<Cultivo> cultivos = [];
   List<Municipio> municipios = [];
@@ -18,6 +22,23 @@ class CatalogosProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
+    // 1. Cargar lo que haya en la base de datos local rápido
+    await _loadFromLocal();
+
+    // 2. Descargar los catálogos del backend en segundo plano
+    try {
+      await _syncService.sincronizarCatalogos();
+      // 3. Volver a cargar la base de datos local con los nuevos datos
+      await _loadFromLocal();
+    } catch (e) {
+      debugPrint('Error en la sincronización de catálogos: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> _loadFromLocal() async {
     try {
       final resCultivos = await _db.queryAllRows(DatabaseHelper.tableCatCultivos);
       final resMunicipios = await _db.queryAllRows(DatabaseHelper.tableCatMunicipios);
@@ -37,12 +58,8 @@ class CatalogosProvider extends ChangeNotifier {
       plagas.sort((a, b) => a.nombre.compareTo(b.nombre));
       fertilizantes.sort((a, b) => a.nombre.compareTo(b.nombre));
       tiposSuelo.sort((a, b) => a.nombre.compareTo(b.nombre));
-
     } catch (e) {
       debugPrint('Error cargando catálogos desde SQLite: $e');
-    } finally {
-      _isLoading = false;
-      notifyListeners();
     }
   }
 }

@@ -217,7 +217,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: GestureDetector(
                         onTap: () {
                           // Aquí colocas la acción para abrir el link o una nueva pantalla
-                          print("Abriendo términos y condiciones...");
+                          debugPrint("Abriendo términos y condiciones...");
                         },
                         child: RichText(
                           textAlign: TextAlign.center,

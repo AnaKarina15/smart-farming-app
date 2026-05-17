@@ -391,7 +391,7 @@ class _SowingScreenState extends State<SowingScreen> {
                               'isPendingSync': 1,
                             });
 
-                            if (!mounted) return;
+                            if (!context.mounted) return;
                             setState(() => _guardando = false);
 
                             Navigator.pushReplacement(

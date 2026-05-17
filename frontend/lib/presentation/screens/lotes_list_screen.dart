@@ -563,16 +563,107 @@ class _LoteCardState extends State<_LoteCard> {
                 ),
               ),
 
-              // Chevron
+              // ── Trailing Actions (Three-dots top, Chevron bottom) ──
               Padding(
-                padding: const EdgeInsets.only(right: 16),
-                child: AnimatedRotation(
-                  duration: const Duration(milliseconds: 250),
-                  turns: widget.isSelected ? 0.5 : 0,
-                  child: const Icon(
-                    Icons.expand_more,
-                    color: AppColors.outline,
-                  ),
+                padding: const EdgeInsets.only(right: 8, top: 12, bottom: 12),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Three-dots menu
+                    SizedBox(
+                      height: 32,
+                      width: 32,
+                      child: PopupMenuButton<String>(
+                        icon: const Icon(Icons.more_vert, color: AppColors.outline, size: 20),
+                        padding: EdgeInsets.zero,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        color: Colors.white,
+                        elevation: 4,
+                        onSelected: (val) {
+                          if (val == 'edit') {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => RegisterLoteScreen(loteToEdit: widget.lote),
+                              ),
+                            );
+                          } else if (val == 'delete') {
+                            showDialog(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                backgroundColor: AppColors.surfaceContainerHigh,
+                                title: Text('Eliminar Lote', style: AppText.h3(color: AppColors.onSurface)),
+                                content: Text(
+                                  '¿Estás seguro de que deseas eliminar el lote "$_loteName"? Esta acción no se puede deshacer.',
+                                  style: AppText.bodyMd(color: AppColors.onSurfaceVariant),
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(ctx),
+                                    child: Text('CANCELAR', style: AppText.labelCaps(color: AppColors.primary)),
+                                  ),
+                                  TextButton(
+                                    onPressed: () async {
+                                      Navigator.pop(ctx);
+                                      final success = await context.read<LotesProvider>().eliminarLote(widget.lote.id);
+                                      if (success && context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text('Lote eliminado correctamente'),
+                                            backgroundColor: AppColors.primary,
+                                          ),
+                                        );
+                                      } else if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text('Error al eliminar el lote'),
+                                            backgroundColor: AppColors.error,
+                                          ),
+                                        );
+                                      }
+                                    },
+                                    child: Text('ELIMINAR', style: AppText.labelCaps(color: AppColors.error)),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          PopupMenuItem(
+                            value: 'edit',
+                            child: Row(
+                              children: [
+                                const Icon(Icons.edit, color: AppColors.primary, size: 20),
+                                const SizedBox(width: 12),
+                                Text('Editar', style: AppText.bodyMd()),
+                              ],
+                            ),
+                          ),
+                          PopupMenuItem(
+                            value: 'delete',
+                            child: Row(
+                              children: [
+                                const Icon(Icons.delete_outline, color: AppColors.error, size: 20),
+                                const SizedBox(width: 12),
+                                Text('Eliminar', style: AppText.bodyMd(color: AppColors.error)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    // Chevron
+                    AnimatedRotation(
+                      duration: const Duration(milliseconds: 250),
+                      turns: widget.isSelected ? 0.5 : 0,
+                      child: const Icon(
+                        Icons.expand_more,
+                        color: AppColors.outline,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],

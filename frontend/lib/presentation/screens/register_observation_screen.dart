@@ -179,7 +179,7 @@ class _RegisterObservationScreenState extends State<RegisterObservationScreen> {
                   'isPendingSync': 1,
                 });
 
-                if (!mounted) return;
+                if (!context.mounted) return;
                 setState(() => _guardando = false);
 
                 Navigator.pushReplacement(

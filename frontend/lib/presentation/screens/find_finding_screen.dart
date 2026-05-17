@@ -243,7 +243,7 @@ class _FindFindingScreenState extends State<FindFindingScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.secondaryContainer.withOpacity(0.3),
+                  color: AppColors.secondaryContainer.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
@@ -393,7 +393,7 @@ class _FindFindingScreenState extends State<FindFindingScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? bgColor : bgColor.withOpacity(0.3),
+          color: isSelected ? bgColor : bgColor.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(12),
           border:
               Border.all(color: isSelected ? textColor : Colors.transparent),
@@ -402,7 +402,8 @@ class _FindFindingScreenState extends State<FindFindingScreen> {
           child: Text(
             value,
             style: AppText.labelCaps(
-                color: isSelected ? textColor : textColor.withOpacity(0.5)),
+                color:
+                    isSelected ? textColor : textColor.withValues(alpha: 0.5)),
           ),
         ),
       ),

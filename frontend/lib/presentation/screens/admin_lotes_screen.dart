@@ -358,14 +358,15 @@ class _DropdownFiltro extends StatelessWidget {
 
 class _TarjetaLote extends StatelessWidget {
   final LoteAdmin lote;
-  const _TarjetaLote({required this.lote});
+  final bool estatica;
+  const _TarjetaLote({required this.lote, this.estatica = false});
 
   @override
   Widget build(BuildContext context) {
     final estadoColor = _colorEstado(lote.estado);
     final estadoBg    = _bgEstado(lote.estado);
 
-    return Container(
+    final cardContent = Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
@@ -390,10 +391,10 @@ class _TarjetaLote extends StatelessWidget {
                   borderRadius: const BorderRadius.vertical(
                       top: Radius.circular(14)),
                 ),
-                child: Center(
+                child: const Center(
                   child: Icon(Icons.agriculture,
                       size: 36,
-                      color: AppColors.primary.withOpacity(0.4)),
+                      color: Color(0x662E7D32)),
                 ),
               ),
               if (lote.estado != null)
@@ -434,10 +435,34 @@ class _TarjetaLote extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const Icon(Icons.more_vert, color: AK.subtext, size: 20),
+                    // ── Lápiz de edición ──────────────────────────────
+                    if (estatica) ...[
+                      const Icon(Icons.edit_outlined, size: 20, color: AK.subtext),
+                      const SizedBox(width: 12),
+                      const Icon(Icons.more_vert, size: 20, color: AK.subtext),
+                    ] else ...[
+                      GestureDetector(
+                        onTap: () => _editarLote(context),
+                        child: const Icon(Icons.edit_outlined, size: 20, color: AK.subtext),
+                      ),
+                      const SizedBox(width: 12),
+                      GestureDetector(
+                        onTap: () => _mostrarMenuDestacado(context),
+                        child: const Icon(Icons.more_vert, size: 20, color: AK.subtext),
+                      ),
+                    ],
                   ],
                 ),
-                if (lote.propietarioId != null)
+                if (lote.propietarioNombre != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      'Propietario: ${lote.propietarioNombre}',
+                      style: const TextStyle(
+                          fontSize: 11, color: AK.subtext),
+                    ),
+                  )
+                else if (lote.propietarioId != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 2),
                     child: Text(
@@ -461,6 +486,150 @@ class _TarjetaLote extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+
+    if (estatica) return cardContent;
+    return cardContent;
+  }
+
+  void _editarLote(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Editar lote "${lote.nombre}" — próximamente'),
+        backgroundColor: AppColors.primary,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+  }
+
+  void _mostrarMenuDestacado(BuildContext context) {
+    final renderBox = context.findRenderObject() as RenderBox;
+    final size      = renderBox.size;
+    final position  = renderBox.localToGlobal(Offset.zero);
+
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'Cerrar menú',
+      barrierColor: Colors.black.withOpacity(0.55),
+      transitionDuration: const Duration(milliseconds: 180),
+      pageBuilder: (ctx, anim1, anim2) {
+        return Stack(
+          children: [
+            // Tarjeta clonada encima de la barrera oscura
+            Positioned(
+              left: position.dx,
+              top: position.dy,
+              width: size.width,
+              child: Material(
+                color: Colors.transparent,
+                child: _TarjetaLote(lote: lote, estatica: true),
+              ),
+            ),
+
+            // Opciones del menú flotante alineadas debajo de la tarjeta
+            Positioned(
+              left: position.dx + size.width - 170,
+              top: position.dy + size.height + 6,
+              width: 160,
+              child: FadeTransition(
+                opacity: anim1,
+                child: Material(
+                  elevation: 8,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: const BorderSide(color: AK.border),
+                  ),
+                  color: Colors.white,
+                  surfaceTintColor: Colors.white,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ListTile(
+                          leading: Icon(Icons.edit_outlined, color: AppColors.primary, size: 18),
+                          title: const Text('Editar lote', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AK.text)),
+                          dense: true,
+                          onTap: () {
+                            Navigator.pop(ctx);
+                            _editarLote(context);
+                          },
+                        ),
+                        const Divider(height: 1, color: AK.border),
+                        ListTile(
+                          leading: const Icon(Icons.person_search_outlined, color: AK.subtext, size: 18),
+                          title: const Text('Ver propietario', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AK.text)),
+                          dense: true,
+                          onTap: () {
+                            Navigator.pop(ctx);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  lote.propietarioNombre != null
+                                      ? 'Propietario: ${lote.propietarioNombre}'
+                                      : 'ID: ${lote.propietarioId ?? "N/A"}',
+                                ),
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                            );
+                          },
+                        ),
+                        const Divider(height: 1, color: AK.border),
+                        ListTile(
+                          leading: const Icon(Icons.delete_outline, color: AK.error, size: 18),
+                          title: const Text('Eliminar lote', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AK.error)),
+                          dense: true,
+                          onTap: () {
+                            Navigator.pop(ctx);
+                            _confirmarEliminar(context);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _confirmarEliminar(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Eliminar lote'),
+        content: Text(
+          '¿Eliminar el lote "${lote.nombre}"? Esta acción no se puede deshacer.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AK.error),
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Eliminar lote "${lote.nombre}" — próximamente'),
+                  backgroundColor: AK.error,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              );
+            },
+            child: const Text('Eliminar', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),

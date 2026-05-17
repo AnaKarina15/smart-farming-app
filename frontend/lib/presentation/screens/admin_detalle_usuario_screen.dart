@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../../core/theme/app_colors.dart';
 import '../../data/providers/admin_provider.dart';
 import '../widgets/admin_widgets.dart';
 import 'admin_editar_usuario_screen.dart';
 
 class AdminDetalleUsuarioScreen extends StatefulWidget {
   final String usuarioId;
-
   const AdminDetalleUsuarioScreen({super.key, required this.usuarioId});
 
   @override
-  State<AdminDetalleUsuarioScreen> createState() => _AdminDetalleUsuarioScreenState();
+  State<AdminDetalleUsuarioScreen> createState() =>
+      _AdminDetalleUsuarioScreenState();
 }
 
-class _AdminDetalleUsuarioScreenState extends State<AdminDetalleUsuarioScreen> {
+class _AdminDetalleUsuarioScreenState
+    extends State<AdminDetalleUsuarioScreen> {
   @override
   void initState() {
     super.initState();
@@ -26,42 +28,28 @@ class _AdminDetalleUsuarioScreenState extends State<AdminDetalleUsuarioScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AdminColors.background,
+      backgroundColor: AK.bg,
       appBar: AppBar(
-        backgroundColor: AdminColors.background,
+        backgroundColor: AK.bg,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AdminColors.textPrimary),
+          icon: const Icon(Icons.arrow_back, color: AK.text),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Row(
-          children: [
-            // Logo
-            Image.asset('assets/images/logo.png', height: 24, errorBuilder: (_, __, ___) =>
-              const Icon(Icons.eco, color: AdminColors.primary, size: 24)),
-            const SizedBox(width: 6),
-            const Text(
-              'AgroField',
-              style: TextStyle(
-                color: AdminColors.primary,
-                fontWeight: FontWeight.w700,
-                fontSize: 18,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined, color: AdminColors.textSecondary),
-            onPressed: () {},
+        title: Text(
+          'AgroField',
+          style: TextStyle(
+            color: AppColors.primary,
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
           ),
-        ],
+        ),
       ),
       body: Consumer<AdminProvider>(
         builder: (context, provider, _) {
           if (provider.cargando && provider.usuarioDetalle == null) {
             return const Center(
-              child: CircularProgressIndicator(color: AdminColors.primary),
+              child: CircularProgressIndicator(color: AppColors.primary),
             );
           }
           final u = provider.usuarioDetalle;
@@ -74,18 +62,16 @@ class _AdminDetalleUsuarioScreenState extends State<AdminDetalleUsuarioScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ─── Encabezado ─────────────────────────────────────────────
+                // Título
                 const Text(
                   'Detalle de Usuario',
                   style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w800,
-                    color: AdminColors.textPrimary,
+                    fontSize: 24, fontWeight: FontWeight.w800, color: AK.text,
                   ),
                 ),
                 const SizedBox(height: 20),
 
-                // ─── Avatar + nombre ─────────────────────────────────────────
+                // ─── Avatar + nombre ────────────────────────────────────────
                 Center(
                   child: Column(
                     children: [
@@ -98,25 +84,22 @@ class _AdminDetalleUsuarioScreenState extends State<AdminDetalleUsuarioScreen> {
                       Text(
                         u.nombreCompleto,
                         style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                          color: AdminColors.textPrimary,
+                          fontSize: 20, fontWeight: FontWeight.w800, color: AK.text,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AdminColors.background,
+                          color: AK.bg,
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: AdminColors.border),
+                          border: Border.all(color: AK.border),
                         ),
                         child: Text(
                           u.roleHumanizado,
                           style: const TextStyle(
-                            fontSize: 13,
-                            color: AdminColors.textSecondary,
-                          ),
+                              fontSize: 13, color: AK.subtext),
                         ),
                       ),
                     ],
@@ -125,26 +108,27 @@ class _AdminDetalleUsuarioScreenState extends State<AdminDetalleUsuarioScreen> {
 
                 const SizedBox(height: 20),
 
-                // ─── Información Personal ─────────────────────────────────────
-                _Seccion(
+                // ─── Información Personal ───────────────────────────────────
+                SeccionCard(
                   icono: Icons.badge_outlined,
                   titulo: 'Información Personal',
                   children: [
-                    _FilaInfo(label: 'EMAIL', valor: u.email),
-                    const Divider(color: AdminColors.border, height: 1),
-                    _FilaInfo(label: 'TELÉFONO', valor: u.telefono ?? 'No registrado'),
-                    const Divider(color: AdminColors.border, height: 1),
-                    _FilaInfo(label: 'ROL', valor: u.roleHumanizado),
+                    FilaInfo(label: 'EMAIL',    valor: u.email),
+                    const Divider(color: AK.border, height: 1),
+                    FilaInfo(label: 'TELÉFONO', valor: u.telefono ?? 'No registrado'),
+                    const Divider(color: AK.border, height: 1),
+                    FilaInfo(label: 'ROL',      valor: u.roleHumanizado),
                   ],
                 ),
 
                 const SizedBox(height: 14),
 
-                // ─── Estado de cuenta ──────────────────────────────────────────
-                _Seccion(
+                // ─── Estado de Cuenta ───────────────────────────────────────
+                SeccionCard(
                   icono: Icons.bar_chart_outlined,
                   titulo: 'Estado de Cuenta',
                   children: [
+                    // Estado activo
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 10),
                       child: Row(
@@ -153,61 +137,56 @@ class _AdminDetalleUsuarioScreenState extends State<AdminDetalleUsuarioScreen> {
                             child: Text(
                               'ESTADO',
                               style: TextStyle(
-                                fontSize: 11,
-                                color: AdminColors.textSecondary,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 0.8,
+                                fontSize: 11, color: AK.subtext,
+                                fontWeight: FontWeight.w700, letterSpacing: 0.8,
                               ),
                             ),
                           ),
-                          PuntoEstado(activo: u.activo, eliminado: u.estaEliminado),
+                          PuntoEstado(
+                              activo: u.activo,
+                              eliminado: u.estaEliminado),
                         ],
                       ),
                     ),
-                    const Divider(color: AdminColors.border, height: 1),
-                    _FilaInfo(
+                    const Divider(color: AK.border, height: 1),
+
+                    // Último acceso
+                    FilaInfo(
                       label: 'ÚLTIMO ACCESO',
                       valor: u.ultimoAcceso != null
                           ? _formatearFecha(u.ultimoAcceso!)
                           : 'Nunca',
                     ),
+
+                    // mustChangePassword
                     if (u.mustChangePassword) ...[
-                      const Divider(color: AdminColors.border, height: 1),
+                      const Divider(color: AK.border, height: 1),
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 10),
                         child: Row(
-                          children: [
-                            const Expanded(
+                          children: const [
+                            Expanded(
                               child: Text(
                                 'CAMBIO DE CLAVE',
                                 style: TextStyle(
-                                  fontSize: 11,
-                                  color: AdminColors.textSecondary,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.8,
+                                  fontSize: 11, color: AK.subtext,
+                                  fontWeight: FontWeight.w700, letterSpacing: 0.8,
                                 ),
                               ),
                             ),
-                            const Icon(
-                              Icons.warning_amber_rounded,
-                              color: AdminColors.warning,
-                              size: 16,
-                            ),
-                            const SizedBox(width: 4),
-                            const Text(
+                            Icon(Icons.warning_amber_rounded,
+                                color: AK.warning, size: 16),
+                            SizedBox(width: 4),
+                            Text(
                               'Requerido',
                               style: TextStyle(
-                                color: AdminColors.warning,
+                                color: AK.warning,
                                 fontWeight: FontWeight.w600,
                                 fontSize: 13,
                               ),
                             ),
-                            const SizedBox(width: 4),
-                            const Icon(
-                              Icons.info_outline,
-                              size: 16,
-                              color: AdminColors.textSecondary,
-                            ),
+                            SizedBox(width: 4),
+                            Icon(Icons.info_outline, size: 16, color: AK.subtext),
                           ],
                         ),
                       ),
@@ -217,62 +196,64 @@ class _AdminDetalleUsuarioScreenState extends State<AdminDetalleUsuarioScreen> {
 
                 const SizedBox(height: 24),
 
-                // ─── Acciones de gestión ──────────────────────────────────────
+                // ─── Acciones ───────────────────────────────────────────────
                 const Text(
                   'Acciones de Gestión',
                   style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: AdminColors.textPrimary,
+                    fontSize: 18, fontWeight: FontWeight.w700, color: AK.text,
                   ),
                 ),
                 const SizedBox(height: 12),
 
-                // Editar
-                _BotonAccion(
+                BotonAccion(
                   icono: Icons.edit_outlined,
                   label: 'Editar Usuario',
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => AdminEditarUsuarioScreen(usuarioId: u.id),
+                      builder: (_) =>
+                          AdminEditarUsuarioScreen(usuarioId: u.id),
                     ),
-                  ).then((_) => context.read<AdminProvider>().cargarUsuario(u.id)),
+                  ).then((_) =>
+                      context.read<AdminProvider>().cargarUsuario(u.id)),
                 ),
                 const SizedBox(height: 10),
 
-                // Resetear contraseña
-                _BotonAccion(
+                BotonAccion(
                   icono: Icons.lock_reset,
                   label: 'Resetear Contraseña',
-                  onTap: () => _mostrarModalResetPassword(context, provider, u.id),
+                  onTap: () =>
+                      _mostrarModalReset(context, provider, u.id),
                 ),
                 const SizedBox(height: 10),
 
-                // Eliminar / Restaurar
                 if (u.estaEliminado)
-                  _BotonAccion(
+                  BotonAccion(
                     icono: Icons.restore,
                     label: 'Restaurar Usuario',
-                    color: AdminColors.accent,
+                    color: AK.accent,
                     textColor: Colors.white,
                     onTap: () async {
-                      final ok = await provider.restaurarUsuario(u.id);
+                      final ok =
+                          await provider.restaurarUsuario(u.id);
                       if (ok && context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Usuario restaurado correctamente.')),
+                          const SnackBar(
+                              content: Text(
+                                  'Usuario restaurado correctamente.')),
                         );
                         Navigator.pop(context);
                       }
                     },
                   )
                 else
-                  _BotonAccion(
+                  BotonAccion(
                     icono: Icons.delete_outline,
                     label: 'Eliminar Usuario',
-                    color: AdminColors.error,
+                    color: AK.error,
                     textColor: Colors.white,
-                    onTap: () => _confirmarEliminar(context, provider, u.id, u.nombreCompleto),
+                    onTap: () => _confirmarEliminar(
+                        context, provider, u.id, u.nombreCompleto),
                   ),
               ],
             ),
@@ -282,7 +263,10 @@ class _AdminDetalleUsuarioScreenState extends State<AdminDetalleUsuarioScreen> {
     );
   }
 
-  void _mostrarModalResetPassword(BuildContext context, AdminProvider provider, String userId) {
+  // ─── Modales ────────────────────────────────────────────────────────────────
+
+  void _mostrarModalReset(
+      BuildContext context, AdminProvider provider, String userId) {
     final ctrl = TextEditingController();
     bool obscure = true;
 
@@ -295,8 +279,7 @@ class _AdminDetalleUsuarioScreenState extends State<AdminDetalleUsuarioScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModal) => Padding(
           padding: EdgeInsets.fromLTRB(
-            24, 24, 24, MediaQuery.of(ctx).viewInsets.bottom + 24,
-          ),
+              24, 24, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -308,7 +291,7 @@ class _AdminDetalleUsuarioScreenState extends State<AdminDetalleUsuarioScreen> {
               const SizedBox(height: 6),
               const Text(
                 'El usuario deberá cambiarla en su próximo ingreso.',
-                style: TextStyle(color: AdminColors.textSecondary, fontSize: 13),
+                style: TextStyle(color: AK.subtext, fontSize: 13),
               ),
               const SizedBox(height: 16),
               AdminTextField(
@@ -316,44 +299,37 @@ class _AdminDetalleUsuarioScreenState extends State<AdminDetalleUsuarioScreen> {
                 label: 'Nueva contraseña temporal',
                 obscureText: obscure,
                 suffixIcon: IconButton(
-                  icon: Icon(obscure ? Icons.visibility_off : Icons.visibility),
-                  onPressed: () => setModal(() => obscure = !obscure),
+                  icon: Icon(
+                      obscure ? Icons.visibility_off : Icons.visibility),
+                  onPressed: () =>
+                      setModal(() => obscure = !obscure),
                 ),
               ),
               const SizedBox(height: 8),
-              // Generar aleatoria
               TextButton.icon(
                 onPressed: () {
-                  final auto = _generarPassword();
-                  ctrl.text = auto;
+                  ctrl.text = _generarPassword();
                   setModal(() => obscure = false);
                 },
                 icon: const Icon(Icons.refresh, size: 16),
-                label: const Text('Generar contraseña automática'),
-                style: TextButton.styleFrom(foregroundColor: AdminColors.primary),
+                label: const Text('Generar automáticamente'),
+                style: TextButton.styleFrom(
+                    foregroundColor: AppColors.primary),
               ),
               const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AdminColors.primary,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  onPressed: () async {
-                    if (ctrl.text.trim().isEmpty) return;
-                    Navigator.pop(ctx);
-                    final ok = await provider.resetearPassword(userId, ctrl.text.trim());
-                    if (ok && context.mounted) {
-                      _mostrarPasswordCopiada(context, ctrl.text.trim());
-                    }
-                  },
-                  child: const Text(
-                    'Aplicar Reset',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
-                  ),
-                ),
+              BotonGuardar(
+                label: 'Aplicar Reset',
+                cargando: false,
+                onPressed: () async {
+                  if (ctrl.text.trim().isEmpty) return;
+                  final pass = ctrl.text.trim();
+                  Navigator.pop(ctx);
+                  final ok =
+                      await provider.resetearPassword(userId, pass);
+                  if (ok && context.mounted) {
+                    _mostrarPasswordCopiada(context, pass);
+                  }
+                },
               ),
             ],
           ),
@@ -375,9 +351,9 @@ class _AdminDetalleUsuarioScreenState extends State<AdminDetalleUsuarioScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AdminColors.background,
+                color: AK.bg,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AdminColors.border),
+                border: Border.all(color: AK.border),
               ),
               child: Row(
                 children: [
@@ -385,15 +361,15 @@ class _AdminDetalleUsuarioScreenState extends State<AdminDetalleUsuarioScreen> {
                     child: Text(
                       password,
                       style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                        letterSpacing: 1.2,
-                      ),
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                          letterSpacing: 1.2),
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.copy, color: AdminColors.primary),
-                    onPressed: () => Clipboard.setData(ClipboardData(text: password)),
+                    icon: Icon(Icons.copy, color: AppColors.primary),
+                    onPressed: () =>
+                        Clipboard.setData(ClipboardData(text: password)),
                   ),
                 ],
               ),
@@ -402,17 +378,19 @@ class _AdminDetalleUsuarioScreenState extends State<AdminDetalleUsuarioScreen> {
         ),
         actions: [
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AdminColors.primary),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary),
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cerrar', style: TextStyle(color: Colors.white)),
+            child: const Text('Cerrar',
+                style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
     );
   }
 
-  void _confirmarEliminar(
-      BuildContext context, AdminProvider provider, String id, String nombre) {
+  void _confirmarEliminar(BuildContext context, AdminProvider provider,
+      String id, String nombre) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -422,169 +400,43 @@ class _AdminDetalleUsuarioScreenState extends State<AdminDetalleUsuarioScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar')),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AdminColors.error),
+            style: ElevatedButton.styleFrom(backgroundColor: AK.error),
             onPressed: () async {
               Navigator.pop(context);
               final ok = await provider.eliminarUsuario(id);
               if (ok && context.mounted) Navigator.pop(context);
             },
-            child: const Text('Eliminar', style: TextStyle(color: Colors.white)),
+            child: const Text('Eliminar',
+                style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
     );
   }
 
+  // ─── Helpers ────────────────────────────────────────────────────────────────
+
   String _formatearFecha(String iso) {
     try {
       final dt = DateTime.parse(iso).toLocal();
-      return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year} '
-          '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+      return '${dt.day.toString().padLeft(2, '0')}/'
+          '${dt.month.toString().padLeft(2, '0')}/'
+          '${dt.year} '
+          '${dt.hour.toString().padLeft(2, '0')}:'
+          '${dt.minute.toString().padLeft(2, '0')}';
     } catch (_) {
       return iso;
     }
   }
 
   String _generarPassword() {
-    const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#\$';
-    final rand = DateTime.now().microsecondsSinceEpoch;
-    return List.generate(10, (i) => chars[(rand * (i + 7)) % chars.length]).join();
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _Seccion extends StatelessWidget {
-  final IconData icono;
-  final String titulo;
-  final List<Widget> children;
-
-  const _Seccion({
-    required this.icono,
-    required this.titulo,
-    required this.children,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AdminColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
-            child: Row(
-              children: [
-                Icon(icono, size: 20, color: AdminColors.textPrimary),
-                const SizedBox(width: 8),
-                Text(
-                  titulo,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AdminColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Divider(color: AdminColors.border, height: 1),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Column(children: children),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _FilaInfo extends StatelessWidget {
-  final String label;
-  final String valor;
-
-  const _FilaInfo({required this.label, required this.valor});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 2,
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontSize: 11,
-                color: AdminColors.textSecondary,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.8,
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text(
-              valor,
-              style: const TextStyle(
-                fontSize: 14,
-                color: AdminColors.textPrimary,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _BotonAccion extends StatelessWidget {
-  final IconData icono;
-  final String label;
-  final VoidCallback onTap;
-  final Color color;
-  final Color textColor;
-
-  const _BotonAccion({
-    required this.icono,
-    required this.label,
-    required this.onTap,
-    this.color = Colors.white,
-    this.textColor = AdminColors.textPrimary,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        icon: Icon(icono, color: textColor, size: 18),
-        label: Text(
-          label,
-          style: TextStyle(color: textColor, fontWeight: FontWeight.w600),
-        ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color,
-          foregroundColor: textColor,
-          elevation: 0,
-          side: BorderSide(
-            color: color == Colors.white ? AdminColors.border : Colors.transparent,
-          ),
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-        onPressed: onTap,
-      ),
-    );
+    const chars =
+        'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#\$';
+    final seed = DateTime.now().microsecondsSinceEpoch;
+    return List.generate(
+        10, (i) => chars[(seed * (i + 7)) % chars.length]).join();
   }
 }

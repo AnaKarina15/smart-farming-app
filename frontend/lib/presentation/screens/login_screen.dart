@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'register_screen.dart';
 import 'map_onboarding_screen.dart';
 import 'home_screen.dart';
+import 'admin_panel_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -50,12 +51,22 @@ class _LoginScreenState extends State<LoginScreen> {
         final hasLotes = prefs.getBool('has_lotes') ?? false;
         
         if (!mounted) return;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => hasLotes ? const HomeScreen() : const MapOnboardingScreen(),
-          ),
-        );
+        final user = authProvider.currentUser;
+        if (user != null && user.role == 'administrador') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const AdminPanelScreen(),
+            ),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => hasLotes ? const HomeScreen() : const MapOnboardingScreen(),
+            ),
+          );
+        }
       } else {
         setState(() {
           final errorStr = (authProvider.errorMessage ?? '').toLowerCase();

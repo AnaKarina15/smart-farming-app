@@ -46,6 +46,7 @@ class AuthService {
           accessToken: tokens.accessToken,
           refreshToken: tokens.refreshToken,
           userId: tokens.user.id,
+          role: tokens.user.role,
         );
         return tokens;
       }
@@ -82,6 +83,7 @@ class AuthService {
           accessToken: tokens.accessToken,
           refreshToken: tokens.refreshToken,
           userId: tokens.user.id,
+          role: tokens.user.role,
         );
         return tokens;
       }

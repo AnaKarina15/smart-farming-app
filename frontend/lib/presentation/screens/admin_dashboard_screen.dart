@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../data/providers/admin_provider.dart';
+import '../../core/theme/app_colors.dart';
 import '../../data/models/stats_admin.dart';
+import '../../data/providers/admin_provider.dart';
+import '../../data/providers/auth_provider.dart';
 import '../widgets/admin_widgets.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
@@ -22,55 +24,59 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+    // Nombre del admin logueado (campo según user_model.dart del proyecto)
+    final nombreAdmin = auth.currentUser?.nombreCompleto ?? 'Administrador';
+
     return Scaffold(
-      backgroundColor: AdminColors.background,
+      backgroundColor: AK.bg,
       appBar: AppBar(
-        backgroundColor: AdminColors.background,
+        backgroundColor: AK.bg,
         elevation: 0,
         automaticallyImplyLeading: false,
         titleSpacing: 20,
         title: Row(
           children: [
-            // Foto de perfil admin (avatar genérico)
             CircleAvatar(
               radius: 18,
-              backgroundColor: AdminColors.primary,
-              child: const Icon(Icons.person, color: Colors.white, size: 20),
+              backgroundColor: AppColors.primary,
+              child: Text(
+                _iniciales(nombreAdmin),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+              ),
             ),
             const SizedBox(width: 10),
             Text(
               'AgroField',
               style: TextStyle(
-                color: AdminColors.primary,
+                color: AppColors.primary,
                 fontWeight: FontWeight.w700,
                 fontSize: 20,
               ),
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined, color: AdminColors.textSecondary),
-            onPressed: () {},
-          ),
-        ],
       ),
       body: Consumer<AdminProvider>(
         builder: (context, provider, _) {
           if (provider.cargando && provider.stats == null) {
             return const Center(
-              child: CircularProgressIndicator(color: AdminColors.primary),
+              child: CircularProgressIndicator(color: AppColors.primary),
             );
           }
           if (provider.error != null && provider.stats == null) {
-            return _ErrorView(
+            return ErrorView(
               mensaje: provider.error!,
               onReintentar: () => provider.cargarStats(),
             );
           }
           final stats = provider.stats;
           return RefreshIndicator(
-            color: AdminColors.primary,
+            color: AppColors.primary,
             onRefresh: () => provider.cargarStats(),
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -78,7 +84,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ─── Tarjetas resumen ───────────────────────────────────────
+                  // ─── Tarjetas resumen ─────────────────────────────────────
                   Row(
                     children: [
                       Expanded(
@@ -92,7 +98,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       Expanded(
                         child: _TarjetaResumen(
                           icono: Icons.person_outline,
-                          label: 'Usuarios Activos',
+                          label: 'Activos',
                           valor: '${stats?.activos ?? 0}',
                         ),
                       ),
@@ -101,27 +107,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
                   const SizedBox(height: 24),
 
-                  // ─── Actividad mensual (gráfico simplificado) ───────────────
+                  // ─── Actividad mensual ────────────────────────────────────
                   const Text(
                     'Actividad Mensual',
                     style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: AdminColors.textPrimary,
+                      fontSize: 18, fontWeight: FontWeight.w700, color: AK.text,
                     ),
                   ),
                   const SizedBox(height: 12),
-                  _GraficoActividad(),
+                  const _GraficoActividad(),
 
                   const SizedBox(height: 24),
 
-                  // ─── Usuarios por rol ───────────────────────────────────────
+                  // ─── Usuarios por rol ─────────────────────────────────────
                   const Text(
                     'Usuarios por Rol',
                     style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: AdminColors.textPrimary,
+                      fontSize: 18, fontWeight: FontWeight.w700, color: AK.text,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -134,22 +136,22 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       ),
     );
   }
+
+  String _iniciales(String nombre) {
+    final partes = nombre.trim().split(' ');
+    if (partes.length >= 2) return '${partes[0][0]}${partes[1][0]}'.toUpperCase();
+    if (nombre.length >= 2) return nombre.substring(0, 2).toUpperCase();
+    return nombre.toUpperCase();
+  }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Subwidgets
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Subwidgets ───────────────────────────────────────────────────────────────
 
 class _TarjetaResumen extends StatelessWidget {
   final IconData icono;
   final String label;
   final String valor;
-
-  const _TarjetaResumen({
-    required this.icono,
-    required this.label,
-    required this.valor,
-  });
+  const _TarjetaResumen({required this.icono, required this.label, required this.valor});
 
   @override
   Widget build(BuildContext context) {
@@ -158,30 +160,21 @@ class _TarjetaResumen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AdminColors.border),
+        border: Border.all(color: AK.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icono, color: AdminColors.primary, size: 28),
+          Icon(icono, color: AppColors.primary, size: 28),
           const SizedBox(height: 12),
           Text(
             valor,
             style: const TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.w800,
-              color: AdminColors.textPrimary,
-              height: 1,
+              fontSize: 32, fontWeight: FontWeight.w800, color: AK.text, height: 1,
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12,
-              color: AdminColors.textSecondary,
-            ),
-          ),
+          Text(label, style: const TextStyle(fontSize: 12, color: AK.subtext)),
         ],
       ),
     );
@@ -189,9 +182,10 @@ class _TarjetaResumen extends StatelessWidget {
 }
 
 class _GraficoActividad extends StatelessWidget {
-  // Datos de ejemplo — en producción vendría del backend
-  final List<double> _semanas = const [11, 19, 16, 15, 24];
-  final List<String> _labels = const ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4', ''];
+  // Datos de placeholder — reemplazar con endpoint real cuando esté disponible
+  static const List<double> _semanas = [11, 19, 16, 15, 24];
+
+  const _GraficoActividad();
 
   @override
   Widget build(BuildContext context) {
@@ -201,7 +195,7 @@ class _GraficoActividad extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AdminColors.border),
+        border: Border.all(color: AK.border),
       ),
       child: CustomPaint(
         painter: _GraficoPainter(datos: _semanas),
@@ -211,17 +205,11 @@ class _GraficoActividad extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 4),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: _labels
-                  .take(4)
-                  .map(
-                    (l) => Text(
-                      l,
-                      style: const TextStyle(
-                        fontSize: 10,
-                        color: AdminColors.textSecondary,
-                      ),
-                    ),
-                  )
+              children: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4']
+                  .map((l) => Text(
+                        l,
+                        style: const TextStyle(fontSize: 10, color: AK.subtext),
+                      ))
                   .toList(),
             ),
           ),
@@ -233,105 +221,66 @@ class _GraficoActividad extends StatelessWidget {
 
 class _GraficoPainter extends CustomPainter {
   final List<double> datos;
-
-  _GraficoPainter({required this.datos});
+  const _GraficoPainter({required this.datos});
 
   @override
   void paint(Canvas canvas, Size size) {
     if (datos.isEmpty) return;
-
     final maxVal = datos.reduce((a, b) => a > b ? a : b);
     final minVal = datos.reduce((a, b) => a < b ? a : b);
-    final range = maxVal - minVal == 0 ? 1.0 : maxVal - minVal;
+    final range  = maxVal - minVal == 0 ? 1.0 : maxVal - minVal;
+    final areaH  = size.height - 32;
+    final paso   = size.width / (datos.length - 1);
 
-    final areaAltura = size.height - 32;
-    final paso = size.width / (datos.length - 1);
-
-    final puntos = List.generate(datos.length, (i) {
-      final x = i * paso;
-      final y = areaAltura - ((datos[i] - minVal) / range * (areaAltura - 16)) + 8;
-      return Offset(x, y);
-    });
+    final puntos = List.generate(datos.length, (i) => Offset(
+      i * paso,
+      areaH - ((datos[i] - minVal) / range * (areaH - 16)) + 8,
+    ));
 
     // Área rellena
-    final areaPath = Path()..moveTo(puntos.first.dx, areaAltura + 8);
-    for (final p in puntos) {
-      areaPath.lineTo(p.dx, p.dy);
-    }
-    areaPath.lineTo(puntos.last.dx, areaAltura + 8);
-    areaPath.close();
+    final area = Path()..moveTo(puntos.first.dx, areaH + 8);
+    for (final p in puntos) area.lineTo(p.dx, p.dy);
+    area.lineTo(puntos.last.dx, areaH + 8);
+    area.close();
     canvas.drawPath(
-      areaPath,
-      Paint()
-        ..color = AdminColors.primary.withOpacity(0.08)
-        ..style = PaintingStyle.fill,
+      area,
+      Paint()..color = AppColors.primary.withOpacity(0.08)..style = PaintingStyle.fill,
     );
 
     // Línea
-    final linePaint = Paint()
-      ..color = AdminColors.primary
-      ..strokeWidth = 2.5
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    final linePath = Path()..moveTo(puntos.first.dx, puntos.first.dy);
-    for (int i = 1; i < puntos.length; i++) {
-      linePath.lineTo(puntos[i].dx, puntos[i].dy);
-    }
-    canvas.drawPath(linePath, linePaint);
-
-    // Punto final destacado
-    canvas.drawCircle(
-      puntos.last,
-      5,
-      Paint()..color = AdminColors.primary,
+    final line = Path()..moveTo(puntos.first.dx, puntos.first.dy);
+    for (int i = 1; i < puntos.length; i++) line.lineTo(puntos[i].dx, puntos[i].dy);
+    canvas.drawPath(
+      line,
+      Paint()
+        ..color = AppColors.primary
+        ..strokeWidth = 2.5
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round,
     );
-    canvas.drawCircle(
-      puntos.last,
-      3,
-      Paint()..color = Colors.white,
-    );
+
+    // Punto final
+    canvas.drawCircle(puntos.last, 5, Paint()..color = AppColors.primary);
+    canvas.drawCircle(puntos.last, 3, Paint()..color = Colors.white);
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant CustomPainter old) => false;
 }
 
 class _GridRoles extends StatelessWidget {
   final StatsAdmin stats;
-
   const _GridRoles({required this.stats});
 
   @override
   Widget build(BuildContext context) {
-    final roles = [
-      _RolItem(
-        icono: Icons.agriculture,
-        label: 'Pequeño...',
-        valor: stats.pequenoProductor,
-        color: AdminColors.primary,
-      ),
-      _RolItem(
-        icono: Icons.construction,
-        label: 'Trabajad...',
-        valor: stats.trabajador,
-        color: const Color(0xFF1565C0),
-      ),
-      _RolItem(
-        icono: Icons.manage_accounts,
-        label: 'Gestor',
-        valor: stats.gestor,
-        color: const Color(0xFF6A1B9A),
-      ),
-      _RolItem(
-        icono: Icons.admin_panel_settings,
-        label: 'Administ...',
-        valor: stats.administrador,
-        color: AdminColors.chipAdmin,
-      ),
+    final items = [
+      _RolItem(Icons.agriculture,        'Productores', stats.pequenoProductor, AppColors.primary),
+      _RolItem(Icons.construction,       'Trabajadores', stats.trabajador,      const Color(0xFF1565C0)),
+      _RolItem(Icons.manage_accounts,    'Gestores',    stats.gestor,           const Color(0xFF6A1B9A)),
+      _RolItem(Icons.admin_panel_settings,'Admins',     stats.administrador,    AK.error),
     ];
-
     return GridView.count(
       crossAxisCount: 2,
       shrinkWrap: true,
@@ -339,7 +288,7 @@ class _GridRoles extends StatelessWidget {
       mainAxisSpacing: 12,
       crossAxisSpacing: 12,
       childAspectRatio: 1.4,
-      children: roles.map((r) => _TarjetaRol(item: r)).toList(),
+      children: items.map((r) => _TarjetaRol(item: r)).toList(),
     );
   }
 }
@@ -349,18 +298,11 @@ class _RolItem {
   final String label;
   final int valor;
   final Color color;
-
-  const _RolItem({
-    required this.icono,
-    required this.label,
-    required this.valor,
-    required this.color,
-  });
+  const _RolItem(this.icono, this.label, this.valor, this.color);
 }
 
 class _TarjetaRol extends StatelessWidget {
   final _RolItem item;
-
   const _TarjetaRol({required this.item});
 
   @override
@@ -370,70 +312,22 @@ class _TarjetaRol extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AdminColors.border),
+        border: Border.all(color: AK.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(item.icono, color: item.color, size: 20),
-              const Spacer(),
-            ],
-          ),
+          Icon(item.icono, color: item.color, size: 20),
           const Spacer(),
           Text(
             '${item.valor}',
             style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.w800,
-              color: item.color,
-              height: 1,
+              fontSize: 28, fontWeight: FontWeight.w800, color: item.color, height: 1,
             ),
           ),
           const SizedBox(height: 2),
-          Text(
-            item.label,
-            style: const TextStyle(
-              fontSize: 11,
-              color: AdminColors.textSecondary,
-            ),
-          ),
+          Text(item.label, style: const TextStyle(fontSize: 11, color: AK.subtext)),
         ],
-      ),
-    );
-  }
-}
-
-class _ErrorView extends StatelessWidget {
-  final String mensaje;
-  final VoidCallback onReintentar;
-
-  const _ErrorView({required this.mensaje, required this.onReintentar});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.error_outline, color: AdminColors.error, size: 48),
-            const SizedBox(height: 12),
-            Text(
-              mensaje,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: AdminColors.textSecondary),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: onReintentar,
-              style: ElevatedButton.styleFrom(backgroundColor: AdminColors.primary),
-              child: const Text('Reintentar', style: TextStyle(color: Colors.white)),
-            ),
-          ],
-        ),
       ),
     );
   }

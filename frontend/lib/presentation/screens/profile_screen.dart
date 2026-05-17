@@ -226,21 +226,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: AgroBottomNav(
-        current: AgroTab.perfil,
-        onTap: (tab) {
-          if (tab == AgroTab.home) {
-            Navigator.pushReplacement(
-                context, MaterialPageRoute(builder: (_) => const HomeScreen()));
-          } else if (tab == AgroTab.lotes) {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (_) => const MapOnboardingScreen()));
-          } else if (tab == AgroTab.tareas) {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (_) => const TasksScreen()));
-          }
-        },
-      ),
+      bottomNavigationBar: user?.role == 'administrador'
+          ? null
+          : AgroBottomNav(
+              current: AgroTab.perfil,
+              onTap: (tab) {
+                if (tab == AgroTab.home) {
+                  Navigator.pushReplacement(
+                      context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+                } else if (tab == AgroTab.lotes) {
+                  Navigator.pushReplacement(context,
+                      MaterialPageRoute(builder: (_) => const MapOnboardingScreen()));
+                } else if (tab == AgroTab.tareas) {
+                  Navigator.pushReplacement(context,
+                      MaterialPageRoute(builder: (_) => const TasksScreen()));
+                }
+              },
+            ),
     );
   }
 

@@ -10,10 +10,10 @@ class ApiEndpoints {
     } else if (Platform.isAndroid) {
       // --- CONFIGURACIÓN PARA ANDROID ---
       // Si usas el EMULADOR, descomenta la línea de abajo y comenta la otra.
-      // return 'http://10.0.2.2:3000/api/v1';
+      return 'http://10.0.2.2:3000/api/v1';
 
       // Si usas el CELULAR FÍSICO (con la ip correcta), usa esta:
-      return 'http://192.168.0.11:3000/api/v1';
+      // return 'http://192.168.0.11:3000/api/v1';
     } else {
       // iOS, macOS o Windows Desktop
       return 'http://192.168.0.11:3000/api/v1';

@@ -18,6 +18,8 @@ import 'data/services/operaciones_service.dart';
 import 'data/providers/operaciones_provider.dart';
 import 'presentation/screens/welcome_screen.dart';
 import 'presentation/widgets/offline_banner.dart';
+import 'data/services/admin_service.dart';
+import 'data/providers/admin_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,6 +36,7 @@ void main() async {
   final catalogosService = CatalogosService(dioClient.dio);
   final catalogosSyncService = CatalogosSyncService(catalogosService);
   final operacionesService = OperacionesService(dioClient.dio);
+  final adminService = AdminService(dioClient);
 
   // Sincronizar catálogos en segundo plano al arrancar
   catalogosSyncService.sincronizarCatalogos();
@@ -46,6 +49,7 @@ void main() async {
     catalogosSyncService: catalogosSyncService,
     operacionesService: operacionesService,
     dioClient: dioClient,
+    adminService: adminService,
   ));
 }
 
@@ -57,6 +61,7 @@ class SmartFarmingApp extends StatelessWidget {
   final CatalogosSyncService catalogosSyncService;
   final OperacionesService operacionesService;
   final DioClient dioClient;
+  final AdminService adminService;
 
   const SmartFarmingApp({
     super.key,
@@ -67,6 +72,7 @@ class SmartFarmingApp extends StatelessWidget {
     required this.catalogosSyncService,
     required this.operacionesService,
     required this.dioClient,
+    required this.adminService,
   });
 
   @override
@@ -102,6 +108,11 @@ class SmartFarmingApp extends StatelessWidget {
         // Provider de operaciones (Sprint 3)
         ChangeNotifierProvider<OperacionesProvider>(
           create: (_) => OperacionesProvider(operacionesService),
+        ),
+
+        // Provider de administración (Sprint 4)
+        ChangeNotifierProvider<AdminProvider>(
+          create: (_) => AdminProvider(adminService),
         ),
       ],
       child: MaterialApp(

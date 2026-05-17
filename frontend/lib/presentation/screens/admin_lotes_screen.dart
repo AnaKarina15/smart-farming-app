@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../data/providers/admin_provider.dart';
+import '../../core/theme/app_colors.dart';
 import '../../data/models/lote_admin.dart';
+import '../../data/providers/admin_provider.dart';
 import '../widgets/admin_widgets.dart';
 
 class AdminLotesScreen extends StatefulWidget {
@@ -12,7 +13,7 @@ class AdminLotesScreen extends StatefulWidget {
 }
 
 class _AdminLotesScreenState extends State<AdminLotesScreen> {
-  final _searchCtrl = TextEditingController();
+  final _searchCtrl   = TextEditingController();
   String? _filtroCultivo;
   String? _filtroEstado;
 
@@ -33,100 +34,76 @@ class _AdminLotesScreenState extends State<AdminLotesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AdminColors.background,
+      backgroundColor: AK.bg,
       appBar: AppBar(
-        backgroundColor: AdminColors.background,
+        backgroundColor: AK.bg,
         elevation: 0,
         automaticallyImplyLeading: false,
-        titleSpacing: 16,
-        leading: const Icon(Icons.menu, color: AdminColors.textPrimary),
-        title: const Text(
+        titleSpacing: 20,
+        title: Text(
           'AgroField',
           style: TextStyle(
-            color: AdminColors.primary,
-            fontWeight: FontWeight.w700,
-            fontSize: 18,
+            color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 18,
           ),
         ),
-        actions: [
-          CircleAvatar(
-            radius: 16,
-            backgroundColor: AdminColors.primary,
-            child: const Icon(Icons.person, color: Colors.white, size: 18),
-          ),
-          const SizedBox(width: 16),
-        ],
       ),
       body: Consumer<AdminProvider>(
         builder: (context, provider, _) {
-          final lotes = _filtrarLotes(provider.lotes);
+          final lotes = _filtrar(provider.lotes);
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ─── Encabezado ─────────────────────────────────────────────
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
+              // ─── Encabezado ───────────────────────────────────────────
+              const Padding(
+                padding: EdgeInsets.fromLTRB(20, 4, 20, 0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
+                  children: [
                     Text(
                       'Gestión Global de Lotes',
                       style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        color: AdminColors.textPrimary,
+                        fontSize: 22, fontWeight: FontWeight.w800, color: AK.text,
                       ),
                     ),
-                    SizedBox(height: 2),
+                    SizedBox(height: 4),
                     Text(
-                      'Vista de supervisión para el administrador que muestra todos los lotes de todos los productores registrados en la plataforma.',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AdminColors.textSecondary,
-                        height: 1.4,
-                      ),
+                      'Vista de supervisión: todos los lotes de todos los productores.',
+                      style: TextStyle(fontSize: 12, color: AK.subtext, height: 1.4),
                     ),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
-              // ─── Tarjetas de stats ───────────────────────────────────────
-              if (!provider.cargando || provider.lotes.isNotEmpty)
+              // ─── Stats rápidas ────────────────────────────────────────
+              if (provider.lotes.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Column(
                     children: [
-                      _TarjetaStat(
+                      _StatRow(
                         label: 'TOTAL DE LOTES',
                         valor: '${provider.lotes.length}',
                         icono: Icons.grid_view,
-                        color: AdminColors.primary,
+                        color: AppColors.primary,
                       ),
                       const SizedBox(height: 8),
-                      _TarjetaStat(
-                        label: 'LOTES ACTIVOS',
-                        valor: '${provider.lotes.where((l) => l.estado?.toLowerCase() != 'cosechado').length}',
-                        icono: Icons.check_circle_outline,
-                        color: AdminColors.accent,
-                      ),
-                      const SizedBox(height: 8),
-                      _TarjetaStat(
+                      _StatRow(
                         label: 'CON ALERTAS',
                         valor: '${provider.lotes.where((l) => l.estado?.toLowerCase() == 'afectado').length}',
                         icono: Icons.warning_amber_rounded,
-                        color: AdminColors.error,
-                        colorFondo: AdminColors.errorLight,
+                        color: AK.error,
+                        colorFondo: const Color(0xFFFFEBEE),
                       ),
                     ],
                   ),
                 ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
-              // ─── Filtros ─────────────────────────────────────────────────
+              // ─── Filtros ──────────────────────────────────────────────
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
@@ -136,23 +113,20 @@ class _AdminLotesScreenState extends State<AdminLotesScreen> {
                       controller: _searchCtrl,
                       onChanged: (_) => setState(() {}),
                       decoration: InputDecoration(
-                        hintText: 'Buscar por nombre de lote o ID de...',
-                        hintStyle:
-                            const TextStyle(color: AdminColors.inactive, fontSize: 13),
-                        prefixIcon: const Icon(Icons.search,
-                            color: AdminColors.inactive, size: 20),
+                        hintText: 'Buscar por nombre de lote...',
+                        hintStyle: const TextStyle(color: AK.inactive, fontSize: 13),
+                        prefixIcon: const Icon(Icons.search, color: AK.inactive, size: 20),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
-                          borderSide: const BorderSide(color: AdminColors.border),
+                          borderSide: const BorderSide(color: AK.border),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
-                          borderSide: const BorderSide(color: AdminColors.border),
+                          borderSide: const BorderSide(color: AK.border),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
-                          borderSide:
-                              const BorderSide(color: AdminColors.primary, width: 1.5),
+                          borderSide: BorderSide(color: AppColors.primary, width: 1.5),
                         ),
                         filled: true,
                         fillColor: Colors.white,
@@ -167,7 +141,8 @@ class _AdminLotesScreenState extends State<AdminLotesScreen> {
                             hint: 'Cultivo',
                             valor: _filtroCultivo,
                             opciones: _cultivosUnicos(provider.lotes),
-                            onChanged: (v) => setState(() => _filtroCultivo = v),
+                            onChanged: (v) =>
+                                setState(() => _filtroCultivo = v),
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -176,7 +151,8 @@ class _AdminLotesScreenState extends State<AdminLotesScreen> {
                             hint: 'Estado',
                             valor: _filtroEstado,
                             opciones: const ['Saludable', 'Afectado', 'Cosechado'],
-                            onChanged: (v) => setState(() => _filtroEstado = v),
+                            onChanged: (v) =>
+                                setState(() => _filtroEstado = v),
                           ),
                         ),
                       ],
@@ -187,35 +163,32 @@ class _AdminLotesScreenState extends State<AdminLotesScreen> {
 
               const SizedBox(height: 12),
 
-              // ─── Lista de lotes ──────────────────────────────────────────
+              // ─── Lista ────────────────────────────────────────────────
               Expanded(
                 child: provider.cargando && provider.lotes.isEmpty
                     ? const Center(
-                        child: CircularProgressIndicator(color: AdminColors.primary),
+                        child: CircularProgressIndicator(
+                            color: AppColors.primary),
                       )
                     : RefreshIndicator(
-                        color: AdminColors.primary,
+                        color: AppColors.primary,
                         onRefresh: () => provider.cargarTodosLotes(),
                         child: lotes.isEmpty
                             ? const Center(
                                 child: Text(
                                   'No hay lotes registrados.',
-                                  style: TextStyle(color: AdminColors.textSecondary),
+                                  style: TextStyle(color: AK.subtext),
                                 ),
                               )
                             : ListView.builder(
-                                padding:
-                                    const EdgeInsets.fromLTRB(20, 0, 20, 100),
-                                itemCount: lotes.length + 1,
-                                itemBuilder: (_, i) {
-                                  if (i == lotes.length) {
-                                    return _BotonRegistrarLote();
-                                  }
-                                  return Padding(
-                                    padding: const EdgeInsets.only(bottom: 12),
-                                    child: _TarjetaLote(lote: lotes[i]),
-                                  );
-                                },
+                                padding: const EdgeInsets.fromLTRB(
+                                    20, 0, 20, 100),
+                                itemCount: lotes.length,
+                                itemBuilder: (_, i) => Padding(
+                                  padding:
+                                      const EdgeInsets.only(bottom: 12),
+                                  child: _TarjetaLote(lote: lotes[i]),
+                                ),
                               ),
                       ),
               ),
@@ -223,52 +196,51 @@ class _AdminLotesScreenState extends State<AdminLotesScreen> {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: AdminColors.primary,
-        onPressed: () {},
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
     );
   }
 
-  List<LoteAdmin> _filtrarLotes(List<LoteAdmin> todos) {
+  List<LoteAdmin> _filtrar(List<LoteAdmin> todos) {
     var lista = todos;
     if (_searchCtrl.text.isNotEmpty) {
       final q = _searchCtrl.text.toLowerCase();
-      lista = lista.where((l) =>
-          l.nombre.toLowerCase().contains(q) ||
-          (l.propietarioId?.toLowerCase().contains(q) ?? false)).toList();
+      lista = lista
+          .where((l) =>
+              l.nombre.toLowerCase().contains(q) ||
+              (l.propietarioId?.toLowerCase().contains(q) ?? false))
+          .toList();
     }
     if (_filtroCultivo != null) {
-      lista = lista.where((l) =>
-          l.cultivo?.toLowerCase() == _filtroCultivo!.toLowerCase()).toList();
+      lista = lista
+          .where((l) =>
+              l.cultivo?.toLowerCase() == _filtroCultivo!.toLowerCase())
+          .toList();
     }
     if (_filtroEstado != null) {
-      lista = lista.where((l) =>
-          l.estadoHumanizado.toLowerCase() == _filtroEstado!.toLowerCase()).toList();
+      lista = lista
+          .where((l) =>
+              l.estadoHumanizado.toLowerCase() ==
+              _filtroEstado!.toLowerCase())
+          .toList();
     }
     return lista;
   }
 
-  List<String> _cultivosUnicos(List<LoteAdmin> lotes) {
-    return lotes
-        .map((l) => l.cultivo ?? '')
-        .where((c) => c.isNotEmpty)
-        .toSet()
-        .toList();
-  }
+  List<String> _cultivosUnicos(List<LoteAdmin> lotes) => lotes
+      .map((l) => l.cultivo ?? '')
+      .where((c) => c.isNotEmpty)
+      .toSet()
+      .toList();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _TarjetaStat extends StatelessWidget {
+class _StatRow extends StatelessWidget {
   final String label;
   final String valor;
   final IconData icono;
   final Color color;
   final Color? colorFondo;
-
-  const _TarjetaStat({
+  const _StatRow({
     required this.label,
     required this.valor,
     required this.icono,
@@ -284,7 +256,9 @@ class _TarjetaStat extends StatelessWidget {
         color: colorFondo ?? Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: colorFondo != null ? color.withOpacity(0.3) : AdminColors.border,
+          color: colorFondo != null
+              ? color.withOpacity(0.3)
+              : AK.border,
         ),
       ),
       child: Row(
@@ -292,24 +266,16 @@ class _TarjetaStat extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: color,
-                  letterSpacing: 0.8,
-                ),
-              ),
-              Text(
-                valor,
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
-                  color: color,
-                  height: 1.1,
-                ),
-              ),
+              Text(label,
+                  style: TextStyle(
+                    fontSize: 11, fontWeight: FontWeight.w700,
+                    color: color, letterSpacing: 0.8,
+                  )),
+              Text(valor,
+                  style: TextStyle(
+                    fontSize: 28, fontWeight: FontWeight.w800,
+                    color: color, height: 1.1,
+                  )),
             ],
           ),
           const Spacer(),
@@ -325,7 +291,6 @@ class _DropdownFiltro extends StatelessWidget {
   final String? valor;
   final List<String> opciones;
   final ValueChanged<String?> onChanged;
-
   const _DropdownFiltro({
     required this.hint,
     required this.valor,
@@ -337,33 +302,32 @@ class _DropdownFiltro extends StatelessWidget {
   Widget build(BuildContext context) {
     return DropdownButtonFormField<String>(
       value: valor,
-      hint: Text(hint, style: const TextStyle(color: AdminColors.textSecondary, fontSize: 13)),
+      hint: Text(hint,
+          style: const TextStyle(color: AK.subtext, fontSize: 13)),
       items: [
-        DropdownMenuItem<String>(
-          value: null,
-          child: Text('Todos', style: const TextStyle(fontSize: 13)),
-        ),
-        ...opciones.map(
-          (o) => DropdownMenuItem<String>(value: o, child: Text(o, style: const TextStyle(fontSize: 13))),
-        ),
+        const DropdownMenuItem<String>(
+            value: null, child: Text('Todos', style: TextStyle(fontSize: 13))),
+        ...opciones.map((o) => DropdownMenuItem<String>(
+            value: o, child: Text(o, style: const TextStyle(fontSize: 13)))),
       ],
       onChanged: onChanged,
       decoration: InputDecoration(
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AdminColors.border),
+          borderSide: const BorderSide(color: AK.border),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AdminColors.border),
+          borderSide: const BorderSide(color: AK.border),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AdminColors.primary, width: 1.5),
+          borderSide: BorderSide(color: AppColors.primary, width: 1.5),
         ),
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         isDense: true,
       ),
       isExpanded: true,
@@ -373,53 +337,50 @@ class _DropdownFiltro extends StatelessWidget {
 
 class _TarjetaLote extends StatelessWidget {
   final LoteAdmin lote;
-
   const _TarjetaLote({required this.lote});
 
   @override
   Widget build(BuildContext context) {
     final estadoColor = _colorEstado(lote.estado);
-    final estadoBg = _bgEstado(lote.estado);
+    final estadoBg    = _bgEstado(lote.estado);
 
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AdminColors.border),
+        border: Border.all(color: AK.border),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            blurRadius: 4, offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Imagen placeholder (verde con badge de estado)
+          // Imagen placeholder con badge de estado
           Stack(
             children: [
               Container(
-                height: 100,
+                height: 90,
                 decoration: BoxDecoration(
-                  color: AdminColors.primary.withOpacity(0.15),
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+                  color: AppColors.primary.withOpacity(0.12),
+                  borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(14)),
                 ),
                 child: Center(
-                  child: Icon(
-                    Icons.agriculture,
-                    size: 40,
-                    color: AdminColors.primary.withOpacity(0.4),
-                  ),
+                  child: Icon(Icons.agriculture,
+                      size: 36,
+                      color: AppColors.primary.withOpacity(0.4)),
                 ),
               ),
               if (lote.estado != null)
                 Positioned(
-                  top: 10,
-                  right: 10,
+                  top: 8, right: 8,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: estadoBg,
                       borderRadius: BorderRadius.circular(20),
@@ -427,10 +388,8 @@ class _TarjetaLote extends StatelessWidget {
                     child: Text(
                       lote.estadoHumanizado.toUpperCase(),
                       style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        color: estadoColor,
-                        letterSpacing: 0.5,
+                        fontSize: 10, fontWeight: FontWeight.w800,
+                        color: estadoColor, letterSpacing: 0.5,
                       ),
                     ),
                   ),
@@ -438,7 +397,6 @@ class _TarjetaLote extends StatelessWidget {
             ],
           ),
 
-          // Info del lote
           Padding(
             padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
             child: Column(
@@ -451,34 +409,33 @@ class _TarjetaLote extends StatelessWidget {
                         lote.nombre,
                         style: const TextStyle(
                           fontWeight: FontWeight.w700,
-                          fontSize: 16,
-                          color: AdminColors.textPrimary,
+                          fontSize: 16, color: AK.text,
                         ),
                       ),
                     ),
-                    const Icon(Icons.more_vert, color: AdminColors.textSecondary, size: 20),
+                    const Icon(Icons.more_vert, color: AK.subtext, size: 20),
                   ],
                 ),
                 if (lote.propietarioId != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 2),
                     child: Text(
-                      'ID Propietario: ${lote.propietarioId}',
+                      'Propietario ID: ${lote.propietarioId}',
                       style: const TextStyle(
-                        fontSize: 11,
-                        color: AdminColors.textSecondary,
-                      ),
+                          fontSize: 11, color: AK.subtext),
                     ),
                   ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    _PillInfo(label: 'CULTIVO', valor: lote.cultivo ?? 'N/A'),
+                    _PillInfo(
+                        label: 'CULTIVO',
+                        valor: lote.cultivo ?? 'N/A'),
                     const SizedBox(width: 12),
                     _PillInfo(
-                      label: 'SUPERFICIE',
-                      valor: '${lote.superficie.toStringAsFixed(1)} ha',
-                    ),
+                        label: 'SUPERFICIE',
+                        valor:
+                            '${lote.superficie.toStringAsFixed(1)} ha'),
                   ],
                 ),
               ],
@@ -489,29 +446,21 @@ class _TarjetaLote extends StatelessWidget {
     );
   }
 
-  Color _colorEstado(String? estado) {
-    switch (estado?.toLowerCase()) {
-      case 'saludable':
-        return AdminColors.estadoSaludable;
-      case 'afectado':
-        return AdminColors.estadoAfectado;
-      case 'cosechado':
-        return AdminColors.estadoCosechado;
-      default:
-        return AdminColors.textSecondary;
+  static Color _colorEstado(String? e) {
+    switch (e?.toLowerCase()) {
+      case 'saludable': return const Color(0xFF2E7D32);
+      case 'afectado':  return AK.error;
+      case 'cosechado': return const Color(0xFF795548);
+      default:          return AK.subtext;
     }
   }
 
-  Color _bgEstado(String? estado) {
-    switch (estado?.toLowerCase()) {
-      case 'saludable':
-        return AdminColors.estadoSaludableBg;
-      case 'afectado':
-        return AdminColors.estadoAfectadoBg;
-      case 'cosechado':
-        return AdminColors.estadoCosechadoBg;
-      default:
-        return AdminColors.background;
+  static Color _bgEstado(String? e) {
+    switch (e?.toLowerCase()) {
+      case 'saludable': return const Color(0xFFE8F5E9);
+      case 'afectado':  return const Color(0xFFFFEBEE);
+      case 'cosechado': return const Color(0xFFEFEBE9);
+      default:          return AK.bg;
     }
   }
 }
@@ -519,7 +468,6 @@ class _TarjetaLote extends StatelessWidget {
 class _PillInfo extends StatelessWidget {
   final String label;
   final String valor;
-
   const _PillInfo({required this.label, required this.valor});
 
   @override
@@ -527,64 +475,26 @@ class _PillInfo extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 10,
-            color: AdminColors.textSecondary,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.6,
-          ),
-        ),
+        Text(label,
+            style: const TextStyle(
+              fontSize: 10, color: AK.subtext,
+              fontWeight: FontWeight.w700, letterSpacing: 0.6,
+            )),
         Container(
           margin: const EdgeInsets.only(top: 2),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
-            color: AdminColors.primary.withOpacity(0.08),
+            color: AppColors.primary.withOpacity(0.08),
             borderRadius: BorderRadius.circular(20),
           ),
-          child: Text(
-            valor,
-            style: const TextStyle(
-              fontSize: 12,
-              color: AdminColors.primary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+          child: Text(valor,
+              style: TextStyle(
+                fontSize: 12,
+                color: AppColors.primary,
+                fontWeight: FontWeight.w600,
+              )),
         ),
       ],
-    );
-  }
-}
-
-class _BotonRegistrarLote extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {},
-      child: Container(
-        margin: const EdgeInsets.only(top: 4, bottom: 20),
-        padding: const EdgeInsets.symmetric(vertical: 18),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AdminColors.border, style: BorderStyle.solid),
-        ),
-        child: const Column(
-          children: [
-            Icon(Icons.add, color: AdminColors.textSecondary, size: 28),
-            SizedBox(height: 4),
-            Text(
-              'Registrar Nuevo Lote',
-              style: TextStyle(
-                fontSize: 13,
-                color: AdminColors.textSecondary,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

@@ -25,3 +25,7 @@ logs/
 
 # Backend
 **/coverage/
+
+.claude/
+**/.claude/
+CLAUDE.md

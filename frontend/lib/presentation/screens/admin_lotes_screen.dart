@@ -290,37 +290,68 @@ class _DropdownFiltro extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DropdownButtonFormField<String>(
-      value: valor,
-      hint: Text(hint,
-          style: const TextStyle(color: AK.subtext, fontSize: 13)),
-      items: [
-        const DropdownMenuItem<String>(
-            value: null, child: Text('Todos', style: TextStyle(fontSize: 13))),
-        ...opciones.map((o) => DropdownMenuItem<String>(
-            value: o, child: Text(o, style: const TextStyle(fontSize: 13)))),
-      ],
-      onChanged: onChanged,
-      decoration: InputDecoration(
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AK.border),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AK.border),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: AppColors.primary, width: 1.5),
-        ),
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        isDense: true,
-      ),
-      isExpanded: true,
+    final String displayLabel = valor ?? hint;
+    final bool hasSelection = valor != null;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double width = constraints.maxWidth;
+
+        return PopupMenuButton<String?>(
+          onSelected: onChanged,
+          position: PopupMenuPosition.under,
+          constraints: BoxConstraints(
+            minWidth: width,
+            maxWidth: width,
+          ),
+          surfaceTintColor: Colors.white,
+          color: Colors.white,
+          elevation: 4,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: const BorderSide(color: AK.border),
+          ),
+          offset: const Offset(0, 4),
+          itemBuilder: (context) => [
+            const PopupMenuItem<String?>(
+              value: null,
+              child: Text('Todos', style: TextStyle(fontSize: 13)),
+            ),
+            ...opciones.map((o) => PopupMenuItem<String?>(
+                  value: o,
+                  child: Text(o, style: const TextStyle(fontSize: 13)),
+                )),
+          ],
+          child: Container(
+            height: 40,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AK.border),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    displayLabel,
+                    style: TextStyle(
+                      color: hasSelection ? AK.text : AK.subtext,
+                      fontSize: 13,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const Icon(
+                  Icons.arrow_drop_down,
+                  color: AK.subtext,
+                  size: 20,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

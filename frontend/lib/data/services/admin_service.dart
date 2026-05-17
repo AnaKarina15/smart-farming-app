@@ -36,10 +36,16 @@ class AdminService {
 
     final response =
         await _dioClient.dio.get('/users', queryParameters: q);
+
+    if (response.statusCode != null && response.statusCode! >= 400) {
+      final errorMsg = response.data is Map ? response.data['message'] : response.statusMessage;
+      throw Exception(errorMsg ?? 'Error al listar usuarios');
+    }
+
     final data = response.data['data'] ?? response.data;
     final List lista = data is List
         ? data
-        : (data['items'] ?? data['users'] ?? []) as List;
+        : (data['data'] ?? data['items'] ?? data['users'] ?? []) as List;
     return lista
         .map((e) => UsuarioAdmin.fromJson(e as Map<String, dynamic>))
         .toList();
@@ -116,7 +122,7 @@ class AdminService {
     final data = response.data['data'] ?? response.data;
     final List lista = data is List
         ? data
-        : (data['items'] ?? data['lotes'] ?? []) as List;
+        : (data['data'] ?? data['items'] ?? data['lotes'] ?? []) as List;
     return lista
         .map((e) => LoteAdmin.fromJson(e as Map<String, dynamic>))
         .toList();

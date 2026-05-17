@@ -63,7 +63,7 @@ class RolChip extends StatelessWidget {
   }
 
   static Color _colorRol(String r) {
-    switch (r) {
+    switch (r.toLowerCase().trim()) {
       case 'administrador':    return _kError;
       case 'gestor':           return AppColors.primary;
       case 'pequeno_productor': return const Color(0xFF1A7A52);
@@ -73,7 +73,7 @@ class RolChip extends StatelessWidget {
   }
 
   static String labelRol(String r) {
-    switch (r) {
+    switch (r.toLowerCase().trim()) {
       case 'administrador':    return 'Admin';
       case 'pequeno_productor': return 'Productor';
       case 'trabajador':       return 'Trabajador';
@@ -113,7 +113,7 @@ class AvatarIniciales extends StatelessWidget {
   }
 
   static Color _fondo(String r) {
-    switch (r) {
+    switch (r.toLowerCase().trim()) {
       case 'administrador':    return const Color(0xFFFFEBEE);
       case 'gestor':           return const Color(0xFFE8F5E9);
       case 'pequeno_productor': return const Color(0xFFE3F2FD);
@@ -122,7 +122,7 @@ class AvatarIniciales extends StatelessWidget {
   }
 
   static Color _texto(String r) {
-    switch (r) {
+    switch (r.toLowerCase().trim()) {
       case 'administrador':    return _kError;
       case 'gestor':           return AppColors.primary;
       case 'pequeno_productor': return const Color(0xFF1565C0);

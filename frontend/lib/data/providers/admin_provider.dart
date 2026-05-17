@@ -49,7 +49,8 @@ class AdminProvider extends ChangeNotifier {
 
   List<UsuarioAdmin> get usuarios {
     return _usuarios.where((u) {
-      final matchesRole = _filtroRoles.contains(u.role);
+      final roleNormalized = u.role.toLowerCase().trim();
+      final matchesRole = _filtroRoles.any((r) => r.toLowerCase().trim() == roleNormalized);
       final matchesEstado = _filtroEstados.contains(u.activo);
       return matchesRole && matchesEstado;
     }).toList();

@@ -246,6 +246,18 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
                     child: CircularProgressIndicator(color: AppColors.primary),
                   );
                 }
+                if (prov.error != null && prov.usuarios.isEmpty) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Text(
+                        'Error: ${prov.error}',
+                        style: const TextStyle(color: AK.error),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  );
+                }
                 if (prov.usuarios.isEmpty) {
                   return const Center(
                     child: Text(

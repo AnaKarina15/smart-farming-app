@@ -41,7 +41,7 @@ class UsuarioAdmin {
   bool get estaEliminado => deletedAt != null;
 
   String get roleHumanizado {
-    switch (role) {
+    switch (role.toLowerCase().trim()) {
       case 'administrador':
         return 'Admin';
       case 'pequeno_productor':

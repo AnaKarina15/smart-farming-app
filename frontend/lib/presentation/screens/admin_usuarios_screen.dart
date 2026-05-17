@@ -17,6 +17,7 @@ class AdminUsuariosScreen extends StatefulWidget {
 
 class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
   final _searchController = TextEditingController();
+  bool _mostrarFiltros = true;
   
   final Set<String> _rolesSeleccionados = {
     'pequeno_productor',
@@ -53,8 +54,9 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
       if (rol == null) {
         // Tapped "Todos"
         if (_rolesSeleccionados.length == allRoles.length) {
-          // "Al hacer clic en 'Todos' con todas las categorías activas, se deben desactivar todas las categorías de rol."
+          // Keep at least one active to avoid empty lists!
           _rolesSeleccionados.clear();
+          _rolesSeleccionados.add('pequeno_productor');
         } else {
           // "Al seleccionar 'Todos', se marcan todas las categorías en verde."
           _rolesSeleccionados.addAll(allRoles);
@@ -62,8 +64,10 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
       } else {
         // Tapped specific role
         if (_rolesSeleccionados.contains(rol)) {
-          // "Al quitar selección de alguna se desmarca 'Todos' pero quedan las demás marcadas."
-          _rolesSeleccionados.remove(rol);
+          // Only remove if we have more than one active category
+          if (_rolesSeleccionados.length > 1) {
+            _rolesSeleccionados.remove(rol);
+          }
         } else {
           _rolesSeleccionados.add(rol);
         }
@@ -75,7 +79,10 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
   void _onEstadoTap(bool estado) {
     setState(() {
       if (_estadosSeleccionados.contains(estado)) {
-        _estadosSeleccionados.remove(estado);
+        // Only remove if we have more than one active category
+        if (_estadosSeleccionados.length > 1) {
+          _estadosSeleccionados.remove(estado);
+        }
       } else {
         _estadosSeleccionados.add(estado);
       }
@@ -85,6 +92,13 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final prov = context.watch<AdminProvider>();
+    
+    // Si todos los filtros están en su estado activo por defecto
+    final bool todosActivos = _rolesSeleccionados.length == 4 &&
+        _estadosSeleccionados.length == 2 &&
+        !prov.verEliminados;
+
     return Scaffold(
       backgroundColor: AK.bg,
       appBar: const CustomAppBar(),
@@ -126,111 +140,143 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Búsqueda
-                TextField(
-                  controller: _searchController,
-                  onChanged: (v) => context.read<AdminProvider>().setBusqueda(v),
-                  decoration: InputDecoration(
-                    hintText: 'Buscar por nombre o email...',
-                    hintStyle: const TextStyle(color: AK.inactive, fontSize: 13),
-                    prefixIcon: const Icon(Icons.search, color: AK.inactive, size: 20),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: AK.border),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: AK.border),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: AppColors.primary, width: 1.5),
-                    ),
-                    filled: true,
-                    fillColor: AK.bg,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                // Chips de rol
-                const Text('Rol', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AK.text)),
-                const SizedBox(height: 8),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      ChipFiltro(
-                        label: 'Todos',
-                        seleccionado: _rolesSeleccionados.length == 4,
-                        onTap: () => _onRolTap(null),
-                      ),
-                      const SizedBox(width: 6),
-                      ChipFiltro(
-                        label: 'Productores',
-                        seleccionado: _rolesSeleccionados.contains('pequeno_productor'),
-                        onTap: () => _onRolTap('pequeno_productor'),
-                      ),
-                      const SizedBox(width: 6),
-                      ChipFiltro(
-                        label: 'Trabajadores',
-                        seleccionado: _rolesSeleccionados.contains('trabajador'),
-                        onTap: () => _onRolTap('trabajador'),
-                      ),
-                      const SizedBox(width: 6),
-                      ChipFiltro(
-                        label: 'Gestores',
-                        seleccionado: _rolesSeleccionados.contains('gestor'),
-                        onTap: () => _onRolTap('gestor'),
-                      ),
-                      const SizedBox(width: 6),
-                      ChipFiltro(
-                        label: 'Admins',
-                        seleccionado: _rolesSeleccionados.contains('administrador'),
-                        onTap: () => _onRolTap('administrador'),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                // Chips de estado
-                const Text('Estado', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AK.text)),
-                const SizedBox(height: 8),
+                // Búsqueda con botón de filtros
                 Row(
                   children: [
-                    ChipFiltro(
-                      label: 'Activo',
-                      seleccionado: _estadosSeleccionados.contains(true),
-                      onTap: () => _onEstadoTap(true),
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: (v) => context.read<AdminProvider>().setBusqueda(v),
+                        decoration: InputDecoration(
+                          hintText: 'Buscar por nombre o email...',
+                          hintStyle: const TextStyle(color: AK.inactive, fontSize: 13),
+                          prefixIcon: const Icon(Icons.search, color: AK.inactive, size: 20),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(color: AK.border),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(color: AK.border),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide(color: AppColors.primary, width: 1.5),
+                          ),
+                          filled: true,
+                          fillColor: AK.bg,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                        ),
+                      ),
                     ),
-                    const SizedBox(width: 6),
-                    ChipFiltro(
-                      label: 'Inactivo',
-                      seleccionado: _estadosSeleccionados.contains(false),
-                      onTap: () => _onEstadoTap(false),
+                    const SizedBox(width: 8),
+                    InkWell(
+                      onTap: () {
+                        setState(() {
+                          _mostrarFiltros = !_mostrarFiltros;
+                        });
+                      },
+                      borderRadius: BorderRadius.circular(10),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: todosActivos ? Colors.white : AppColors.secondaryContainer,
+                          border: Border.all(color: AK.border),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          Icons.tune,
+                          color: todosActivos ? AK.subtext : AppColors.onSecondaryContainer,
+                          size: 20,
+                        ),
+                      ),
                     ),
                   ],
                 ),
 
-                const SizedBox(height: 12),
+                if (_mostrarFiltros) ...[
+                  const SizedBox(height: 12),
 
-                // Toggle eliminados
-                Consumer<AdminProvider>(
-                  builder: (_, prov, __) => Row(
+                  // Chips de rol
+                  const Text('Rol', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AK.text)),
+                  const SizedBox(height: 8),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        ChipFiltro(
+                          label: 'Todos',
+                          seleccionado: _rolesSeleccionados.length == 4,
+                          onTap: () => _onRolTap(null),
+                        ),
+                        const SizedBox(width: 6),
+                        ChipFiltro(
+                          label: 'Productores',
+                          seleccionado: _rolesSeleccionados.contains('pequeno_productor'),
+                          onTap: () => _onRolTap('pequeno_productor'),
+                        ),
+                        const SizedBox(width: 6),
+                        ChipFiltro(
+                          label: 'Trabajadores',
+                          seleccionado: _rolesSeleccionados.contains('trabajador'),
+                          onTap: () => _onRolTap('trabajador'),
+                        ),
+                        const SizedBox(width: 6),
+                        ChipFiltro(
+                          label: 'Gestores',
+                          seleccionado: _rolesSeleccionados.contains('gestor'),
+                          onTap: () => _onRolTap('gestor'),
+                        ),
+                        const SizedBox(width: 6),
+                        ChipFiltro(
+                          label: 'Admins',
+                          seleccionado: _rolesSeleccionados.contains('administrador'),
+                          onTap: () => _onRolTap('administrador'),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Chips de estado
+                  const Text('Estado', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AK.text)),
+                  const SizedBox(height: 8),
+                  Row(
                     children: [
-                      const Text('Ver eliminados', style: TextStyle(fontSize: 13, color: AK.text)),
-                      const Spacer(),
-                      Switch(
-                        value: prov.verEliminados,
-                        onChanged: prov.setVerEliminados,
-                        activeColor: AppColors.primary,
+                      ChipFiltro(
+                        label: 'Activo',
+                        seleccionado: _estadosSeleccionados.contains(true),
+                        onTap: () => _onEstadoTap(true),
+                      ),
+                      const SizedBox(width: 6),
+                      ChipFiltro(
+                        label: 'Inactivo',
+                        seleccionado: _estadosSeleccionados.contains(false),
+                        onTap: () => _onEstadoTap(false),
                       ),
                     ],
                   ),
-                ),
+
+                  const SizedBox(height: 12),
+
+                  // Toggle eliminados
+                  Consumer<AdminProvider>(
+                    builder: (_, prov, __) => Row(
+                      children: [
+                        const Text('Ver eliminados', style: TextStyle(fontSize: 13, color: AK.text)),
+                        const Spacer(),
+                        Switch(
+                          value: prov.verEliminados,
+                          onChanged: prov.setVerEliminados,
+                          activeColor: AppColors.primary,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

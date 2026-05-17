@@ -4,6 +4,7 @@ import '../../core/theme/app_colors.dart';
 import '../../data/models/usuario_admin.dart';
 import '../../data/providers/admin_provider.dart';
 import '../widgets/admin_widgets.dart';
+import '../widgets/custom_app_bar.dart';
 import 'admin_detalle_usuario_screen.dart';
 import 'admin_crear_usuario_screen.dart';
 
@@ -37,18 +38,7 @@ class _AdminUsuariosScreenState extends State<AdminUsuariosScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AK.bg,
-      appBar: AppBar(
-        backgroundColor: AK.bg,
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        titleSpacing: 20,
-        title: Text(
-          'AgroField',
-          style: TextStyle(
-            color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 18,
-          ),
-        ),
-      ),
+      appBar: const CustomAppBar(),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

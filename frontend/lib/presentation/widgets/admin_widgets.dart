@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_text.dart';
 
 // ─── Colores semánticos del panel admin ──────────────────────────────────────
 // Se definen aquí como constantes locales para no duplicar AppColors.
@@ -25,7 +26,7 @@ class AK {
   static const Color accent  = _kAccent;
   static const Color inactive = _kInactive;
   static const Color border  = _kBorder;
-  static const Color bg      = _kBg;
+  static Color get bg      => AppColors.background;
   static const Color text    = _kText;
   static const Color subtext = _kSubtext;
 }
@@ -246,34 +247,102 @@ class AdminBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BottomNavigationBar(
-      currentIndex: indiceActivo,
+    return Container(
+      height: 80,
+      decoration: const BoxDecoration(
+        color: AppColors.surfaceContainerLowest,
+        border: Border(
+          top: BorderSide(color: AppColors.outlineVariant, width: 1),
+        ),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _AdminNavItem(
+              icon: Icons.dashboard_outlined,
+              iconActive: Icons.dashboard,
+              label: 'Panel',
+              active: indiceActivo == 0,
+              onTap: () => onTap(0),
+            ),
+            _AdminNavItem(
+              icon: Icons.people_outline,
+              iconActive: Icons.people,
+              label: 'Usuarios',
+              active: indiceActivo == 1,
+              onTap: () => onTap(1),
+            ),
+            _AdminNavItem(
+              icon: Icons.grid_view_outlined,
+              iconActive: Icons.grid_view,
+              label: 'Lotes',
+              active: indiceActivo == 2,
+              onTap: () => onTap(2),
+            ),
+            _AdminNavItem(
+              icon: Icons.person_outline,
+              iconActive: Icons.person,
+              label: 'Ajustes',
+              active: indiceActivo == 3,
+              onTap: () => onTap(3),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AdminNavItem extends StatelessWidget {
+  final IconData icon;
+  final IconData iconActive;
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+
+  const _AdminNavItem({
+    required this.icon,
+    required this.iconActive,
+    required this.label,
+    required this.active,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = active
+        ? AppColors.onSecondaryContainer
+        : AppColors.onSurfaceVariant;
+
+    return InkWell(
       onTap: onTap,
-      type: BottomNavigationBarType.fixed,
-      selectedItemColor: AppColors.primary,
-      unselectedItemColor: _kSubtext,
-      backgroundColor: Colors.white,
-      elevation: 8,
-      selectedLabelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-      unselectedLabelStyle: const TextStyle(fontSize: 11),
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.dashboard_outlined), activeIcon: Icon(Icons.dashboard),
-          label: 'Panel',
+      borderRadius: BorderRadius.circular(20),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 64,
+              height: 32,
+              decoration: BoxDecoration(
+                color: active
+                    ? AppColors.secondaryContainer
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Icon(active ? iconActive : icon, color: color, size: 22),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label.toUpperCase(),
+              style: AppText.labelCaps(color: color).copyWith(fontSize: 10),
+            ),
+          ],
         ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.people_outline), activeIcon: Icon(Icons.people),
-          label: 'Usuarios',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.grid_view_outlined), activeIcon: Icon(Icons.grid_view),
-          label: 'Lotes',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person_outline), activeIcon: Icon(Icons.person),
-          label: 'Perfil',
-        ),
-      ],
+      ),
     );
   }
 }

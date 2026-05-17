@@ -4,6 +4,7 @@ import '../../core/theme/app_colors.dart';
 import '../../data/models/lote_admin.dart';
 import '../../data/providers/admin_provider.dart';
 import '../widgets/admin_widgets.dart';
+import '../widgets/custom_app_bar.dart';
 
 class AdminLotesScreen extends StatefulWidget {
   const AdminLotesScreen({super.key});
@@ -35,18 +36,7 @@ class _AdminLotesScreenState extends State<AdminLotesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AK.bg,
-      appBar: AppBar(
-        backgroundColor: AK.bg,
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        titleSpacing: 20,
-        title: Text(
-          'AgroField',
-          style: TextStyle(
-            color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 18,
-          ),
-        ),
-      ),
+      appBar: const CustomAppBar(),
       body: Consumer<AdminProvider>(
         builder: (context, provider, _) {
           final lotes = _filtrar(provider.lotes);

@@ -5,6 +5,7 @@ import '../../data/models/stats_admin.dart';
 import '../../data/providers/admin_provider.dart';
 import '../../data/providers/auth_provider.dart';
 import '../widgets/admin_widgets.dart';
+import '../widgets/custom_app_bar.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -30,37 +31,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
     return Scaffold(
       backgroundColor: AK.bg,
-      appBar: AppBar(
-        backgroundColor: AK.bg,
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        titleSpacing: 20,
-        title: Row(
-          children: [
-            CircleAvatar(
-              radius: 18,
-              backgroundColor: AppColors.primary,
-              child: Text(
-                _iniciales(nombreAdmin),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Text(
-              'AgroField',
-              style: TextStyle(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w700,
-                fontSize: 20,
-              ),
-            ),
-          ],
-        ),
-      ),
+      appBar: const CustomAppBar(),
       body: Consumer<AdminProvider>(
         builder: (context, provider, _) {
           if (provider.cargando && provider.stats == null) {
@@ -156,25 +127,43 @@ class _TarjetaResumen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(color: AK.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Icon(icono, color: AppColors.primary, size: 28),
           const SizedBox(height: 12),
           Text(
             valor,
-            style: const TextStyle(
-              fontSize: 32, fontWeight: FontWeight.w800, color: AK.text, height: 1,
+            style: TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.w800,
+              color: AppColors.primary,
+              height: 1,
             ),
           ),
-          const SizedBox(height: 4),
-          Text(label, style: const TextStyle(fontSize: 12, color: AK.subtext)),
+          const SizedBox(height: 6),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: AK.subtext,
+            ),
+          ),
         ],
       ),
     );
@@ -182,8 +171,8 @@ class _TarjetaResumen extends StatelessWidget {
 }
 
 class _GraficoActividad extends StatelessWidget {
-  // Datos de placeholder — reemplazar con endpoint real cuando esté disponible
-  static const List<double> _semanas = [11, 19, 16, 15, 24];
+  // Datos de placeholder de 4 semanas para alinearse exactamente con las etiquetas de la base
+  static const List<double> _semanas = [12, 19, 15, 25];
 
   const _GraficoActividad();
 
@@ -191,11 +180,18 @@ class _GraficoActividad extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 160,
-      padding: const EdgeInsets.fromLTRB(12, 16, 12, 8),
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(color: AK.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: CustomPaint(
         painter: _GraficoPainter(datos: _semanas),
@@ -205,10 +201,10 @@ class _GraficoActividad extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 4),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4']
+              children: ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4']
                   .map((l) => Text(
                         l,
-                        style: const TextStyle(fontSize: 10, color: AK.subtext),
+                        style: const TextStyle(fontSize: 10, color: AK.subtext, fontWeight: FontWeight.w500),
                       ))
                   .toList(),
             ),
@@ -237,9 +233,16 @@ class _GraficoPainter extends CustomPainter {
       areaH - ((datos[i] - minVal) / range * (areaH - 16)) + 8,
     ));
 
-    // Área rellena
+    // Área rellena con curva Bezier cúbica
     final area = Path()..moveTo(puntos.first.dx, areaH + 8);
-    for (final p in puntos) area.lineTo(p.dx, p.dy);
+    area.lineTo(puntos.first.dx, puntos.first.dy);
+    for (int i = 0; i < puntos.length - 1; i++) {
+      final p0 = puntos[i];
+      final p1 = puntos[i + 1];
+      final cp1 = Offset(p0.dx + paso / 2, p0.dy);
+      final cp2 = Offset(p1.dx - paso / 2, p1.dy);
+      area.cubicTo(cp1.dx, cp1.dy, cp2.dx, cp2.dy, p1.dx, p1.dy);
+    }
     area.lineTo(puntos.last.dx, areaH + 8);
     area.close();
     canvas.drawPath(
@@ -247,9 +250,15 @@ class _GraficoPainter extends CustomPainter {
       Paint()..color = AppColors.primary.withOpacity(0.08)..style = PaintingStyle.fill,
     );
 
-    // Línea
+    // Línea suave con curva Bezier cúbica
     final line = Path()..moveTo(puntos.first.dx, puntos.first.dy);
-    for (int i = 1; i < puntos.length; i++) line.lineTo(puntos[i].dx, puntos[i].dy);
+    for (int i = 0; i < puntos.length - 1; i++) {
+      final p0 = puntos[i];
+      final p1 = puntos[i + 1];
+      final cp1 = Offset(p0.dx + paso / 2, p0.dy);
+      final cp2 = Offset(p1.dx - paso / 2, p1.dy);
+      line.cubicTo(cp1.dx, cp1.dy, cp2.dx, cp2.dy, p1.dx, p1.dy);
+    }
     canvas.drawPath(
       line,
       Paint()
@@ -260,9 +269,11 @@ class _GraficoPainter extends CustomPainter {
         ..strokeJoin = StrokeJoin.round,
     );
 
-    // Punto final
-    canvas.drawCircle(puntos.last, 5, Paint()..color = AppColors.primary);
-    canvas.drawCircle(puntos.last, 3, Paint()..color = Colors.white);
+    // Dibujar puntos/círculos en cada coordenada
+    for (final p in puntos) {
+      canvas.drawCircle(p, 5, Paint()..color = AppColors.primary);
+      canvas.drawCircle(p, 3, Paint()..color = Colors.white);
+    }
   }
 
   @override
@@ -276,10 +287,10 @@ class _GridRoles extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = [
-      _RolItem(Icons.agriculture,        'Productores', stats.pequenoProductor, AppColors.primary),
-      _RolItem(Icons.construction,       'Trabajadores', stats.trabajador,      const Color(0xFF1565C0)),
-      _RolItem(Icons.manage_accounts,    'Gestores',    stats.gestor,           const Color(0xFF6A1B9A)),
-      _RolItem(Icons.admin_panel_settings,'Admins',     stats.administrador,    AK.error),
+      _RolItem(Icons.agriculture,        'Pequeño Productor', stats.pequenoProductor, const Color(0xFF2E7D32)),
+      _RolItem(Icons.construction,       'Trabajador',        stats.trabajador,      const Color(0xFF00687E)),
+      _RolItem(Icons.manage_accounts,    'Gestor',            stats.gestor,           const Color(0xFF6A1B9A)),
+      _RolItem(Icons.admin_panel_settings,'Administrador',     stats.administrador,    AK.error),
     ];
     return GridView.count(
       crossAxisCount: 2,
@@ -287,7 +298,7 @@ class _GridRoles extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       mainAxisSpacing: 12,
       crossAxisSpacing: 12,
-      childAspectRatio: 1.4,
+      childAspectRatio: 1.35,
       children: items.map((r) => _TarjetaRol(item: r)).toList(),
     );
   }
@@ -308,25 +319,57 @@ class _TarjetaRol extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(color: AK.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(item.icono, color: item.color, size: 20),
+          Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: item.color.withOpacity(0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(item.icono, color: item.color, size: 16),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  item.label,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AK.text,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
           const Spacer(),
           Text(
             '${item.valor}',
-            style: TextStyle(
-              fontSize: 28, fontWeight: FontWeight.w800, color: item.color, height: 1,
+            style: const TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.w800,
+              color: AK.text,
+              height: 1,
             ),
           ),
-          const SizedBox(height: 2),
-          Text(item.label, style: const TextStyle(fontSize: 11, color: AK.subtext)),
+          const Spacer(),
         ],
       ),
     );

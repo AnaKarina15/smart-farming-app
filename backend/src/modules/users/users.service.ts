@@ -38,7 +38,7 @@ export class UsersService {
     if (dto.telefono) {
       const phoneExists = await this.usersRepo.existsByTelefono(dto.telefono);
       if (phoneExists) {
-        throw new ConflictException('Ese número de teléfono ya está registrado por otro usuario');
+        throw new ConflictException('Ese número de teléfono ya está registrado');
       }
     }
 

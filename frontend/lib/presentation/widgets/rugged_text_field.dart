@@ -77,6 +77,7 @@ class RuggedTextField extends StatelessWidget {
         errorBorder: errorBorder,
         focusedErrorBorder: errorBorder,
         errorStyle: GoogleFonts.lexend(color: AppColors.error, fontSize: 12),
+        errorMaxLines: 3,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 18,

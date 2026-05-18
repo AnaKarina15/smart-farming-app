@@ -22,6 +22,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   String? _emailAuthError;
+  String? _phoneAuthError;
   String? _generalAuthError;
   bool _obscurePassword = true;
 
@@ -37,6 +38,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void _handleRegister() async {
     setState(() {
       _emailAuthError = null;
+      _phoneAuthError = null;
       _generalAuthError = null;
     });
 
@@ -56,7 +58,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         );
       } else {
         setState(() {
-          final errorStr = (authProvider.errorMessage ?? '').toLowerCase();
+          final rawMsg = authProvider.errorMessage ??
+              'Error al crear cuenta. Verifica tus datos.';
+          final errorStr = rawMsg.toLowerCase();
 
           if (errorStr.contains('conexi') ||
               errorStr.contains('servidor') ||
@@ -71,17 +75,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
             );
           } else if (errorStr.contains('correo') ||
-              errorStr.contains('email') ||
-              errorStr.contains('existe') ||
-              errorStr.contains('recurso') ||
-              errorStr.contains('uso') ||
-              errorStr.contains('already') ||
-              errorStr.contains('conflict') ||
-              errorStr.contains('duplicado') ||
-              errorStr.contains('registrado')) {
-            _emailAuthError = 'Este correo ya está registrado.';
+              errorStr.contains('email')) {
+            _emailAuthError = rawMsg;
+          } else if (errorStr.contains('teléfono') ||
+              errorStr.contains('telefono')) {
+            _phoneAuthError = rawMsg;
           } else {
-            _generalAuthError = 'Error al crear cuenta. Verifica tus datos.';
+            _generalAuthError = rawMsg;
           }
         });
         _formKey.currentState!.validate();
@@ -119,7 +119,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   textAlign: TextAlign.center,
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 25),
               Form(
                 key: _formKey,
                 child: Column(
@@ -131,6 +131,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       controller: _nameController,
                       hintText: 'Ej: Juan Pérez',
                       prefixIcon: Icons.person_outline,
+                      textCapitalization: TextCapitalization.words,
                       validator: (v) =>
                           (v == null || v.isEmpty) ? 'Ingresa tu nombre' : null,
                     ),
@@ -169,9 +170,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       hintText: '300 000 0000',
                       prefixIcon: Icons.phone_outlined,
                       keyboardType: TextInputType.phone,
-                      validator: (v) => (v == null || v.isEmpty)
-                          ? 'Ingresa tu teléfono'
-                          : null,
+                      onChanged: (_) {
+                        if (_phoneAuthError != null ||
+                            _generalAuthError != null) {
+                          setState(() {
+                            _phoneAuthError = null;
+                            _generalAuthError = null;
+                          });
+                          _formKey.currentState!.validate();
+                        }
+                      },
+                      validator: (v) {
+                        if (v == null || v.isEmpty) {
+                          return 'Ingresa tu teléfono';
+                        }
+                        if (_phoneAuthError != null) return _phoneAuthError;
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 20),
                     Text('CONTRASEÑA', style: AppText.labelCaps()),
@@ -213,6 +228,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         return null;
                       },
                     ),
+                    const SizedBox(height: 8),
                     Center(
                       child: GestureDetector(
                         onTap: () {
@@ -243,7 +259,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 15),
                     isLoading
                         ? const Center(
                             child: CircularProgressIndicator(
@@ -254,7 +270,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             text: 'CREAR CUENTA',
                             onPressed: _handleRegister,
                           ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 8),
                     Center(
                       child: TextButton(
                         onPressed: () => Navigator.pushReplacement(
@@ -262,6 +278,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           MaterialPageRoute(
                             builder: (_) => const LoginScreen(),
                           ),
+                        ),
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
                         child: RichText(
                           text: TextSpan(

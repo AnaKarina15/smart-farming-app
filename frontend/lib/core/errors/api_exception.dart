@@ -10,10 +10,10 @@ class ApiException implements Exception {
   final dynamic rawError;
 
   ApiException({
-    required this.message,
+    required String message,
     this.statusCode,
     this.rawError,
-  });
+  }) : message = message.replaceAll(RegExp(r'[\[\]]'), '');
 
   @override
   String toString() => message;
@@ -28,9 +28,9 @@ class ApiException implements Exception {
     if (responseData is Map<String, dynamic>) {
       final message = responseData['message'];
       if (message is String) {
-        serverMessage = message;
-      } else if (message is List) {
-        serverMessage = message.join(', ');
+        serverMessage = message.replaceAll(RegExp(r'[\[\]]'), '');
+      } else if (message is List && message.isNotEmpty) {
+        serverMessage = message.first.toString().replaceAll(RegExp(r'[\[\]]'), '');
       }
     }
 

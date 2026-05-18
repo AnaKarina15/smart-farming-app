@@ -16,6 +16,7 @@ import '../../data/providers/lotes_provider.dart';
 import '../../data/models/lote_model.dart';
 import 'terrain_status_screen.dart';
 import '../../data/providers/catalogos_provider.dart';
+import '../../data/services/sync_service.dart';
 
 class SowingScreen extends StatefulWidget {
   final String? fixedLote;
@@ -465,6 +466,7 @@ class _SowingScreenState extends State<SowingScreen> {
 
                             final navigator = Navigator.of(context);
                             final lotesProv = context.read<LotesProvider>();
+                            final syncService = context.read<SyncService>();
 
                             final finalCropNombre =
                                 _selectedCultivoNombre ?? 'Desconocido';
@@ -508,6 +510,11 @@ class _SowingScreenState extends State<SowingScreen> {
                                 );
                               } catch (_) {}
                             }
+
+                            // Sincronizar en segundo plano de inmediato
+                            try {
+                              syncService.syncNow(lotesProvider: lotesProv);
+                            } catch (_) {}
 
                             if (!mounted) return;
                             setState(() => _guardando = false);

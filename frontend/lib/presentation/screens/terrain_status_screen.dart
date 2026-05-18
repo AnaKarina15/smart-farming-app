@@ -14,6 +14,7 @@ import '../../data/providers/auth_provider.dart';
 import '../../data/providers/lotes_provider.dart';
 import '../../core/storage/database_helper.dart';
 import 'package:provider/provider.dart';
+import '../../data/services/sync_service.dart';
 
 class TerrainStatusScreen extends StatefulWidget {
   final String? lote;
@@ -46,6 +47,9 @@ class _TerrainStatusScreenState extends State<TerrainStatusScreen> {
   bool _loadingSowingStatus = true;
   String? _selectedLoteId;
   String? _selectedLoteNombre;
+
+  bool get _isPrevio => widget.isPreviousStateOfSiembra == true ||
+      (_selectedStatus != null && ['limpio', 'con maleza', 'arado', 'adecuado'].contains(_selectedStatus!.toLowerCase()));
 
   @override
   void initState() {
@@ -203,8 +207,12 @@ class _TerrainStatusScreenState extends State<TerrainStatusScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(widget.idToEdit != null ? 'Editar estado del terreno' : 'Estado del terreno',
-                style: AppText.h2(color: AppColors.onSurface)),
+            Text(
+              widget.idToEdit != null
+                  ? (_isPrevio ? 'Editar estado del terreno (Previo)' : 'Editar estado del terreno (Después)')
+                  : (_isPrevio ? 'Estado del terreno (Previo)' : 'Estado del terreno'),
+              style: AppText.h2(color: AppColors.onSurface),
+            ),
             const SizedBox(height: 5),
             Text(
               'Seleccione la condición actual del lote asignado.',
@@ -443,8 +451,14 @@ class _TerrainStatusScreenState extends State<TerrainStatusScreen> {
               text: widget.idToEdit != null ? 'ACTUALIZAR ESTADO' : 'GUARDAR ESTADO',
               icon: Icons.save,
               onPressed: () async {
+                final scaffoldMessenger = ScaffoldMessenger.of(context);
+                final navigator = Navigator.of(context);
+                final authProvider = context.read<AuthProvider>();
+                final lotesProvider = context.read<LotesProvider>();
+                final syncService = context.read<SyncService>();
+
                 if (_selectedLoteNombre == null || _selectedLoteNombre!.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  scaffoldMessenger.showSnackBar(
                     const SnackBar(
                       content: Text('Por favor selecciona un lote.'),
                       behavior: SnackBarBehavior.floating,
@@ -453,7 +467,7 @@ class _TerrainStatusScreenState extends State<TerrainStatusScreen> {
                   return;
                 }
                 if (_selectedStatus == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  scaffoldMessenger.showSnackBar(
                     const SnackBar(
                       content:
                           Text('Por favor selecciona el estado del terreno.'),
@@ -463,7 +477,7 @@ class _TerrainStatusScreenState extends State<TerrainStatusScreen> {
                   return;
                 }
                 // Guardar en SQLite
-                final user = context.read<AuthProvider>().currentUser;
+                final user = authProvider.currentUser;
                 final now = DateTime.now().toIso8601String();
                 final id = widget.idToEdit ?? 'terreno_${DateTime.now().millisecondsSinceEpoch}';
                 
@@ -496,9 +510,12 @@ class _TerrainStatusScreenState extends State<TerrainStatusScreen> {
                   );
                 }
 
-                if (!context.mounted) return;
-                Navigator.pushReplacement(
-                  context,
+                // Sincronizar en segundo plano de inmediato
+                try {
+                  syncService.syncNow(lotesProvider: lotesProvider);
+                } catch (_) {}
+
+                navigator.pushReplacement(
                   MaterialPageRoute(
                     builder: (_) => TerrainSuccessScreen(
                       lote: _selectedLoteNombre!,

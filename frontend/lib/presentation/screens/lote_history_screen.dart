@@ -158,7 +158,7 @@ class _LoteHistoryScreenState extends State<LoteHistoryScreen> {
         final siembraId = t['siembraId'] as String?;
         final isPrevio = siembraId == null || 
             ['limpio', 'con maleza', 'arado', 'adecuado'].contains(estado.toLowerCase());
-        final title = isPrevio ? 'Terreno (Previo): $estado' : 'Terreno: $estado';
+        final title = isPrevio ? 'Terreno (Previo): $estado' : 'Terreno (Después): $estado';
 
         items.add(_HistoryItem(
           id: t['id'] as String,

@@ -6,13 +6,173 @@ import '../widgets/offline_banner.dart';
 import '../widgets/custom_app_bar.dart';
 import 'home_screen.dart';
 import 'profile_screen.dart';
+import '../../core/storage/database_helper.dart';
+import 'package:intl/intl.dart';
+import 'irrigation_screen.dart';
+import 'sowing_screen.dart';
 
 enum SyncStatus { syncing, local, completed }
 
-class LoteHistoryScreen extends StatelessWidget {
+class _HistoryItem {
+  final String id;
+  final String table;
+  final String title;
+  final String type;
+  final DateTime date;
+  final SyncStatus status;
+  final IconData icon;
+  final Color iconBg;
+  final Color iconFg;
+
+  _HistoryItem({
+    required this.id,
+    required this.table,
+    required this.title,
+    required this.type,
+    required this.date,
+    required this.status,
+    required this.icon,
+    required this.iconBg,
+    required this.iconFg,
+  });
+}
+
+class LoteHistoryScreen extends StatefulWidget {
   final String loteName;
 
   const LoteHistoryScreen({super.key, this.loteName = 'Lote 1'});
+
+  @override
+  State<LoteHistoryScreen> createState() => _LoteHistoryScreenState();
+}
+
+class _LoteHistoryScreenState extends State<LoteHistoryScreen> {
+  bool _isLoading = true;
+  List<_HistoryItem> _history = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadHistory();
+  }
+
+  Future<void> _loadHistory() async {
+    final db = await DatabaseHelper.instance.database;
+    final List<_HistoryItem> items = [];
+
+    // 1. Siembras
+    final siembras = await db.query(DatabaseHelper.tableSiembras,
+        where: 'loteNombre = ?', whereArgs: [widget.loteName]);
+    for (var s in siembras) {
+      items.add(_HistoryItem(
+        id: s['id'] as String,
+        table: DatabaseHelper.tableSiembras,
+        title: 'Siembra: ${s['cultivo'] ?? 'Desconocido'}',
+        type: 'siembra',
+        date: DateTime.parse(s['createdAt'] as String),
+        status: (s['isPendingSync'] as int) == 1 ? SyncStatus.local : SyncStatus.completed,
+        icon: Icons.agriculture,
+        iconBg: AppColors.tertiaryContainer,
+        iconFg: AppColors.onTertiaryContainer,
+      ));
+    }
+
+    // 2. Riego (y Humedad)
+    final riegos = await db.query(DatabaseHelper.tableRiego,
+        where: 'loteNombre = ?', whereArgs: [widget.loteName]);
+    for (var r in riegos) {
+      final tipo = r['tipo'] as String? ?? '';
+      final isHumedad = tipo.contains('Humedad');
+      items.add(_HistoryItem(
+        id: r['id'] as String,
+        table: DatabaseHelper.tableRiego,
+        title: isHumedad ? 'Lectura: ${r['humedad']}' : 'Riego: ${r['cantidadLitros']}L',
+        type: 'riego',
+        date: DateTime.parse(r['createdAt'] as String),
+        status: (r['isPendingSync'] as int) == 1 ? SyncStatus.local : SyncStatus.completed,
+        icon: isHumedad ? Icons.opacity : Icons.water_drop,
+        iconBg: AppColors.secondaryContainer,
+        iconFg: AppColors.onSecondaryContainer,
+      ));
+    }
+
+    // 3. Fertilización
+    final ferts = await db.query(DatabaseHelper.tableFertilizacion,
+        where: 'loteNombre = ?', whereArgs: [widget.loteName]);
+    for (var f in ferts) {
+      items.add(_HistoryItem(
+        id: f['id'] as String,
+        table: DatabaseHelper.tableFertilizacion,
+        title: 'Fertilización: ${f['nombre']}',
+        type: 'fertilizacion',
+        date: DateTime.parse(f['createdAt'] as String),
+        status: (f['isPendingSync'] as int) == 1 ? SyncStatus.local : SyncStatus.completed,
+        icon: Icons.science,
+        iconBg: AppColors.primaryContainer,
+        iconFg: AppColors.onPrimaryContainer,
+      ));
+    }
+
+    // 4. Hallazgos
+    final hallazgos = await db.query(DatabaseHelper.tableHallazgos,
+        where: 'loteNombre = ?', whereArgs: [widget.loteName]);
+    for (var h in hallazgos) {
+      items.add(_HistoryItem(
+        id: h['id'] as String,
+        table: DatabaseHelper.tableHallazgos,
+        title: 'Hallazgo: ${h['tipo']}',
+        type: 'hallazgo',
+        date: DateTime.parse(h['createdAt'] as String),
+        status: (h['isPendingSync'] as int) == 1 ? SyncStatus.local : SyncStatus.completed,
+        icon: Icons.pest_control,
+        iconBg: AppColors.errorContainer,
+        iconFg: AppColors.onErrorContainer,
+      ));
+    }
+
+    // 5. Tratamientos
+    final tratamientos = await db.query(DatabaseHelper.tableTratamientos,
+        where: 'loteNombre = ?', whereArgs: [widget.loteName]);
+    for (var t in tratamientos) {
+      items.add(_HistoryItem(
+        id: t['id'] as String,
+        table: DatabaseHelper.tableTratamientos,
+        title: 'Tratamiento: ${t['producto']}',
+        type: 'tratamiento',
+        date: DateTime.parse(t['createdAt'] as String),
+        status: (t['isPendingSync'] as int) == 1 ? SyncStatus.local : SyncStatus.completed,
+        icon: Icons.vaccines,
+        iconBg: AppColors.primaryContainer,
+        iconFg: AppColors.onPrimaryContainer,
+      ));
+    }
+
+    // Sort descending (newest first)
+    items.sort((a, b) => b.date.compareTo(a.date));
+
+    if (mounted) {
+      setState(() {
+        _history = items;
+        _isLoading = false;
+      });
+    }
+  }
+
+  String _formatDate(DateTime d) {
+    final now = DateTime.now();
+    final diff = now.difference(d);
+    
+    if (diff.inMinutes < 1) return 'Hace un momento';
+    if (diff.inMinutes < 60) return 'Hace ${diff.inMinutes} min';
+    if (diff.inHours < 24) {
+      return diff.inHours == 1 ? 'Hace 1 hora' : 'Hace ${diff.inHours} horas';
+    }
+    if (diff.inDays == 1) return 'Ayer';
+    if (diff.inDays < 7) return 'Hace ${diff.inDays} días';
+    if (diff.inDays < 14) return 'Hace una semana';
+    
+    return DateFormat('dd/MM/yyyy').format(d);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,34 +186,33 @@ class LoteHistoryScreen extends StatelessWidget {
           children: [
             const OfflineBanner(),
             const SizedBox(height: 16),
-            Text('Historial - $loteName', style: AppText.h2()),
+            Text('Historial - ${widget.loteName}', style: AppText.h2()),
             const SizedBox(height: 16),
-            _activityCard(
-              icon: Icons.pest_control,
-              iconBg: AppColors.primaryContainer,
-              iconFg: AppColors.onPrimaryContainer,
-              title: 'Tratamiento Fitosanitario',
-              time: 'Hace 2 horas',
-              status: SyncStatus.syncing,
-            ),
-            const SizedBox(height: 12),
-            _activityCard(
-              icon: Icons.water_drop,
-              iconBg: AppColors.secondaryContainer,
-              iconFg: AppColors.onSecondaryContainer,
-              title: 'Riego (20L)',
-              time: 'Ayer',
-              status: SyncStatus.local,
-            ),
-            const SizedBox(height: 12),
-            _activityCard(
-              icon: Icons.agriculture,
-              iconBg: AppColors.tertiaryContainer,
-              iconFg: AppColors.onTertiaryContainer,
-              title: 'Siembra de Maíz',
-              time: 'Hace 3 meses',
-              status: SyncStatus.completed,
-            ),
+            
+            if (_isLoading)
+              const Center(child: CircularProgressIndicator())
+            else if (_history.isEmpty)
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 40),
+                  child: Text('No hay registros para este lote.',
+                      style: AppText.bodyMd(color: AppColors.outline)),
+                ),
+              )
+            else
+              ..._history.map((item) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _activityCard(
+                  id: item.id,
+                  table: item.table,
+                  icon: item.icon,
+                  iconBg: item.iconBg,
+                  iconFg: item.iconFg,
+                  title: item.title,
+                  time: _formatDate(item.date),
+                  status: item.status,
+                ),
+              )),
           ],
         ),
       ),
@@ -77,6 +236,8 @@ class LoteHistoryScreen extends StatelessWidget {
   }
 
   Widget _activityCard({
+    required String id,
+    required String table,
     required IconData icon,
     required Color iconBg,
     required Color iconFg,
@@ -130,11 +291,88 @@ class LoteHistoryScreen extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  time,
-                  style: AppText.bodyMd(
-                    color: AppColors.onSurfaceVariant,
-                  ).copyWith(fontSize: 13),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      time,
+                      style: AppText.bodyMd(
+                        color: AppColors.onSurfaceVariant,
+                      ).copyWith(fontSize: 13),
+                    ),
+                    PopupMenuButton<String>(
+                      icon: const Icon(Icons.more_vert, color: AppColors.outline, size: 20),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onSelected: (value) async {
+                        if (value == 'edit') {
+                          if (table == DatabaseHelper.tableRiego) {
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => IrrigationScreen(idToEdit: id, currentTab: AgroTab.home)));
+                          } else if (table == DatabaseHelper.tableSiembras) {
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => SowingScreen(idToEdit: id, currentTab: AgroTab.home)));
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Edición para este proceso disponible próximamente')),
+                            );
+                          }
+                        } else if (value == 'delete') {
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('Eliminar registro'),
+                              content: Text('¿Estás seguro de que deseas eliminar permanentemente este registro de $title?'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, false),
+                                  child: const Text('CANCELAR'),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  child: const Text('ELIMINAR', style: TextStyle(color: AppColors.error)),
+                                ),
+                              ],
+                            ),
+                          );
+
+                          if (confirm == true) {
+                            final messenger = ScaffoldMessenger.of(context);
+                            final db = await DatabaseHelper.instance.database;
+                            await db.delete(table, where: 'id = ?', whereArgs: [id]);
+                            _loadHistory();
+                            
+                            messenger.showSnackBar(
+                              SnackBar(
+                                content: Text('El registro "$title" fue eliminado exitosamente.'),
+                                backgroundColor: AppColors.error,
+                              ),
+                            );
+                          }
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: 'edit',
+                          child: Row(
+                            children: [
+                              Icon(Icons.edit_outlined, size: 20),
+                              SizedBox(width: 8),
+                              Text('Editar'),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'delete',
+                          child: Row(
+                            children: [
+                              Icon(Icons.delete_outline, size: 20, color: AppColors.error),
+                              SizedBox(width: 8),
+                              Text('Eliminar', style: TextStyle(color: AppColors.error)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ],
             ),

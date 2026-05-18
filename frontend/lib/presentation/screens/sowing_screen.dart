@@ -21,11 +21,13 @@ import '../../data/providers/catalogos_provider.dart';
 class SowingScreen extends StatefulWidget {
   final String? fixedLote;
   final AgroTab currentTab;
+  final String? idToEdit;
 
   const SowingScreen({
     super.key,
     this.fixedLote,
     this.currentTab = AgroTab.home,
+    this.idToEdit,
   });
 
   @override
@@ -51,7 +53,23 @@ class _SowingScreenState extends State<SowingScreen> {
       if (!provider.hasLotes) {
         provider.init();
       }
+      if (widget.idToEdit != null) {
+        _loadEditData();
+      }
     });
+  }
+
+  Future<void> _loadEditData() async {
+    final rows = await DatabaseHelper.instance.queryWhere(
+      DatabaseHelper.tableSiembras, 'id = ?', [widget.idToEdit!]);
+    if (rows.isNotEmpty && mounted) {
+      final data = rows.first;
+      setState(() {
+        _loteId = data['loteId'];
+        _selectedCultivoId = data['cultivoId'];
+        // _selectedCultivoNombre se auto-cargará desde el catálogo
+      });
+    }
   }
 
   @override
@@ -229,6 +247,21 @@ class _SowingScreenState extends State<SowingScreen> {
                         initialDate: DateTime.now(),
                         firstDate: DateTime(2000),
                         lastDate: DateTime(2100),
+                        builder: (context, child) {
+                          return Theme(
+                            data: Theme.of(context).copyWith(
+                              datePickerTheme: DatePickerThemeData(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                              ),
+                            ),
+                            child: Transform.scale(
+                              scale: 0.85, // Reducir el tamaño un 15%
+                              child: child!,
+                            ),
+                          );
+                        },
                       );
                       if (picked != null) {
                         setState(() {
@@ -247,6 +280,58 @@ class _SowingScreenState extends State<SowingScreen> {
                     Text('Sin lotes', style: AppText.bodyMd())
                   else
                     _selector(lotes),
+                  if (_loteId != null && lotes.isNotEmpty) ...[
+                    const SizedBox(height: 24),
+                    Text('TIPO DE SUELO DEL LOTE', style: AppText.labelCaps()),
+                    const SizedBox(height: 8),
+                    Consumer<CatalogosProvider>(
+                      builder: (context, catProvider, child) {
+                        try {
+                          final lote = lotes.firstWhere((l) => l.id == _loteId);
+                          final tipoId = lote.tipoSueloId;
+                          final tipoSuelo = catProvider.tiposSuelo
+                              .where((ts) => ts.id == tipoId)
+                              .firstOrNull;
+
+                          return Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceContainerLowest,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppColors.outlineVariant),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.layers_outlined,
+                                    color: AppColors.primary),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        tipoSuelo?.nombre ?? 'Suelo no especificado',
+                                        style: AppText.bodyLg()
+                                            .copyWith(fontWeight: FontWeight.w600),
+                                      ),
+                                      if (tipoSuelo?.descripcion != null)
+                                        Text(
+                                          tipoSuelo!.descripcion!,
+                                          style: AppText.bodyMd(
+                                              color: AppColors.onSurfaceVariant),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        } catch (e) {
+                          return const SizedBox.shrink();
+                        }
+                      },
+                    ),
+                  ],
                   const SizedBox(height: 24),
                   Text('ESTADO PREVIO', style: AppText.labelCaps()),
                   const SizedBox(height: 12),
@@ -374,12 +459,10 @@ class _SowingScreenState extends State<SowingScreen> {
                             final user =
                                 context.read<AuthProvider>().currentUser;
                             final userId = user?.id ?? 'unknown';
-                            final id =
-                                'siembra_${DateTime.now().millisecondsSinceEpoch}';
+                            final id = widget.idToEdit ?? 'siembra_${DateTime.now().millisecondsSinceEpoch}';
                             final now = DateTime.now().toIso8601String();
 
-                            await DatabaseHelper.instance
-                                .insert(DatabaseHelper.tableSiembras, {
+                            final data = {
                               'id': id,
                               'loteId': _loteId,
                               'loteNombre': _loteNombre,
@@ -387,9 +470,19 @@ class _SowingScreenState extends State<SowingScreen> {
                               'cultivoId': _selectedCultivoId,
                               'fecha': _dateController.text,
                               'userId': userId,
-                              'createdAt': now,
                               'isPendingSync': 1,
-                            });
+                            };
+
+                            if (widget.idToEdit != null) {
+                              data['updatedAt'] = now;
+                              await DatabaseHelper.instance.update(
+                                  DatabaseHelper.tableSiembras, data,
+                                  'id = ?', [id]);
+                            } else {
+                              data['createdAt'] = now;
+                              await DatabaseHelper.instance.insert(
+                                  DatabaseHelper.tableSiembras, data);
+                            }
 
                             if (!context.mounted) return;
                             setState(() => _guardando = false);

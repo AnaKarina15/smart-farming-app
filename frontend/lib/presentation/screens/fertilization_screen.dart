@@ -107,7 +107,30 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Registro de Fertilización', style: AppText.h1()),
-                  const SizedBox(height: 5),
+                  const SizedBox(height: 24),
+                  Text('SELECCIONAR LOTE', style: AppText.labelCaps()),
+                  const SizedBox(height: 12),
+                  if (lotesProvider.isLoading && lotes.isEmpty)
+                    const Center(child: CircularProgressIndicator())
+                  else if (lotes.isEmpty)
+                    Text('Sin lotes', style: AppText.bodyMd())
+                  else if (widget.fixedLote != null && _loteNombre != null)
+                    Container(
+                      height: 56,
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceContainerLowest,
+                        border: Border.all(
+                            color: AppColors.outlineVariant, width: 1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      alignment: Alignment.centerLeft,
+                      child: Text(_loteNombre!, style: AppText.bodyMd()),
+                    )
+                  else
+                    _selector(lotes),
+                  const SizedBox(height: 24),
                   Text('SELECCIONAR FERTILIZANTE', style: AppText.labelCaps()),
                   const SizedBox(height: 8),
                   Container(
@@ -306,30 +329,7 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 24),
-                  Text('SELECCIONAR LOTE', style: AppText.labelCaps()),
-                  const SizedBox(height: 12),
-                  if (lotesProvider.isLoading && lotes.isEmpty)
-                    const Center(child: CircularProgressIndicator())
-                  else if (lotes.isEmpty)
-                    Text('Sin lotes', style: AppText.bodyMd())
-                  else if (widget.fixedLote != null && _loteNombre != null)
-                    Container(
-                      height: 56,
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceContainerLowest,
-                        border: Border.all(
-                            color: AppColors.outlineVariant, width: 1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      alignment: Alignment.centerLeft,
-                      child: Text(_loteNombre!, style: AppText.bodyMd()),
-                    )
-                  else
-                    _selector(lotes),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 36),
                   RuggedButton(
                     text: _guardando ? 'GUARDANDO...' : 'GUARDAR REGISTRO',
                     icon: Icons.save,

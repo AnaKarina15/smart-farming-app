@@ -197,19 +197,142 @@ class LotesProvider extends ChangeNotifier {
     }
   }
 
-  /// Elimina un lote (solo con internet por ahora).
-  Future<bool> eliminarLote(String id) async {
-    try {
-      await _lotesService.eliminarLote(id);
-      _lotes.removeWhere((l) => l.id == id);
-      await _db.deleteById(DatabaseHelper.tableLotes, id);
+  /// Actualiza un lote existente (soporte offline).
+  Future<bool> actualizarLote({
+    required String id,
+    String? nombre,
+    String? descripcion,
+    double? superficieHectareas,
+    String? cultivoActual,
+    double? latitud,
+    double? longitud,
+  }) async {
+    final conectado = await _checkConnectivity();
+    final isLocalOnly = id.startsWith('local_');
+
+    // 1. Actualizamos localmente en memoria y SQLite
+    final index = _lotes.indexWhere((l) => l.id == id);
+    if (index != -1) {
+      final old = _lotes[index];
+      final updated = LoteModel(
+        id: old.id,
+        nombre: nombre ?? old.nombre,
+        descripcion: descripcion ?? old.descripcion,
+        superficieHectareas: superficieHectareas ?? old.superficieHectareas,
+        cultivoActual: cultivoActual ?? old.cultivoActual,
+        cultivoActualId: old.cultivoActualId,
+        municipioId: old.municipioId,
+        tipoSueloId: old.tipoSueloId,
+        latitud: latitud ?? old.latitud,
+        longitud: longitud ?? old.longitud,
+        estado: old.estado,
+        createdAt: old.createdAt,
+        updatedAt: DateTime.now(),
+        propietarioId: old.propietarioId,
+      );
+      _lotes[index] = updated;
+
+      await _db.update(
+        DatabaseHelper.tableLotes,
+        {
+          'nombre': updated.nombre,
+          'descripcion': updated.descripcion,
+          'superficieHectareas': updated.superficieHectareas,
+          'cultivoActual': updated.cultivoActual,
+          'cultivoActualId': updated.cultivoActualId,
+          'municipioId': updated.municipioId,
+          'tipoSueloId': updated.tipoSueloId,
+          'latitud': updated.latitud,
+          'longitud': updated.longitud,
+          'estado': updated.estado,
+          'updatedAt': updated.updatedAt.toIso8601String(),
+          'isPendingSync': 1,
+        },
+        'id = ?',
+        [id],
+      );
+    }
+
+    final payload = {
+      if (nombre != null) 'nombre': nombre,
+      if (descripcion != null) 'descripcion': descripcion,
+      if (superficieHectareas != null) 'superficieHectareas': superficieHectareas,
+      if (cultivoActual != null) 'cultivoActual': cultivoActual,
+      if (latitud != null) 'latitud': latitud,
+      if (longitud != null) 'longitud': longitud,
+    };
+
+    if (isLocalOnly) {
+      // Si es un lote que no ha subido al servidor, basta con la edicion en SQLite
       notifyListeners();
       return true;
-    } catch (e) {
-      _errorMessage = e.toString();
-      notifyListeners();
-      return false;
     }
+
+    if (conectado) {
+      try {
+        await _lotesService.actualizarLote(
+          id: id,
+          nombre: nombre,
+          descripcion: descripcion,
+          superficieHectareas: superficieHectareas,
+          cultivoActual: cultivoActual,
+          latitud: latitud,
+          longitud: longitud,
+        );
+        notifyListeners();
+        return true;
+      } catch (e) {
+        // Falló internet, pasamos al modo offline
+      }
+    }
+
+    // Modo offline (encolamos el PATCH)
+    await _db.insert(DatabaseHelper.tableSyncQueue, {
+      'method': 'PATCH',
+      'endpoint': '${ApiEndpoints.lotes}/$id',
+      'payload': json.encode(payload),
+      'createdAt': DateTime.now().toIso8601String(),
+    });
+    await _actualizarContadorPendientes();
+    notifyListeners();
+    return true;
+  }
+
+  /// Elimina un lote (soporte offline).
+  Future<bool> eliminarLote(String id) async {
+    final conectado = await _checkConnectivity();
+    final isLocalOnly = id.startsWith('local_');
+
+    // Siempre lo desaparecemos de memoria y DB local de inmediato (Eliminación fantasma)
+    _lotes.removeWhere((l) => l.id == id);
+    await _db.deleteById(DatabaseHelper.tableLotes, id);
+
+    if (isLocalOnly) {
+      // Si era un lote que nunca se subió al servidor, no hacemos nada más
+      notifyListeners();
+      return true;
+    }
+
+    if (conectado) {
+      try {
+        await _lotesService.eliminarLote(id);
+        notifyListeners();
+        return true;
+      } catch (e) {
+        // Fallo en la red, pasamos a modo offline fallback
+      }
+    }
+
+    // Modo offline (o si falló la red): encolamos la tarea para borrarlo luego
+    await _db.insert(DatabaseHelper.tableSyncQueue, {
+      'method': 'DELETE',
+      'endpoint': '${ApiEndpoints.lotes}/$id',
+      'payload': json.encode({}),
+      'createdAt': DateTime.now().toIso8601String(),
+    });
+    await _actualizarContadorPendientes();
+    notifyListeners();
+    return true;
   }
 
   void clearError() {

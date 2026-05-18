@@ -11,12 +11,12 @@ import 'home_screen.dart';
 import 'map_onboarding_screen.dart';
 import 'profile_screen.dart';
 import 'tasks_screen.dart';
-import 'active_alerts_screen.dart';
 
 class PhytosanitaryScreen extends StatefulWidget {
   final AgroTab currentTab;
   final String? fixedLote;
-  const PhytosanitaryScreen({super.key, this.currentTab = AgroTab.tareas, this.fixedLote});
+  const PhytosanitaryScreen(
+      {super.key, this.currentTab = AgroTab.tareas, this.fixedLote});
 
   @override
   State<PhytosanitaryScreen> createState() => _PhytosanitaryScreenState();
@@ -48,15 +48,6 @@ class _PhytosanitaryScreenState extends State<PhytosanitaryScreen> {
               title: 'Registrar Hallazgo',
               subtitle: 'Reporta nuevas plagas o enfermedades',
               destination: FindFindingScreen(currentTab: widget.currentTab),
-            ),
-            const SizedBox(height: 12),
-            _hubItem(
-              context,
-              icon: Icons.warning,
-              title: 'Alertas Activas',
-              subtitle: '2 alertas críticas detectadas',
-              badge: '2',
-              destination: ActiveAlertsScreen(currentTab: widget.currentTab),
             ),
             const SizedBox(height: 12),
             _hubItem(

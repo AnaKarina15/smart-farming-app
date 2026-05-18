@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text.dart';
+import '../../core/network/api_endpoints.dart';
 import '../../data/providers/auth_provider.dart';
 import '../../data/providers/profile_image_provider.dart';
 import '../common/agro_bottom_nav.dart';
 import '../widgets/custom_app_bar.dart';
-import '../widgets/rugged_button.dart';
 import 'home_screen.dart';
 import 'welcome_screen.dart';
 import 'map_onboarding_screen.dart';
@@ -21,7 +21,16 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   bool _notifications = true;
-  bool _offlineSync = true;
+
+  void _showActionDialog(String action) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('La función "$action" estará disponible pronto'),
+        backgroundColor: AppColors.primary,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,12 +65,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               image: FileImage(profileImage.imageFile!),
                               fit: BoxFit.cover,
                             )
-                          : const DecorationImage(
-                              image: NetworkImage(
-                                'https://lh3.googleusercontent.com/aida-public/AB6AXuCTJGCEi16aUTDw3teJYYIG4o1sxhol2vxdeCDJd_xTonNe12Xf1kwbshQ25TtdlrWtlRcQjf1jwF9dTVqHu1tyjOt6u5S7TfEBN9pj9aRcwZZlN1gyXHmJZdWvkNY4gZj2fKmnxNlRKM9M2x--gjPXGDZOM4ROQ29HS6R_mNK7AM-xsv_0nRQcjbocYWRLFNyyNxlBsP3KuhDLKcX8mj7LaEVo1rnPVG4XYxIHCN3svc1Hz144HJM-1Nl4V5xfFKi41FQgiNCpX4p3',
-                              ),
-                              fit: BoxFit.cover,
-                            ),
+                          : user?.fotoPerfilUrl != null && user!.fotoPerfilUrl!.isNotEmpty
+                              ? DecorationImage(
+                                  image: NetworkImage(
+                                    user.fotoPerfilUrl!.startsWith('http')
+                                        ? user.fotoPerfilUrl!
+                                        : '${ApiEndpoints.baseUrl.replaceAll('/api/v1', '')}${user.fotoPerfilUrl}',
+                                  ),
+                                  fit: BoxFit.cover,
+                                )
+                              : const DecorationImage(
+                                  image: NetworkImage(
+                                    'https://lh3.googleusercontent.com/aida-public/AB6AXuCTJGCEi16aUTDw3teJYYIG4o1sxhol2vxdeCDJd_xTonNe12Xf1kwbshQ25TtdlrWtlRcQjf1jwF9dTVqHu1tyjOt6u5S7TfEBN9pj9aRcwZZlN1gyXHmJZdWvkNY4gZj2fKmnxNlRKM9M2x--gjPXGDZOM4ROQ29HS6R_mNK7AM-xsv_0nRQcjbocYWRLFNyyNxlBsP3KuhDLKcX8mj7LaEVo1rnPVG4XYxIHCN3svc1Hz144HJM-1Nl4V5xfFKi41FQgiNCpX4p3',
+                                  ),
+                                  fit: BoxFit.cover,
+                                ),
                       boxShadow: [
                         BoxShadow(
                           color: AppColors.primary.withValues(alpha: 0.08),
@@ -95,13 +113,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
             // Información Personal
             _sectionCard(
               icon: Icons.person,
-              title: 'Información\nPersonal',
+              title: 'Información Personal',
               children: [
                 _field('NOMBRE COMPLETO', name),
                 const SizedBox(height: 16),
-                _field('CORREO ELECTRÓNICO', email),
+                _field(
+                  'CORREO ELECTRÓNICO',
+                  email,
+                  actionText: 'Cambiar',
+                  onActionTap: () => _showActionDialog('Cambiar correo'),
+                ),
                 const SizedBox(height: 16),
-                _field('TELÉFONO', user?.telefono ?? '+57 300 0000000'),
+                _field(
+                  'TELÉFONO',
+                  user?.telefono ?? '+57 300 0000000',
+                  actionText: 'Cambiar',
+                  onActionTap: () => _showActionDialog('Cambiar teléfono'),
+                ),
               ],
             ),
             const SizedBox(height: 24),
@@ -111,13 +139,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               icon: Icons.lock,
               title: 'Seguridad',
               children: [
-                _field('CONTRASEÑA ACTUAL', '••••••••', obscure: true),
-                const SizedBox(height: 16),
                 _field(
-                  'NUEVA CONTRASEÑA',
-                  '',
+                  'CONTRASEÑA',
+                  '••••••••',
                   obscure: true,
-                  hint: 'Ingresar nueva contraseña',
+                  actionText: 'Cambiar',
+                  onActionTap: () => _showActionDialog('Cambiar contraseña'),
                 ),
               ],
             ),
@@ -133,35 +160,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _notifications,
                   (v) => setState(() => _notifications = v),
                 ),
-                const Divider(
-                  color: AppColors.outlineVariant,
-                  height: 1,
-                  thickness: 1,
-                ),
-                _switchRow(
-                  'Sincronización Offline',
-                  _offlineSync,
-                  (v) => setState(() => _offlineSync = v),
-                ),
               ],
             ),
-            const SizedBox(height: 32),
-            RuggedButton(
-              text: 'GUARDAR CAMBIOS',
-              icon: Icons.save,
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Cambios guardados',
-                      style: AppText.bodyMd(color: AppColors.onPrimary),
-                    ),
-                    backgroundColor: AppColors.primary,
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 15),
             SizedBox(
               width: double.infinity,
               height: 56,
@@ -233,11 +234,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
               current: AgroTab.perfil,
               onTap: (tab) {
                 if (tab == AgroTab.home) {
-                  Navigator.pushReplacement(
-                      context, MaterialPageRoute(builder: (_) => const HomeScreen()));
-                } else if (tab == AgroTab.lotes) {
                   Navigator.pushReplacement(context,
-                      MaterialPageRoute(builder: (_) => const MapOnboardingScreen()));
+                      MaterialPageRoute(builder: (_) => const HomeScreen()));
+                } else if (tab == AgroTab.lotes) {
+                  Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const MapOnboardingScreen()));
                 } else if (tab == AgroTab.tareas) {
                   Navigator.pushReplacement(context,
                       MaterialPageRoute(builder: (_) => const TasksScreen()));
@@ -294,11 +297,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
     String value, {
     bool obscure = false,
     String? hint,
+    String? actionText,
+    VoidCallback? onActionTap,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: AppText.labelCaps()),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label, style: AppText.labelCaps()),
+            if (actionText != null && onActionTap != null)
+              GestureDetector(
+                onTap: onActionTap,
+                child: Text(
+                  actionText,
+                  style: AppText.labelCaps(color: AppColors.primary).copyWith(
+                    decoration: TextDecoration.underline,
+                    decorationColor: AppColors.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+          ],
+        ),
         const SizedBox(height: 8),
         Container(
           width: double.infinity,
@@ -312,6 +334,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             obscure && value.isNotEmpty
                 ? '••••••••'
                 : (value.isEmpty ? (hint ?? '') : value),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: AppText.bodyMd(
               color: value.isEmpty ? AppColors.outline : AppColors.onSurface,
             ),

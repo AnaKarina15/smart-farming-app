@@ -19,11 +19,13 @@ import 'irrigation_success_screen.dart';
 class IrrigationScreen extends StatefulWidget {
   final AgroTab currentTab;
   final String? fixedLote;
+  final String? idToEdit;
 
   const IrrigationScreen({
     super.key,
     this.currentTab = AgroTab.tareas,
     this.fixedLote,
+    this.idToEdit,
   });
 
   @override
@@ -46,7 +48,24 @@ class _IrrigationScreenState extends State<IrrigationScreen> {
       if (!provider.hasLotes) {
         provider.init();
       }
+      if (widget.idToEdit != null) {
+        _loadEditData();
+      }
     });
+  }
+
+  Future<void> _loadEditData() async {
+    final rows = await DatabaseHelper.instance.queryWhere(
+      DatabaseHelper.tableRiego, 'id = ?', [widget.idToEdit!]);
+    if (rows.isNotEmpty && mounted) {
+      final data = rows.first;
+      setState(() {
+        _loteId = data['loteId'];
+        _liters = data['cantidadLitros'] as int? ?? 0;
+        _litersController.text = _liters.toString();
+        _loteNombre = data['loteNombre'];
+      });
+    }
   }
 
   @override
@@ -128,7 +147,7 @@ class _IrrigationScreenState extends State<IrrigationScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Aplicar 20L en Lote 1 para optimizar el rendimiento del suelo hoy.',
+                          'Aplicar 20L en ${_loteNombre ?? 'el lote seleccionado'} para optimizar el rendimiento del suelo hoy.',
                           style: AppText.bodyMd(
                             color: AppColors.onSecondaryContainer,
                           ),
@@ -224,6 +243,14 @@ class _IrrigationScreenState extends State<IrrigationScreen> {
                 }),
               ],
             ),
+            if (_liters == 0)
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+                child: Text(
+                  'La cantidad debe ser mayor a 0 para poder registrarse.',
+                  style: AppText.bodyMd(color: AppColors.error).copyWith(fontWeight: FontWeight.w600),
+                ),
+              ),
             const SizedBox(height: 24),
 
             // Context info
@@ -241,17 +268,26 @@ class _IrrigationScreenState extends State<IrrigationScreen> {
               onPressed: _guardando
                   ? () {}
                   : () async {
-                      if (_loteId == null) return;
+                      if (_loteId == null || _liters <= 0) {
+                        if (_liters <= 0) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Por favor, indica una cantidad de agua mayor a 0 litros.'),
+                              backgroundColor: AppColors.error,
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        }
+                        return;
+                      }
                       setState(() => _guardando = true);
 
                       final user = context.read<AuthProvider>().currentUser;
                       final userId = user?.id ?? 'unknown';
-                      final id =
-                          'riego_${DateTime.now().millisecondsSinceEpoch}';
+                      final id = widget.idToEdit ?? 'riego_${DateTime.now().millisecondsSinceEpoch}';
                       final now = DateTime.now().toIso8601String();
 
-                      await DatabaseHelper.instance
-                          .insert(DatabaseHelper.tableRiego, {
+                      final data = {
                         'id': id,
                         'loteId': _loteId,
                         'loteNombre': _loteNombre,
@@ -259,12 +295,20 @@ class _IrrigationScreenState extends State<IrrigationScreen> {
                         'duracionMinutos': null,
                         'cantidadLitros': _liters,
                         'fecha': now,
-                        'humedad': null,
-                        'observaciones': null,
-                        'userId': userId,
-                        'createdAt': now,
                         'isPendingSync': 1,
-                      });
+                        'createdBy': userId,
+                      };
+
+                      if (widget.idToEdit != null) {
+                        data['updatedAt'] = now;
+                        await DatabaseHelper.instance.update(
+                          DatabaseHelper.tableRiego, data,
+                          'id = ?', [id]);
+                      } else {
+                        data['createdAt'] = now;
+                        await DatabaseHelper.instance.insert(
+                          DatabaseHelper.tableRiego, data);
+                      }
 
                       if (!context.mounted) return;
                       setState(() => _guardando = false);

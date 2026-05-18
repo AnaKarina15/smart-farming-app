@@ -13,6 +13,10 @@ import 'map_onboarding_screen.dart';
 import 'profile_screen.dart';
 import 'tasks_screen.dart';
 import 'soil_success_screen.dart';
+import 'package:provider/provider.dart';
+import '../../core/storage/database_helper.dart';
+import '../../data/providers/auth_provider.dart';
+import '../../data/providers/lotes_provider.dart';
 
 class SoilHumidityScreen extends StatefulWidget {
   final AgroTab currentTab;
@@ -101,24 +105,48 @@ class _SoilHumidityScreenState extends State<SoilHumidityScreen> {
     }
   }
 
-  // Lotes simulados para asociar el registro o el sensor
-  final List<String> _lotes = [
-    'Lote 1 — Sector Norte',
-    'Lote 2 — Ladera Este',
-    'Lote 3 — Valle Sur'
-  ];
-  String _selectedLote = 'Lote 1 — Sector Norte';
+  String? _loteId;
+  String? _loteNombre;
+  bool _guardando = false;
 
   @override
   void initState() {
     super.initState();
-    if (widget.fixedLote != null) {
-      _selectedLote = widget.fixedLote!;
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = context.read<LotesProvider>();
+      if (!provider.hasLotes) {
+        provider.init();
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final lotesProvider = context.watch<LotesProvider>();
+    final lotes = lotesProvider.lotes;
+
+    if (_loteId == null && lotes.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            if (widget.fixedLote != null) {
+              final found = lotes.where((l) => l.nombre == widget.fixedLote).toList();
+              if (found.isNotEmpty) {
+                _loteId = found.first.id;
+                _loteNombre = found.first.nombre;
+              } else {
+                _loteId = lotes.first.id;
+                _loteNombre = lotes.first.nombre;
+              }
+            } else {
+              _loteId = lotes.first.id;
+              _loteNombre = lotes.first.nombre;
+            }
+          });
+        }
+      });
+    }
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: const CustomAppBar(showBack: true),
@@ -140,7 +168,11 @@ class _SoilHumidityScreenState extends State<SoilHumidityScreen> {
               style: AppText.labelCaps(color: AppColors.onSurfaceVariant),
             ),
             const SizedBox(height: 8),
-            if (widget.fixedLote != null)
+            if (lotesProvider.isLoading && lotes.isEmpty)
+              const Center(child: CircularProgressIndicator())
+            else if (lotes.isEmpty)
+              Text('Sin lotes', style: AppText.bodyMd())
+            else if (widget.fixedLote != null && _loteNombre != null)
               Container(
                 height: 56,
                 width: double.infinity,
@@ -151,7 +183,7 @@ class _SoilHumidityScreenState extends State<SoilHumidityScreen> {
                   border: Border.all(color: AppColors.outlineVariant),
                 ),
                 alignment: Alignment.centerLeft,
-                child: Text(widget.fixedLote!, style: AppText.bodyMd()),
+                child: Text(_loteNombre!, style: AppText.bodyMd()),
               )
             else
               Container(
@@ -163,20 +195,22 @@ class _SoilHumidityScreenState extends State<SoilHumidityScreen> {
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
-                    value: _selectedLote,
+                    value: _loteId,
                     isExpanded: true,
                     icon: const Icon(Icons.arrow_drop_down,
                         color: AppColors.primary),
-                    items: _lotes.map((lote) {
+                    items: lotes.map((lote) {
                       return DropdownMenuItem(
-                        value: lote,
-                        child: Text(lote, style: AppText.bodyMd()),
+                        value: lote.id,
+                        child: Text(lote.nombre, style: AppText.bodyMd()),
                       );
                     }).toList(),
                     onChanged: (value) {
                       if (value != null) {
+                        final l = lotes.firstWhere((x) => x.id == value);
                         setState(() {
-                          _selectedLote = value;
+                          _loteId = value;
+                          _loteNombre = l.nombre;
                           _isSensorConnected = false;
                           _isConnecting = false;
                         });
@@ -256,15 +290,41 @@ class _SoilHumidityScreenState extends State<SoilHumidityScreen> {
             const SizedBox(height: 32),
             // Save Button
             ElevatedButton.icon(
-              onPressed: () {
+              onPressed: _guardando ? null : () async {
+                if (_loteId == null) return;
+                setState(() => _guardando = true);
+
                 final perceptionValue = _isSensorMode
                     ? '$_sensorValue% (Sensor)'
                     : _selectedPerception!;
+                
+                final user = context.read<AuthProvider>().currentUser;
+                final userId = user?.id ?? 'unknown';
+                final now = DateTime.now().toIso8601String();
+
+                await DatabaseHelper.instance.insert(DatabaseHelper.tableRiego, {
+                    'id': 'humedad_${DateTime.now().millisecondsSinceEpoch}',
+                    'loteId': _loteId,
+                    'loteNombre': _loteNombre,
+                    'tipo': _isSensorMode ? 'Sensor Humedad' : 'Manual Humedad',
+                    'duracionMinutos': null,
+                    'cantidadLitros': 0,
+                    'fecha': now,
+                    'humedad': perceptionValue,
+                    'observaciones': null,
+                    'userId': userId,
+                    'createdAt': now,
+                    'isPendingSync': 1,
+                });
+
+                if (!context.mounted) return;
+                setState(() => _guardando = false);
+
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
                     builder: (_) => SoilSuccessScreen(
-                      lote: _selectedLote,
+                      lote: _loteNombre ?? '',
                       perception: perceptionValue,
                       currentTab: widget.currentTab,
                       isSensor: _isSensorMode,

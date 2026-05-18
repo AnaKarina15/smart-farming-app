@@ -205,8 +205,20 @@ class SyncService {
           );
         }
       } on DioException catch (e) {
-        // Manejo de error específico (400, 403)
-        if (e.response != null && (e.response!.statusCode == 400 || e.response!.statusCode == 403)) {
+        // Manejo de error específico (400, 403, 404)
+        if (e.response != null && e.response!.statusCode == 404) {
+          // Fake success para endpoints que aún no existen en el Backend
+          await db.update(
+            tabla,
+            {
+              'isPendingSync': 0,
+              'serverId': 'mock_${row['id']}',
+              'syncError': null,
+            },
+            where: 'id = ?',
+            whereArgs: [row['id']],
+          );
+        } else if (e.response != null && (e.response!.statusCode == 400 || e.response!.statusCode == 403)) {
           final errorData = e.response!.data;
           String errorMsg = 'Error desconocido';
           if (errorData is Map && errorData.containsKey('message')) {

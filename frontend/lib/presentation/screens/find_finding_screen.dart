@@ -32,6 +32,7 @@ class _FindFindingScreenState extends State<FindFindingScreen> {
   String? _sintomasSugeridos;
   String _tipo = 'INSECTO';
   String _severidad = 'MEDIO';
+  String? _fotoPath;
   bool _guardando = false;
 
   @override
@@ -47,9 +48,14 @@ class _FindFindingScreenState extends State<FindFindingScreen> {
   }
 
   Future<void> _guardarHallazgo() async {
-    if (_loteId == null) {
+    if (_loteId == null || _selectedPlagaId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Selecciona un lote')),
+        SnackBar(
+          content: Text('Por favor, completa todos los campos requeridos.',
+            style: AppText.bodyMd(color: Colors.white).copyWith(fontWeight: FontWeight.w600)),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
       );
       return;
     }
@@ -69,7 +75,7 @@ class _FindFindingScreenState extends State<FindFindingScreen> {
       'plagaId': _selectedPlagaId,
       'severidad': _severidad,
       'descripcion': null,
-      'fotoPath': null,
+      'fotoPath': _fotoPath,
       'fecha': now,
       'userId': userId,
       'createdAt': now,
@@ -206,6 +212,7 @@ class _FindFindingScreenState extends State<FindFindingScreen> {
                     child: DropdownButton<String>(
                       value: _selectedPlagaId,
                       isExpanded: true,
+                      menuMaxHeight: 300,
                       icon: const Icon(Icons.keyboard_arrow_down,
                           color: AppColors.onSurfaceVariant),
                       items: [
@@ -243,19 +250,19 @@ class _FindFindingScreenState extends State<FindFindingScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.secondaryContainer.withValues(alpha: 0.3),
+                  color: const Color(0xFFE8F5E9), // Verde muy suave para no ser opaco
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Icon(Icons.info_outline,
-                        color: AppColors.secondary, size: 20),
+                        color: Color(0xFF1B5E20), size: 20),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'Síntomas típicos: $_sintomasSugeridos',
-                        style: AppText.bodyMd(color: AppColors.secondary),
+                        style: AppText.bodyMd(color: const Color(0xFF1B5E20)),
                       ),
                     ),
                   ],
@@ -263,17 +270,19 @@ class _FindFindingScreenState extends State<FindFindingScreen> {
               ),
             ],
             const SizedBox(height: 24),
-            _label('TIPO DETECTADO'),
-            Row(
-              children: [
-                Expanded(child: _tipoOption('INSECTO', Icons.bug_report)),
-                const SizedBox(width: 12),
-                Expanded(child: _tipoOption('ENFERMEDAD', Icons.coronavirus)),
-                const SizedBox(width: 12),
-                Expanded(child: _tipoOption('MALEZA', Icons.grass)),
-              ],
-            ),
-            const SizedBox(height: 24),
+            if (_selectedPlagaId == 'OTROS' || _selectedPlagaId == null) ...[
+              _label('TIPO DETECTADO'),
+              Row(
+                children: [
+                  Expanded(child: _tipoOption('INSECTO', Icons.bug_report)),
+                  const SizedBox(width: 12),
+                  Expanded(child: _tipoOption('ENFERMEDAD', Icons.coronavirus)),
+                  const SizedBox(width: 12),
+                  Expanded(child: _tipoOption('MALEZA', Icons.grass)),
+                ],
+              ),
+              const SizedBox(height: 24),
+            ],
             _label('SEVERIDAD'),
             Row(
               children: [
@@ -292,33 +301,52 @@ class _FindFindingScreenState extends State<FindFindingScreen> {
             ),
             const SizedBox(height: 24),
             _label('EVIDENCIA'),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 32),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceContainerLowest,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: CustomPaint(
-                      painter: _DashedRectPainter(color: AppColors.outline),
-                    ),
-                  ),
-                  Center(
-                    child: Column(
-                      children: [
-                        const Icon(Icons.camera_alt_outlined,
-                            color: AppColors.onSurfaceVariant, size: 32),
-                        const SizedBox(height: 8),
-                        Text('TOMAR FOTO',
+            GestureDetector(
+              onTap: () async {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Abriendo cámara...')),
+                );
+                await Future.delayed(const Duration(seconds: 1));
+                setState(() {
+                  _fotoPath = 'path/simulado/foto_plaga.jpg';
+                });
+              },
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 32),
+                decoration: BoxDecoration(
+                  color: _fotoPath != null ? AppColors.primaryContainer.withValues(alpha: 0.3) : AppColors.surfaceContainerLowest,
+                  borderRadius: BorderRadius.circular(12),
+                  border: _fotoPath != null ? Border.all(color: AppColors.primary, width: 2) : null,
+                ),
+                child: Stack(
+                  children: [
+                    if (_fotoPath == null)
+                      Positioned.fill(
+                        child: CustomPaint(
+                          painter: _DashedRectPainter(color: AppColors.outline),
+                        ),
+                      ),
+                    Center(
+                      child: Column(
+                        children: [
+                          Icon(
+                            _fotoPath != null ? Icons.check_circle : Icons.camera_alt_outlined,
+                            color: _fotoPath != null ? AppColors.primary : AppColors.onSurfaceVariant,
+                            size: 32,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            _fotoPath != null ? 'FOTO CAPTURADA' : 'TOMAR FOTO',
                             style: AppText.labelCaps(
-                                color: AppColors.onSurfaceVariant)),
-                      ],
+                              color: _fotoPath != null ? AppColors.primary : AppColors.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 48),

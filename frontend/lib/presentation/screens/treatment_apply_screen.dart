@@ -240,7 +240,17 @@ class _TreatmentApplyScreenState extends State<TreatmentApplyScreen> {
               onPressed: _guardando
                   ? () {}
                   : () async {
-                      if (_loteId == null) return;
+                      if (_loteId == null || _insumoCtrl.text.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Por favor, completa todos los campos requeridos (Insumo y Lote).',
+                              style: AppText.bodyMd(color: Colors.white).copyWith(fontWeight: FontWeight.w600)),
+                            backgroundColor: AppColors.error,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                        return;
+                      }
                       setState(() => _guardando = true);
 
                       final user = context.read<AuthProvider>().currentUser;

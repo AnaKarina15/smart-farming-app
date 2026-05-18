@@ -438,6 +438,7 @@ class _LoteCard extends StatefulWidget {
 
 class _LoteCardState extends State<_LoteCard> {
   String get _loteName => widget.lote.nombre;
+  bool _isMenuOpen = false;
 
   void _navigate(Widget screen) {
     Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
@@ -445,6 +446,7 @@ class _LoteCardState extends State<_LoteCard> {
 
   @override
   Widget build(BuildContext context) {
+    final isActive = widget.isSelected || _isMenuOpen;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       decoration: BoxDecoration(
@@ -452,10 +454,10 @@ class _LoteCardState extends State<_LoteCard> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color:
-              widget.isSelected ? widget.statusColor : AppColors.outlineVariant,
-          width: widget.isSelected ? 2 : 1,
+              isActive ? widget.statusColor : AppColors.outlineVariant,
+          width: isActive ? 2 : 1,
         ),
-        boxShadow: widget.isSelected
+        boxShadow: isActive
             ? [
                 BoxShadow(
                   color: widget.statusColor.withValues(alpha: 0.15),
@@ -579,7 +581,10 @@ class _LoteCardState extends State<_LoteCard> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         color: Colors.white,
                         elevation: 4,
+                        onOpened: () => setState(() => _isMenuOpen = true),
+                        onCanceled: () => setState(() => _isMenuOpen = false),
                         onSelected: (val) {
+                          setState(() => _isMenuOpen = false);
                           if (val == 'edit') {
                             Navigator.push(
                               context,

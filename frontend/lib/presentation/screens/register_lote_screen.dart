@@ -77,15 +77,15 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
   }
 
   Future<void> _initDotMarker() async {
-    final int size = 60;
+    final int size = 32; // Puntos pequeños y finos
     final dart_ui.PictureRecorder pictureRecorder = dart_ui.PictureRecorder();
     final Canvas canvas = Canvas(pictureRecorder);
     final Paint paint1 = Paint()..color = const Color(0xFFFF6B00);
     final Paint paint2 = Paint()..color = Colors.white;
 
+    // Borde naranja y centro blanco
     canvas.drawCircle(Offset(size / 2, size / 2), size / 2.0, paint1);
-    canvas.drawCircle(Offset(size / 2, size / 2), size / 3.0, paint2);
-    canvas.drawCircle(Offset(size / 2, size / 2), size / 4.0, paint1);
+    canvas.drawCircle(Offset(size / 2, size / 2), (size / 2.0) - 4, paint2);
 
     final dart_ui.Image image = await pictureRecorder.endRecording().toImage(size, size);
     final ByteData? byteData = await image.toByteData(format: dart_ui.ImageByteFormat.png);
@@ -96,6 +96,61 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
         _dotMarker = BitmapDescriptor.bytes(uint8List);
       });
     }
+  }
+
+  BitmapDescriptor? _areaMarkerIcon;
+  String _lastAreaText = '';
+
+  Future<void> _updateAreaMarker(String haText, String m2Text) async {
+    final String text = '$m2Text m²\n($haText Ha)';
+    if (text == _lastAreaText) return;
+    _lastAreaText = text;
+
+    final dart_ui.PictureRecorder pictureRecorder = dart_ui.PictureRecorder();
+    final Canvas canvas = Canvas(pictureRecorder);
+
+    final textSpan = TextSpan(
+      text: text,
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 18, // Letra pequeña y sutil
+        fontWeight: FontWeight.bold,
+      ),
+    );
+
+    final textPainter = TextPainter(
+      text: textSpan,
+      textAlign: TextAlign.center,
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+
+    final paint = Paint()..color = const Color(0xFFFF6B00).withValues(alpha: 0.85);
+    final rect = Rect.fromLTRB(0, 0, textPainter.width + 24, textPainter.height + 12);
+    final RRect rrect = RRect.fromRectAndRadius(rect, const Radius.circular(8));
+    canvas.drawRRect(rrect, paint);
+
+    textPainter.paint(canvas, const Offset(12, 6));
+
+    final dart_ui.Image img = await pictureRecorder.endRecording().toImage(rect.width.toInt(), rect.height.toInt());
+    final ByteData? data = await img.toByteData(format: dart_ui.ImageByteFormat.png);
+    
+    if (mounted) {
+      setState(() {
+        _areaMarkerIcon = BitmapDescriptor.bytes(data!.buffer.asUint8List());
+      });
+    }
+  }
+
+  LatLng _getPolygonCentroid() {
+    if (_polygonLatLngs.isEmpty) return const LatLng(0, 0);
+    double latSum = 0;
+    double lngSum = 0;
+    for (var p in _polygonLatLngs) {
+      latSum += p.latitude;
+      lngSum += p.longitude;
+    }
+    return LatLng(latSum / _polygonLatLngs.length, lngSum / _polygonLatLngs.length);
   }
 
   void _initializePolygon(double lat, double lng, {double? ha}) {
@@ -118,6 +173,8 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
         LatLng(lat - dLat, lng - dLng),
       ];
     });
+    // Se asegura de generar el icono de área instantáneamente
+    _calculateAreaFromLatLngs();
   }
 
   void _calculateAreaFromLatLngs() {
@@ -143,7 +200,10 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
     area = (area.abs() / 2.0); // Area in square meters
     double ha = area / 10000.0; // 1 Hectare = 10,000 m²
     if (ha < 0.1) ha = 0.1;
-    _areaController.text = ha.toStringAsFixed(1);
+    final haText = ha.toStringAsFixed(1);
+    final m2Text = area.toStringAsFixed(0);
+    _areaController.text = haText;
+    _updateAreaMarker(haText, m2Text);
   }
 
   String? _selectedMunicipioId;
@@ -264,10 +324,7 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
       return;
     }
 
-    if (_selectedMunicipioId == null && _manualMunicipioCtrl.text.trim().isEmpty) {
-      _showSnack('Por favor selecciona un municipio o colócalo manualmente.');
-      return;
-    }
+    // Validación de Municipio eliminada (ahora es opcional)
 
     if (_manualLocationCtrl.text.trim().isEmpty) {
       _showSnack('Por favor ingresa la dirección o ubicación de tu lote.');
@@ -298,21 +355,36 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
     final descripcionFinal =
         partes.isNotEmpty ? partes.join(' – ') : _locationLabel;
 
-    final success = await lotesProvider.crearLote(
-      nombre: name,
-      descripcion: descripcionFinal,
-      superficieHectareas: double.tryParse(_areaController.text) ?? 0.0,
-      latitud: _lat,
-      longitud: _lng,
-      propietarioId: auth.currentUser?.id ?? 'unknown',
-      municipioId: _selectedMunicipioId,
-      tipoSueloId: _selectedTipoSueloId,
-    );
+    final isEditing = widget.loteToEdit != null;
+    bool success = false;
+
+    if (isEditing) {
+      success = await lotesProvider.actualizarLote(
+        id: widget.loteToEdit!.id,
+        nombre: name,
+        descripcion: descripcionFinal,
+        superficieHectareas: double.tryParse(_areaController.text) ?? 0.0,
+        latitud: _lat,
+        longitud: _lng,
+      );
+    } else {
+      success = await lotesProvider.crearLote(
+        nombre: name,
+        descripcion: descripcionFinal,
+        superficieHectareas: double.tryParse(_areaController.text) ?? 0.0,
+        latitud: _lat,
+        longitud: _lng,
+        propietarioId: auth.currentUser?.id ?? 'unknown',
+        municipioId: _selectedMunicipioId,
+        tipoSueloId: _selectedTipoSueloId,
+      );
+    }
 
     setState(() => _saving = false);
 
     if (!success) {
-      _showSnack('Error al guardar el lote: ${lotesProvider.errorMessage}');
+      _showSnack(
+          'Error al ${isEditing ? 'actualizar' : 'guardar'} el lote: ${lotesProvider.errorMessage}');
       return;
     }
 
@@ -321,7 +393,9 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
     // Verificar si es el primer lote para mostrar un mensaje especial
     final prefs = await SharedPreferences.getInstance();
     final isFirstLote = !(prefs.getBool('has_lotes') ?? false);
-    await prefs.setBool('has_lotes', true);
+    if (!isEditing) {
+      await prefs.setBool('has_lotes', true);
+    }
 
     // Show success dialog
     if (!mounted) return;
@@ -350,15 +424,19 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        isFirstLote
-                            ? '¡Registraste tu\nprimer lote!'
-                            : '¡Lote registrado!',
+                        isEditing
+                            ? '¡Lote Actualizado!'
+                            : (isFirstLote
+                                ? '¡Registraste tu\nprimer lote!'
+                                : '¡Lote registrado!'),
                         textAlign: TextAlign.center,
                         style: AppText.h2(),
                       ),
                       const SizedBox(height: 10),
                       Text(
-                        '"$name" ya está disponible en tu sistema.',
+                        isEditing
+                            ? 'Los cambios en "$name" han sido guardados.'
+                            : '"$name" ya está disponible en tu sistema.',
                         textAlign: TextAlign.center,
                         style:
                             AppText.bodyMd(color: AppColors.onSurfaceVariant),
@@ -443,6 +521,7 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                               _lat = location.latitude;
                               _lng = location.longitude;
                               _locationLabel = 'Buscando dirección...';
+                              _editingZone = true; // Habilita edición de esquinas inmediatamente
                             });
                             _initializePolygon(location.latitude, location.longitude);
                             try {
@@ -461,13 +540,13 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                             }
                           },
                     markers: {
-                      if (_lat != null && _lng != null && !_editingZone)
+                      if (_lat != null && _lng != null)
                         Marker(
                           markerId: const MarkerId('lote_marker'),
                           position: LatLng(_lat!, _lng!),
                           infoWindow: InfoWindow(title: _locationLabel ?? 'Lote'),
                         ),
-                      if (_editingZone && _polygonLatLngs.isNotEmpty)
+                      if (_editingZone && _polygonLatLngs.isNotEmpty) ...[
                         ..._polygonLatLngs.asMap().entries.map((entry) {
                           final idx = entry.key;
                           final latLng = entry.value;
@@ -492,6 +571,14 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                             },
                           );
                         }),
+                        if (_areaMarkerIcon != null)
+                          Marker(
+                            markerId: const MarkerId('area_marker'),
+                            position: _getPolygonCentroid(),
+                            anchor: const Offset(0.5, 0.5),
+                            icon: _areaMarkerIcon!,
+                          ),
+                      ],
                     },
                     polygons: {
                       if (_polygonLatLngs.isNotEmpty)
@@ -542,73 +629,74 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                   ),
                 ),
 
-                // ── Métrica de Área (m² y Ha) ──────────────────────────────────
-                if (_polygonLatLngs.isNotEmpty && _areaController.text.isNotEmpty)
-                  Positioned(
-                    top: 76,
-                    left: 16,
-                    right: 64, // Da espacio al botón X
-                    child: Center(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryContainer.withValues(alpha: 0.95),
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: const [
-                            BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 2))
-                          ],
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              '${((double.tryParse(_areaController.text) ?? 0.0) * 10000).toStringAsFixed(0)} m² (${_areaController.text} Ha)',
-                              style: AppText.labelCaps(color: AppColors.onPrimaryContainer)
-                                  .copyWith(fontWeight: FontWeight.w800, fontSize: 13),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'Mantén presionado un punto para arrastrarlo',
-                              style: AppText.bodyMd(color: AppColors.onPrimaryContainer)
-                                  .copyWith(fontSize: 10, fontWeight: FontWeight.w600),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
+                // Area is now displayed inside the polygon via _areaMarkerIcon
 
-                // ── Botón X (Borrar Ubicación) ──────────────────────────────────
+                // ── Instrucción y Botón X (Borrar Ubicación) ──────────────────
                 if (_lat != null)
                   Positioned(
                     top: 76,
+                    left: 16,
                     right: 16,
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        color: AppColors.errorContainer,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 2))
-                        ],
-                      ),
-                      child: IconButton(
-                        icon: const Icon(Icons.close, color: AppColors.onErrorContainer, size: 20),
-                        tooltip: 'Borrar ubicación y área',
-                        onPressed: () {
-                          setState(() {
-                            _lat = null;
-                            _lng = null;
-                            _locationLabel = null;
-                            _polygonLatLngs.clear();
-                            _areaController.clear();
-                            _manualLocationCtrl.clear();
-                            _manualMunicipioCtrl.clear();
-                            _selectedMunicipioId = null;
-                            _searchCtrl.clear();
-                            _editingZone = false;
-                          });
-                        },
-                      ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (_polygonLatLngs.isNotEmpty)
+                          Expanded(
+                            child: Container(
+                              margin: const EdgeInsets.only(right: 12),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: Colors.lightGreen.shade600,
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: const [
+                                  BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2))
+                                ],
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.touch_app, color: Colors.white, size: 18),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'Mantén presionada una esquina para moverla',
+                                      style: AppText.bodyMd(color: Colors.white)
+                                          .copyWith(fontSize: 12, fontWeight: FontWeight.w600),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                        else
+                          const Spacer(),
+                        Container(
+                          decoration: const BoxDecoration(
+                            color: AppColors.errorContainer,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 2))
+                            ],
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.close, color: AppColors.onErrorContainer, size: 20),
+                            tooltip: 'Borrar ubicación y área',
+                            onPressed: () {
+                              setState(() {
+                                _lat = null;
+                                _lng = null;
+                                _locationLabel = null;
+                                _polygonLatLngs.clear();
+                                _areaController.clear();
+                                _manualLocationCtrl.clear();
+                                _manualMunicipioCtrl.clear();
+                                _selectedMunicipioId = null;
+                                _searchCtrl.clear();
+                                _editingZone = false;
+                              });
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                   ),
 
@@ -718,7 +806,7 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                               decoration: InputDecoration(
                                 filled: true,
                                 fillColor: AppColors.surface,
-                                hintText: 'Escribe el nombre de tu lote',
+                                hintText: 'Ej: Lote El Mirador',
                                 prefixIcon: const Icon(Icons.landscape,
                                     color: AppColors.primary, size: 20),
                                 border: OutlineInputBorder(
@@ -1084,7 +1172,9 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
 
                             // ── Save ──────────────────────────────────────────────
                             RuggedButton(
-                              text: _saving ? 'GUARDANDO...' : 'GUARDAR LOTE',
+                              text: _saving 
+                                ? 'GUARDANDO...' 
+                                : (widget.loteToEdit != null ? 'GUARDAR CAMBIOS' : 'GUARDAR LOTE'),
                               icon: Icons.save,
                               onPressed: _saving
                                   ? null

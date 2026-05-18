@@ -133,9 +133,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         const Icon(Icons.pending_actions,
                             size: 16, color: AppColors.error),
                         const SizedBox(width: 6),
-                        Text(
-                          '$pendientes registro(s) pendientes de enviar',
-                          style: AppText.bodyMd(color: AppColors.error),
+                        Expanded(
+                          child: Text(
+                            '$pendientes registro(s) pendientes de enviar',
+                            style: AppText.bodyMd(color: AppColors.error),
+                          ),
                         ),
                       ],
                     ),

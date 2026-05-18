@@ -15,7 +15,7 @@ import 'package:path_provider/path_provider.dart';
 /// - observaciones  → observaciones generales del campo
 class DatabaseHelper {
   static const _databaseName = 'AgroField.db';
-  static const _databaseVersion = 6;
+  static const _databaseVersion = 7;
 
   // Nombres de tablas
   static const tableLotes = 'lotes';
@@ -26,6 +26,7 @@ class DatabaseHelper {
   static const tableHallazgos = 'hallazgos';
   static const tableTratamientos = 'tratamientos';
   static const tableObservaciones = 'observaciones';
+  static const tableEstadoTerreno = 'estado_terreno';
 
   // Catálogos (Sprint 2)
   static const tableCatCultivos = 'catalogo_cultivos';
@@ -119,6 +120,10 @@ class DatabaseHelper {
       } catch (_) {} // Columna ya existe
       await _seedCatalogos(db);
     }
+    if (oldVersion < 7) {
+      // Sprint 4: Tabla de estado del terreno vinculada a lote y siembra
+      await _createEstadoTerreno(db);
+    }
   }
 
   Future<void> _createAllTables(Database db) async {
@@ -136,6 +141,7 @@ class DatabaseHelper {
     await _createCatalogoPlagas(db);
     await _createCatalogoFertilizantes(db);
     await _createCatalogoTiposSuelo(db);
+    await _createEstadoTerreno(db);
   }
 
   // ─── Datos semilla (offline-first) ────────────────────────
@@ -451,6 +457,25 @@ class DatabaseHelper {
     ''');
   }
 
+  Future<void> _createEstadoTerreno(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS $tableEstadoTerreno (
+        id TEXT PRIMARY KEY,
+        loteId TEXT NOT NULL,
+        loteNombre TEXT NOT NULL,
+        siembraId TEXT,
+        estado TEXT NOT NULL,
+        tipoSueloId TEXT,
+        notas TEXT,
+        userId TEXT NOT NULL,
+        createdAt TEXT NOT NULL,
+        isPendingSync INTEGER NOT NULL DEFAULT 1,
+        serverId TEXT,
+        syncError TEXT
+      )
+    ''');
+  }
+
   // ─── Tablas de Catálogos (Sprint 2) ─────────────────────────
 
   Future<void> _createCatalogoCultivos(Database db) async {
@@ -626,6 +651,7 @@ class DatabaseHelper {
       tableHallazgos,
       tableTratamientos,
       tableObservaciones,
+      tableEstadoTerreno,
     ];
     for (final t in tables) {
       try {

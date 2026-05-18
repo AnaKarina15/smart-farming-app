@@ -10,7 +10,9 @@ import '../../core/storage/database_helper.dart';
 import 'package:intl/intl.dart';
 import 'irrigation_screen.dart';
 import 'sowing_screen.dart';
-
+import 'terrain_status_screen.dart';
+import 'package:provider/provider.dart';
+import '../../data/providers/lotes_provider.dart';
 enum SyncStatus { syncing, local, completed }
 
 class _HistoryItem {
@@ -146,6 +148,31 @@ class _LoteHistoryScreenState extends State<LoteHistoryScreen> {
         iconFg: AppColors.onPrimaryContainer,
       ));
     }
+
+    // 6. Estado del Terreno
+    try {
+      final terrenos = await db.query(DatabaseHelper.tableEstadoTerreno,
+          where: 'loteNombre = ?', whereArgs: [widget.loteName]);
+      for (var t in terrenos) {
+        final estado = t['estado'] as String;
+        final siembraId = t['siembraId'] as String?;
+        final isPrevio = siembraId == null || 
+            ['limpio', 'con maleza', 'arado', 'adecuado'].contains(estado.toLowerCase());
+        final title = isPrevio ? 'Terreno (Previo): $estado' : 'Terreno: $estado';
+
+        items.add(_HistoryItem(
+          id: t['id'] as String,
+          table: DatabaseHelper.tableEstadoTerreno,
+          title: title,
+          type: 'terreno',
+          date: DateTime.parse(t['createdAt'] as String),
+          status: (t['isPendingSync'] as int) == 1 ? SyncStatus.local : SyncStatus.completed,
+          icon: Icons.landscape,
+          iconBg: AppColors.secondaryContainer,
+          iconFg: AppColors.secondary,
+        ));
+      }
+    } catch (_) {}
 
     // Sort descending (newest first)
     items.sort((a, b) => b.date.compareTo(a.date));
@@ -310,17 +337,20 @@ class _LoteHistoryScreenState extends State<LoteHistoryScreen> {
                             Navigator.push(context, MaterialPageRoute(builder: (_) => IrrigationScreen(idToEdit: id, currentTab: AgroTab.home)));
                           } else if (table == DatabaseHelper.tableSiembras) {
                             Navigator.push(context, MaterialPageRoute(builder: (_) => SowingScreen(idToEdit: id, currentTab: AgroTab.home)));
+                          } else if (table == DatabaseHelper.tableEstadoTerreno) {
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => TerrainStatusScreen(idToEdit: id, currentTab: AgroTab.home)));
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('Edición para este proceso disponible próximamente')),
                             );
                           }
                         } else if (value == 'delete') {
+                          final messenger = ScaffoldMessenger.of(context);
                           final confirm = await showDialog<bool>(
                             context: context,
                             builder: (context) => AlertDialog(
-                              title: const Text('Eliminar registro'),
-                              content: Text('¿Estás seguro de que deseas eliminar permanentemente este registro de $title?'),
+                              title: const Text('Confirmar Eliminación'),
+                              content: Text('¿Estás seguro que deseas eliminar el registro de "$title"?'),
                               actions: [
                                 TextButton(
                                   onPressed: () => Navigator.pop(context, false),
@@ -335,9 +365,34 @@ class _LoteHistoryScreenState extends State<LoteHistoryScreen> {
                           );
 
                           if (confirm == true) {
-                            final messenger = ScaffoldMessenger.of(context);
                             final db = await DatabaseHelper.instance.database;
                             await db.delete(table, where: 'id = ?', whereArgs: [id]);
+                            if (table == DatabaseHelper.tableSiembras) {
+                              await db.delete(
+                                DatabaseHelper.tableEstadoTerreno,
+                                where: 'siembraId = ?',
+                                whereArgs: [id],
+                              );
+                              try {
+                                final lotesRows = await db.query(
+                                  DatabaseHelper.tableLotes,
+                                  where: 'nombre = ?',
+                                  whereArgs: [widget.loteName],
+                                );
+                                if (lotesRows.isNotEmpty) {
+                                  final loteId = lotesRows.first['id'] as String;
+                                  await db.update(
+                                    DatabaseHelper.tableLotes,
+                                    {'cultivoActual': null, 'cultivoActualId': null},
+                                    where: 'id = ?',
+                                    whereArgs: [loteId],
+                                  );
+                                  if (mounted) {
+                                    context.read<LotesProvider>().init();
+                                  }
+                                }
+                              } catch (_) {}
+                            }
                             _loadHistory();
                             
                             messenger.showSnackBar(

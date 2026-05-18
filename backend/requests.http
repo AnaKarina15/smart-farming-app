@@ -89,3 +89,20 @@ Authorization: Bearer {{accessToken}}
 ### 11. Eliminar lote
 DELETE {{host}}/lotes/{{loteId}}
 Authorization: Bearer {{accessToken}}
+
+### 12. Registrar Estado del Terreno (Sprint 4)
+# @name registrarEstadoTerreno
+POST {{host}}/estado-terreno
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "loteId": "{{loteId}}",
+  "estado": "arado",
+  "notas": "Terreno preparado con arado de vertedera, listo para siembra de banano."
+}
+
+### 13. Listar Estados del Terreno
+GET {{host}}/estado-terreno?loteId={{loteId}}
+Authorization: Bearer {{accessToken}}
+

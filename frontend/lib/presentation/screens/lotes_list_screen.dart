@@ -15,6 +15,7 @@ import 'phytosanitary_screen.dart';
 import 'tasks_screen.dart';
 import 'register_lote_screen.dart';
 import 'lote_history_screen.dart';
+import 'terrain_status_screen.dart';
 import 'package:provider/provider.dart';
 import '../../data/providers/lotes_provider.dart';
 import '../../data/models/lote_model.dart';
@@ -453,8 +454,7 @@ class _LoteCardState extends State<_LoteCard> {
         color: AppColors.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color:
-              isActive ? widget.statusColor : AppColors.outlineVariant,
+          color: isActive ? widget.statusColor : AppColors.outlineVariant,
           width: isActive ? 2 : 1,
         ),
         boxShadow: isActive
@@ -576,9 +576,11 @@ class _LoteCardState extends State<_LoteCard> {
                       height: 32,
                       width: 32,
                       child: PopupMenuButton<String>(
-                        icon: const Icon(Icons.more_vert, color: AppColors.outline, size: 20),
+                        icon: const Icon(Icons.more_vert,
+                            color: AppColors.outline, size: 20),
                         padding: EdgeInsets.zero,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                         color: Colors.white,
                         elevation: 4,
                         onOpened: () => setState(() => _isMenuOpen = true),
@@ -589,7 +591,8 @@ class _LoteCardState extends State<_LoteCard> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => RegisterLoteScreen(loteToEdit: widget.lote),
+                                builder: (_) =>
+                                    RegisterLoteScreen(loteToEdit: widget.lote),
                               ),
                             );
                           } else if (val == 'delete') {
@@ -597,37 +600,50 @@ class _LoteCardState extends State<_LoteCard> {
                               context: context,
                               builder: (ctx) => AlertDialog(
                                 backgroundColor: AppColors.surfaceContainerHigh,
-                                title: Text('Eliminar Lote', style: AppText.h3(color: AppColors.onSurface)),
+                                title: Text('Eliminar Lote',
+                                    style:
+                                        AppText.h3(color: AppColors.onSurface)),
                                 content: Text(
                                   '¿Estás seguro de que deseas eliminar el lote "$_loteName"? Esta acción no se puede deshacer.',
-                                  style: AppText.bodyMd(color: AppColors.onSurfaceVariant),
+                                  style: AppText.bodyMd(
+                                      color: AppColors.onSurfaceVariant),
                                 ),
                                 actions: [
                                   TextButton(
                                     onPressed: () => Navigator.pop(ctx),
-                                    child: Text('CANCELAR', style: AppText.labelCaps(color: AppColors.primary)),
+                                    child: Text('CANCELAR',
+                                        style: AppText.labelCaps(
+                                            color: AppColors.primary)),
                                   ),
                                   TextButton(
                                     onPressed: () async {
                                       Navigator.pop(ctx);
-                                      final success = await context.read<LotesProvider>().eliminarLote(widget.lote.id);
+                                      final success = await context
+                                          .read<LotesProvider>()
+                                          .eliminarLote(widget.lote.id);
                                       if (success && context.mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
                                           SnackBar(
-                                            content: Text('Lote eliminado correctamente'),
+                                            content: Text(
+                                                'Lote eliminado correctamente'),
                                             backgroundColor: AppColors.primary,
                                           ),
                                         );
                                       } else if (context.mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
                                           SnackBar(
-                                            content: Text('Error al eliminar el lote'),
+                                            content: Text(
+                                                'Error al eliminar el lote'),
                                             backgroundColor: AppColors.error,
                                           ),
                                         );
                                       }
                                     },
-                                    child: Text('ELIMINAR', style: AppText.labelCaps(color: AppColors.error)),
+                                    child: Text('ELIMINAR',
+                                        style: AppText.labelCaps(
+                                            color: AppColors.error)),
                                   ),
                                 ],
                               ),
@@ -639,7 +655,8 @@ class _LoteCardState extends State<_LoteCard> {
                             value: 'edit',
                             child: Row(
                               children: [
-                                const Icon(Icons.edit, color: AppColors.primary, size: 20),
+                                const Icon(Icons.edit,
+                                    color: AppColors.primary, size: 20),
                                 const SizedBox(width: 12),
                                 Text('Editar', style: AppText.bodyMd()),
                               ],
@@ -649,9 +666,12 @@ class _LoteCardState extends State<_LoteCard> {
                             value: 'delete',
                             child: Row(
                               children: [
-                                const Icon(Icons.delete_outline, color: AppColors.error, size: 20),
+                                const Icon(Icons.delete_outline,
+                                    color: AppColors.error, size: 20),
                                 const SizedBox(width: 12),
-                                Text('Eliminar', style: AppText.bodyMd(color: AppColors.error)),
+                                Text('Eliminar',
+                                    style:
+                                        AppText.bodyMd(color: AppColors.error)),
                               ],
                             ),
                           ),
@@ -704,6 +724,13 @@ class _LoteCardState extends State<_LoteCard> {
                     runSpacing: 8,
                     children: [
                       _QuickAction(
+                        icon: Icons.eco,
+                        label: 'Siembra',
+                        color: const Color(0xFF827717),
+                        onTap: () => _navigate(SowingScreen(
+                            fixedLote: _loteName, currentTab: AgroTab.lotes)),
+                      ),
+                      _QuickAction(
                         icon: Icons.water_drop,
                         label: 'Riego',
                         color: const Color(0xFF1565C0),
@@ -715,13 +742,6 @@ class _LoteCardState extends State<_LoteCard> {
                         label: 'Fertilizar',
                         color: const Color(0xFF2E7D32),
                         onTap: () => _navigate(FertilizationScreen(
-                            fixedLote: _loteName, currentTab: AgroTab.lotes)),
-                      ),
-                      _QuickAction(
-                        icon: Icons.eco,
-                        label: 'Siembra',
-                        color: const Color(0xFF827717),
-                        onTap: () => _navigate(SowingScreen(
                             fixedLote: _loteName, currentTab: AgroTab.lotes)),
                       ),
                       _QuickAction(
@@ -737,6 +757,15 @@ class _LoteCardState extends State<_LoteCard> {
                         color: const Color(0xFF00838F),
                         onTap: () => _navigate(SoilHumidityScreen(
                             fixedLote: _loteName, currentTab: AgroTab.lotes)),
+                      ),
+                      _QuickAction(
+                        icon: Icons.landscape,
+                        label: 'Terreno',
+                        color: const Color(0xFFE65100),
+                        onTap: () => _navigate(TerrainStatusScreen(
+                            lote: _loteName,
+                            loteId: widget.lote.id,
+                            currentTab: AgroTab.lotes)),
                       ),
                       _QuickAction(
                         icon: Icons.history,

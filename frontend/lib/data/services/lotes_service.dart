@@ -78,10 +78,14 @@ class LotesService {
           'nombre': nombre,
           if (descripcion != null) 'descripcion': descripcion,
           'superficieHectareas': superficieHectareas,
-          if (cultivoActual != null && cultivoActual.isNotEmpty) 'cultivoActual': cultivoActual,
-          if (cultivoActualId != null && cultivoActualId.isNotEmpty) 'cultivoActualId': cultivoActualId,
-          if (municipioId != null && municipioId.isNotEmpty) 'municipioId': municipioId,
-          if (tipoSueloId != null && tipoSueloId.isNotEmpty) 'tipoSueloId': tipoSueloId,
+          if (cultivoActual != null && cultivoActual.isNotEmpty)
+            'cultivoActual': cultivoActual,
+          if (cultivoActualId != null && cultivoActualId.isNotEmpty)
+            'cultivoActualId': cultivoActualId,
+          if (municipioId != null && municipioId.isNotEmpty)
+            'municipioId': municipioId,
+          if (tipoSueloId != null && tipoSueloId.isNotEmpty)
+            'tipoSueloId': tipoSueloId,
           if (latitud != null) 'latitud': latitud,
           if (longitud != null) 'longitud': longitud,
         },
@@ -117,7 +121,8 @@ class LotesService {
         data: {
           if (nombre != null) 'nombre': nombre,
           if (descripcion != null) 'descripcion': descripcion,
-          if (superficieHectareas != null) 'superficieHectareas': superficieHectareas,
+          if (superficieHectareas != null)
+            'superficieHectareas': superficieHectareas,
           if (cultivoActual != null) 'cultivoActual': cultivoActual,
           if (latitud != null) 'latitud': latitud,
           if (longitud != null) 'longitud': longitud,

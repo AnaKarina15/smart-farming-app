@@ -36,6 +36,9 @@ class _IrrigationScreenState extends State<IrrigationScreen> {
   int _liters = 0;
   String? _loteId;
   String? _loteNombre;
+  String? _cultivoActual;
+  DateTime? _ultimoRiego;
+  int? _litrosRecomendados;
   late TextEditingController _litersController;
   bool _guardando = false;
 
@@ -65,6 +68,56 @@ class _IrrigationScreenState extends State<IrrigationScreen> {
         _litersController.text = _liters.toString();
         _loteNombre = data['loteNombre'];
       });
+      _loadSuggestionData(data['loteId'] as String?);
+    }
+  }
+
+  /// Carga el último riego y cultivo actual del lote para la sugerencia.
+  Future<void> _loadSuggestionData(String? loteId) async {
+    if (loteId == null) return;
+    final db = DatabaseHelper.instance;
+
+    // Último riego de este lote
+    final riegos = await db.queryWhere(
+      DatabaseHelper.tableRiego, 'loteId = ?', [loteId]);
+    DateTime? ultimo;
+    if (riegos.isNotEmpty) {
+      riegos.sort((a, b) => (b['fecha'] as String).compareTo(a['fecha'] as String));
+      ultimo = DateTime.tryParse(riegos.first['fecha'] as String? ?? '');
+    }
+
+    // Cultivo actual del lote
+    final lotesRows = await db.queryWhere(
+      DatabaseHelper.tableLotes, 'id = ?', [loteId]);
+    String? cultivo;
+    if (lotesRows.isNotEmpty) {
+      cultivo = lotesRows.first['cultivoActual'] as String?;
+    }
+
+    // Calcular litros recomendados según días desde último riego
+    int recomendado = 20;
+    if (ultimo != null) {
+      final dias = DateTime.now().difference(ultimo).inDays;
+      if (dias >= 5) {
+        recomendado = 40;
+      } else if (dias >= 3) {
+        recomendado = 25;
+      } else {
+        recomendado = 15;
+      }
+    }
+
+    if (mounted) {
+      setState(() {
+        _ultimoRiego = ultimo;
+        _cultivoActual = cultivo;
+        _litrosRecomendados = recomendado;
+        // Pre-llenar el stepper con la cantidad recomendada si está en 0
+        if (_liters == 0) {
+          _liters = recomendado;
+          _litersController.text = recomendado.toString();
+        }
+      });
     }
   }
 
@@ -89,22 +142,26 @@ class _IrrigationScreenState extends State<IrrigationScreen> {
     if (_loteId == null && lotes.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          setState(() {
-            if (widget.fixedLote != null) {
-              final found =
-                  lotes.where((l) => l.nombre == widget.fixedLote).toList();
-              if (found.isNotEmpty) {
-                _loteId = found.first.id;
-                _loteNombre = found.first.nombre;
-              } else {
-                _loteId = lotes.first.id;
-                _loteNombre = lotes.first.nombre;
-              }
+          String? newId;
+          String? newNombre;
+          if (widget.fixedLote != null) {
+            final found = lotes.where((l) => l.nombre == widget.fixedLote).toList();
+            if (found.isNotEmpty) {
+              newId = found.first.id;
+              newNombre = found.first.nombre;
             } else {
-              _loteId = lotes.first.id;
-              _loteNombre = lotes.first.nombre;
+              newId = lotes.first.id;
+              newNombre = lotes.first.nombre;
             }
+          } else {
+            newId = lotes.first.id;
+            newNombre = lotes.first.nombre;
+          }
+          setState(() {
+            _loteId = newId;
+            _loteNombre = newNombre;
           });
+          _loadSuggestionData(newId);
         }
       });
     }
@@ -122,49 +179,68 @@ class _IrrigationScreenState extends State<IrrigationScreen> {
             Text('Registrar Riego', style: AppText.h2()),
             const SizedBox(height: 5),
 
-            // Suggestion
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.secondaryContainer,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.outlineVariant, width: 1),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(Icons.info, color: AppColors.secondary, size: 22),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Sugerencia de riego',
-                          style: AppText.bodyMd(
-                            color: AppColors.onSecondaryContainer,
-                          ).copyWith(fontWeight: FontWeight.w600),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Aplicar 20L en ${_loteNombre ?? 'el lote seleccionado'} para optimizar el rendimiento del suelo hoy.',
-                          style: AppText.bodyMd(
-                            color: AppColors.onSecondaryContainer,
+            // Suggestion card dinámica
+            Builder(builder: (context) {
+              final loteNombre = _loteNombre ?? 'el lote seleccionado';
+              final litros = _litrosRecomendados ?? 20;
+              String diasTexto;
+              if (_ultimoRiego == null) {
+                diasTexto = 'Sin registros previos de riego';
+              } else {
+                final dias = DateTime.now().difference(_ultimoRiego!).inDays;
+                if (dias == 0) {
+                  diasTexto = 'Regado hoy';
+                } else if (dias == 1) {
+                  diasTexto = 'Último riego: ayer';
+                } else {
+                  diasTexto = 'Último riego: hace $dias días';
+                }
+              }
+              final cultivoTexto = (_cultivoActual != null && _cultivoActual!.isNotEmpty)
+                  ? ' para tu cultivo de ${_cultivoActual!.toLowerCase()}'
+                  : '';
+
+              return Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.secondaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.outlineVariant, width: 1),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.water_drop, color: AppColors.secondary, size: 22),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Sugerencia de riego',
+                            style: AppText.bodyMd(
+                              color: AppColors.onSecondaryContainer,
+                            ).copyWith(fontWeight: FontWeight.w600),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Sugerencia calculada localmente',
-                          style: AppText.bodyMd(
-                            color: AppColors.onSecondaryContainer,
-                          ).copyWith(fontSize: 12, fontStyle: FontStyle.italic),
-                        ),
-                      ],
+                          const SizedBox(height: 4),
+                          Text(
+                            'Aplicar ${litros}L en $loteNombre$cultivoTexto.',
+                            style: AppText.bodyMd(color: AppColors.onSecondaryContainer),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            diasTexto,
+                            style: AppText.bodyMd(
+                              color: AppColors.onSecondaryContainer,
+                            ).copyWith(fontSize: 12, fontStyle: FontStyle.italic),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ),
+                  ],
+                ),
+              );
+            }),
             const SizedBox(height: 24),
 
             // Lote selector
@@ -243,22 +319,27 @@ class _IrrigationScreenState extends State<IrrigationScreen> {
                 }),
               ],
             ),
-            if (_liters == 0)
-              Padding(
-                padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
-                child: Text(
-                  'La cantidad debe ser mayor a 0 para poder registrarse.',
-                  style: AppText.bodyMd(color: AppColors.error).copyWith(fontWeight: FontWeight.w600),
-                ),
-              ),
+
             const SizedBox(height: 24),
 
             // Context info
             Row(
               children: [
-                Expanded(child: _statCard('ÚLTIMO RIEGO', 'Hace 2 días')),
+                Expanded(
+                  child: _statCard(
+                    'ÚLTIMO RIEGO',
+                    _ultimoRiego == null
+                        ? 'Sin registros'
+                        : () {
+                            final dias = DateTime.now().difference(_ultimoRiego!).inDays;
+                            if (dias == 0) return 'Hoy';
+                            if (dias == 1) return 'Ayer';
+                            return 'Hace $dias días';
+                          }(),
+                  ),
+                ),
                 const SizedBox(width: 16),
-                Expanded(child: _statCard('ESTADO SUELO', 'Seco')),
+                Expanded(child: _statCard('ESTADO SUELO', 'Sin datos')),
               ],
             ),
             const SizedBox(height: 32),

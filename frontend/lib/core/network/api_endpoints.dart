@@ -38,4 +38,5 @@ class ApiEndpoints {
   static const String hallazgos = '/hallazgos';
   static const String tratamientos = '/tratamientos';
   static const String observaciones = '/observaciones';
+  static const String estadoTerreno = '/estado-terreno';
 }

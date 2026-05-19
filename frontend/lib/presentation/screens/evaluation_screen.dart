@@ -147,14 +147,14 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 20),
                       decoration: BoxDecoration(
                         color: _isControlled == true
-                            ? AppColors.primaryContainer
-                            : AppColors.primaryContainer.withValues(alpha: 0.3),
+                            ? AppColors.primaryContainer.withValues(alpha: 0.3)
+                            : AppColors.primaryContainer.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: _isControlled == true
                               ? AppColors.primary
-                              : Colors.transparent,
-                          width: 2,
+                              : AppColors.primary.withValues(alpha: 0.4),
+                          width: _isControlled == true ? 2 : 1,
                         ),
                       ),
                       child: Column(

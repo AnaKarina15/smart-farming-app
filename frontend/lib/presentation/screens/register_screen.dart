@@ -101,9 +101,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(
-                  height:
-                      24), // Ajustado para dar un buen margen superior sin la flecha
+              const SizedBox(height: 8),
+              IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(
+                  Icons.arrow_back,
+                  color: AppColors.onSurface,
+                  size: 28,
+                ),
+                padding: EdgeInsets.zero,
+              ),
+              const SizedBox(height: 32),
               Center(
                 child: Text(
                   'Bienvenido a Agrofield',

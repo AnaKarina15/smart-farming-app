@@ -34,7 +34,7 @@ class AgroBottomNav extends StatelessWidget {
               onTap: () => onTap?.call(AgroTab.home),
             ),
             _NavItem(
-              icon: Icons.grid_view_outlined,
+              icon: Icons.map_outlined,
               iconActive: Icons.map,
               label: 'Lotes',
               active: current == AgroTab.lotes,

@@ -308,8 +308,8 @@ class AdminBottomNav extends StatelessWidget {
               onTap: () => onTap(1),
             ),
             _AdminNavItem(
-              icon: Icons.grid_view_outlined,
-              iconActive: Icons.grid_view,
+              icon: Icons.map_outlined,
+              iconActive: Icons.map,
               label: 'Lotes',
               active: indiceActivo == 2,
               onTap: () => onTap(2),

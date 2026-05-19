@@ -215,6 +215,8 @@ class LotesProvider extends ChangeNotifier {
     String? descripcion,
     double? superficieHectareas,
     String? cultivoActual,
+    String? municipioId,
+    String? tipoSueloId,
     double? latitud,
     double? longitud,
   }) async {
@@ -232,8 +234,8 @@ class LotesProvider extends ChangeNotifier {
         superficieHectareas: superficieHectareas ?? old.superficieHectareas,
         cultivoActual: cultivoActual ?? old.cultivoActual,
         cultivoActualId: old.cultivoActualId,
-        municipioId: old.municipioId,
-        tipoSueloId: old.tipoSueloId,
+        municipioId: municipioId ?? old.municipioId,
+        tipoSueloId: tipoSueloId ?? old.tipoSueloId,
         latitud: latitud ?? old.latitud,
         longitud: longitud ?? old.longitud,
         estado: old.estado,
@@ -269,6 +271,8 @@ class LotesProvider extends ChangeNotifier {
       if (descripcion != null) 'descripcion': descripcion,
       if (superficieHectareas != null) 'superficieHectareas': superficieHectareas,
       if (cultivoActual != null) 'cultivoActual': cultivoActual,
+      if (_sanitizeUuid(municipioId) != null) 'municipioId': _sanitizeUuid(municipioId),
+      if (_sanitizeUuid(tipoSueloId) != null) 'tipoSueloId': _sanitizeUuid(tipoSueloId),
       if (latitud != null) 'latitud': latitud,
       if (longitud != null) 'longitud': longitud,
     };
@@ -287,6 +291,8 @@ class LotesProvider extends ChangeNotifier {
           descripcion: descripcion,
           superficieHectareas: superficieHectareas,
           cultivoActual: cultivoActual,
+          municipioId: _sanitizeUuid(municipioId),
+          tipoSueloId: _sanitizeUuid(tipoSueloId),
           latitud: latitud,
           longitud: longitud,
         );

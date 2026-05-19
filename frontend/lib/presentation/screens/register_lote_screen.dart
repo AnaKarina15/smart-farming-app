@@ -64,6 +64,16 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
     _locationLabel = widget.loteToEdit?.descripcion;
     _selectedMunicipioId = widget.loteToEdit?.municipioId;
     _selectedTipoSueloId = widget.loteToEdit?.tipoSueloId;
+    if (widget.loteToEdit != null) {
+      final desc = widget.loteToEdit!.descripcion ?? '';
+      if (desc.contains(' – ')) {
+        final parts = desc.split(' – ');
+        _manualLocationCtrl.text = parts[0].trim();
+        _manualMunicipioCtrl.text = parts[1].trim();
+      } else {
+        _manualLocationCtrl.text = desc;
+      }
+    }
     if (_lat != null && _lng != null) {
       _initializePolygon(_lat!, _lng!,
           ha: widget.loteToEdit?.superficieHectareas);
@@ -407,6 +417,8 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
         nombre: name,
         descripcion: descripcionFinal,
         superficieHectareas: double.tryParse(_areaController.text) ?? 0.0,
+        municipioId: _selectedMunicipioId,
+        tipoSueloId: _selectedTipoSueloId,
         latitud: _lat,
         longitud: _lng,
       );

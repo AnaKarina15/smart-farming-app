@@ -111,6 +111,8 @@ class LotesService {
     String? descripcion,
     double? superficieHectareas,
     String? cultivoActual,
+    String? municipioId,
+    String? tipoSueloId,
     double? latitud,
     double? longitud,
     String? estado,
@@ -124,6 +126,8 @@ class LotesService {
           if (superficieHectareas != null)
             'superficieHectareas': superficieHectareas,
           if (cultivoActual != null) 'cultivoActual': cultivoActual,
+          if (municipioId != null) 'municipioId': municipioId,
+          if (tipoSueloId != null) 'tipoSueloId': tipoSueloId,
           if (latitud != null) 'latitud': latitud,
           if (longitud != null) 'longitud': longitud,
           if (estado != null) 'estado': estado,

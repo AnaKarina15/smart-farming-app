@@ -20,6 +20,7 @@ import 'presentation/screens/welcome_screen.dart';
 import 'presentation/widgets/offline_banner.dart';
 import 'data/services/admin_service.dart';
 import 'data/providers/admin_provider.dart';
+import 'data/providers/tareas_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -118,6 +119,11 @@ class SmartFarmingApp extends StatelessWidget {
         // Provider de administración (Sprint 4)
         ChangeNotifierProvider<AdminProvider>(
           create: (_) => AdminProvider(adminService),
+        ),
+
+        // Provider de tareas inteligentes (Sprint 3)
+        ChangeNotifierProvider<TareasProvider>(
+          create: (_) => TareasProvider(operacionesService),
         ),
       ],
       child: MaterialApp(

@@ -94,11 +94,12 @@ class _IrrigationScreenState extends State<IrrigationScreen> {
       cultivo = lotesRows.first['cultivoActual'] as String?;
     }
 
-    // Calcular litros recomendados según días desde último riego
-    int recomendado = 20;
+    int recomendado = 50; // 50L si no hay registros previos
     if (ultimo != null) {
       final dias = DateTime.now().difference(ultimo).inDays;
-      if (dias >= 5) {
+      if (dias >= 7) {
+        recomendado = 50;
+      } else if (dias >= 5) {
         recomendado = 40;
       } else if (dias >= 3) {
         recomendado = 25;
@@ -377,7 +378,7 @@ class _IrrigationScreenState extends State<IrrigationScreen> {
                         'cantidadLitros': _liters,
                         'fecha': now,
                         'isPendingSync': 1,
-                        'createdBy': userId,
+                        'userId': userId,
                       };
 
                       if (widget.idToEdit != null) {

@@ -1,10 +1,11 @@
 import 'package:flutter/foundation.dart';
 import '../../core/storage/database_helper.dart';
+import '../../core/services/weather_service.dart';
 import '../services/operaciones_service.dart';
 
 // ─── Enums ─────────────────────────────────────────────────
 
-enum TareaTipo { riego, hallazgo, tratamiento, evaluacion, fertilizacion, observacion }
+enum TareaTipo { riego, hallazgo, tratamiento, evaluacion, fertilizacion, observacion, clima }
 
 enum TareaPrioridad { alta, media, baja }
 
@@ -46,6 +47,7 @@ class TareaItem {
 
 class TareasProvider extends ChangeNotifier {
   final DatabaseHelper _db = DatabaseHelper.instance;
+  final WeatherService _weatherService = WeatherService();
   // OperacionesService se mantiene para uso futuro con el backend
   // ignore: unused_field
   final OperacionesService _operacionesService;
@@ -109,6 +111,10 @@ class TareasProvider extends ChangeNotifier {
         // 5. Observación: si no hay en 7+ días
         final tareaObs = await _evaluarObservacion(loteId, loteNombre);
         if (tareaObs != null) generadas.add(tareaObs);
+
+        // 6. Alerta climática: anomalías según api de clima
+        final tareaClima = await _evaluarClima(lote, loteId, loteNombre);
+        if (tareaClima != null) generadas.add(tareaClima);
       }
 
       // Ordenar por prioridad: alta → media → baja
@@ -318,7 +324,7 @@ class TareasProvider extends ChangeNotifier {
           loteNombre: loteNombre,
           titulo: 'Alerta de Revisión',
           descripcion:
-              '$loteNombre: Han pasado ${tiempoLabel} desde el tratamiento. Evalúe si la plaga disminuyó.',
+              '$loteNombre: Han pasado $tiempoLabel desde el tratamiento. Evalúe si la plaga disminuyó.',
           motivo: 'Tratamiento aplicado hace $tiempoLabel',
           accionLabel: 'REGISTRAR EVALUACIÓN',
           prioridad: TareaPrioridad.media,
@@ -450,5 +456,71 @@ class TareasProvider extends ChangeNotifier {
       debugPrint('[TareasProvider] _evaluarObservacion error: $e');
       return null;
     }
+  }
+
+  // ─── Regla 6: Alerta Climática ──────────────────────────
+
+  Future<TareaItem?> _evaluarClima(Map<String, dynamic> lote, String loteId, String loteNombre) async {
+    final lat = lote['latitud'] as double?;
+    final lon = lote['longitud'] as double?;
+    if (lat == null || lon == null) return null;
+
+    try {
+      final weather = await _weatherService.getWeatherData(lat, lon);
+      final tempStr = weather['temperature'] ?? '';
+      final rainStr = weather['rainProbability'] ?? '';
+
+      // Parseadores seguros
+      final cleanRain = rainStr.replaceAll('%', '').trim();
+      final rainPct = int.tryParse(cleanRain) ?? 0;
+
+      final cleanTemp = tempStr.replaceAll('°C', '').replaceAll('°', '').trim();
+      final tempVal = double.tryParse(cleanTemp);
+
+      // Regla A: Alta probabilidad de lluvia (anomalía / prevención)
+      if (rainPct >= 60) {
+        return TareaItem(
+          tipo: TareaTipo.clima,
+          loteId: loteId,
+          loteNombre: loteNombre,
+          titulo: 'Alerta Climática',
+          descripcion: '$loteNombre: Lluvias intensas pronosticadas ($rainStr). Se recomienda posponer la fertilización o el riego.',
+          motivo: 'Lluvia inminente detectada',
+          accionLabel: 'REGISTRAR OBSERVACIÓN',
+          prioridad: TareaPrioridad.media,
+        );
+      }
+
+      // Regla B: Temperaturas extremas - Calor extremo
+      if (tempVal != null && tempVal >= 35) {
+        return TareaItem(
+          tipo: TareaTipo.clima,
+          loteId: loteId,
+          loteNombre: loteNombre,
+          titulo: 'Alerta Climática',
+          descripcion: '$loteNombre: Temperatura extrema detectada ($tempStr). Se recomienda incrementar el volumen de riego y regar al amanecer o atardecer.',
+          motivo: 'Ola de calor detectada',
+          accionLabel: 'EJECUTAR RIEGO',
+          prioridad: TareaPrioridad.alta,
+        );
+      }
+
+      // Regla C: Temperaturas bajas / Heladas
+      if (tempVal != null && tempVal <= 15) {
+        return TareaItem(
+          tipo: TareaTipo.clima,
+          loteId: loteId,
+          loteNombre: loteNombre,
+          titulo: 'Alerta Climática',
+          descripcion: '$loteNombre: Bajas temperaturas registradas ($tempStr). Monitoree el cultivo para prevenir daños por heladas.',
+          motivo: 'Helada / Frío detectado',
+          accionLabel: 'REGISTRAR OBSERVACIÓN',
+          prioridad: TareaPrioridad.media,
+        );
+      }
+    } catch (e) {
+      debugPrint('[TareasProvider] _evaluarClima error: $e');
+    }
+    return null;
   }
 }

@@ -322,6 +322,55 @@ class _TasksScreenState extends State<TasksScreen> {
             ),
           ),
         );
+
+      case TareaTipo.clima:
+        return _TaskCard(
+          icon: Icons.cloud_outlined,
+          iconColor: AppColors.onPrimary,
+          iconBgColor: AppColors.primary,
+          cardColor: const Color(0xFFE3F2FD),
+          title: tarea.titulo,
+          content: RichText(
+            text: TextSpan(
+              style: AppText.bodyMd(color: const Color(0xFF0D47A1)),
+              children: [
+                TextSpan(
+                    text: '${tarea.loteNombre}: ',
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                TextSpan(text: tarea.descripcion.replaceFirst('${tarea.loteNombre}: ', '')),
+              ],
+            ),
+          ),
+          actionLabel: tarea.accionLabel,
+          onAction: () {
+            if (tarea.accionLabel == 'EJECUTAR RIEGO') {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => IrrigationScreen(
+                    fixedLote: tarea.loteNombre,
+                    currentTab: AgroTab.tareas,
+                  ),
+                ),
+              );
+            } else {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => RegisterObservationScreen(
+                    loteName: tarea.loteNombre,
+                    currentTab: AgroTab.tareas,
+                  ),
+                ),
+              );
+            }
+          },
+          footer: Text(
+            tarea.motivo,
+            style: AppText.bodyMd(color: const Color(0xFF0D47A1))
+                .copyWith(fontSize: 13, fontStyle: FontStyle.italic),
+          ),
+        );
     }
   }
 

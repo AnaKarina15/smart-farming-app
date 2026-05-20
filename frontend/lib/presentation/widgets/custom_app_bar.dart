@@ -91,18 +91,13 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                                   ),
                                   fit: BoxFit.cover,
                                 )
-                              : null,
+                              : const DecorationImage(
+                                  image: NetworkImage(
+                                    'https://lh3.googleusercontent.com/aida-public/AB6AXuCTJGCEi16aUTDw3teJYYIG4o1sxhol2vxdeCDJd_xTonNe12Xf1kwbshQ25TtdlrWtlRcQjf1jwF9dTVqHu1tyjOt6u5S7TfEBN9pj9aRcwZZlN1gyXHmJZdWvkNY4gZj2fKmnxNlRKM9M2x--gjPXGDZOM4ROQ29HS6R_mNK7AM-xsv_0nRQcjbocYWRLFNyyNxlBsP3KuhDLKcX8mj7LaEVo1rnPVG4XYxIHCN3svc1Hz144HJM-1Nl4V5xfFKi41FQgiNCpX4p3',
+                                  ),
+                                  fit: BoxFit.cover,
+                                ),
                     ),
-                    child: (profileImage.imageFile == null &&
-                            (user?.fotoPerfilUrl == null || user!.fotoPerfilUrl!.isEmpty))
-                        ? const Center(
-                            child: Icon(
-                              Icons.person,
-                              size: 24,
-                              color: AppColors.outline,
-                            ),
-                          )
-                        : null,
                   ),
                 )
               else

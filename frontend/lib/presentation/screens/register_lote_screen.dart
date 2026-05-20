@@ -387,12 +387,29 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
       return;
     }
 
-
+    // ─── Validar límite de 5 ha en total (suma de todos los lotes) ─────────
+    final lotesProvider = context.read<LotesProvider>();
+    final isEditing = widget.loteToEdit != null;
+    final currentLoteId = widget.loteToEdit?.id;
+    final otrosLotes = lotesProvider.lotes
+        .where((l) => l.id != currentLoteId)
+        .toList();
+    final totalHaOtros = otrosLotes.fold<double>(
+        0.0, (sum, l) => sum + l.superficieHectareas);
+    final totalFinal = totalHaOtros + areaVal;
+    if (totalFinal > 5.0) {
+      final disponible = (5.0 - totalHaOtros).clamp(0.0, 5.0);
+      _showSnack(
+        'La superficie total de todos tus lotes no puede superar 5 ha. '
+        'Ya tienes ${totalHaOtros.toStringAsFixed(2)} ha registradas. '
+        'Puedes agregar máximo ${disponible.toStringAsFixed(2)} ha más.',
+      );
+      return;
+    }
 
     setState(() => _saving = true);
     // ─── REAL SAVE ─────────────────────────────────────────
     final auth = context.read<AuthProvider>();
-    final lotesProvider = context.read<LotesProvider>();
 
     // Construir descripción completa para offline
     final partes = <String>[];
@@ -408,7 +425,6 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
     final descripcionFinal =
         partes.isNotEmpty ? partes.join(' – ') : _locationLabel;
 
-    final isEditing = widget.loteToEdit != null;
     bool success = false;
 
     if (isEditing) {
@@ -438,8 +454,15 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
     setState(() => _saving = false);
 
     if (!success) {
-      _showSnack(
-          'Error al ${isEditing ? 'actualizar' : 'guardar'} el lote: ${lotesProvider.errorMessage}');
+      final rawError = lotesProvider.errorMessage ?? '';
+      // Mejorar el mensaje del backend cuando rechaza por límite de área total
+      final friendlyError = rawError.toLowerCase().contains('5') ||
+              rawError.toLowerCase().contains('superficie') ||
+              rawError.toLowerCase().contains('exceed') ||
+              rawError.toLowerCase().contains('total')
+          ? 'La superficie total de todos tus lotes no puede superar 5 hectáreas.'
+          : 'Error al ${isEditing ? 'actualizar' : 'guardar'} el lote: $rawError';
+      _showSnack(friendlyError);
       return;
     }
 

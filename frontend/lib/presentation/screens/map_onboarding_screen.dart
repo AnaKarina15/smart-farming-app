@@ -11,6 +11,8 @@ import 'tasks_screen.dart';
 import 'profile_screen.dart';
 import 'lotes_list_screen.dart';
 
+import '../../core/storage/database_helper.dart';
+
 class MapOnboardingScreen extends StatefulWidget {
   const MapOnboardingScreen({super.key});
 
@@ -28,10 +30,20 @@ class _MapOnboardingScreenState extends State<MapOnboardingScreen> {
   }
 
   Future<void> _checkLotes() async {
-    final prefs = await SharedPreferences.getInstance();
-    final hasLotes = prefs.getBool('has_lotes') ?? false;
+    // Comprobamos directamente en SQLite por seguridad de datos offline reales
+    final db = DatabaseHelper.instance;
+    final lotesRows = await db.queryAllRows(DatabaseHelper.tableLotes);
+    final hasLotesReal = lotesRows.isNotEmpty;
+
+    if (hasLotesReal) {
+      // Actualizamos SharedPreferences para mantener consistencia
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('has_lotes', true);
+    }
+
     if (!mounted) return;
-    if (hasLotes) {
+
+    if (hasLotesReal) {
       // Already has registered lotes → go directly to list
       Navigator.pushReplacement(
         context,

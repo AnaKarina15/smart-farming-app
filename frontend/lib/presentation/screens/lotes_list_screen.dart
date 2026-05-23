@@ -251,8 +251,7 @@ class _LotesListScreenState extends State<LotesListScreen> {
             Navigator.pushReplacement(
                 context, MaterialPageRoute(builder: (_) => const HomeScreen()));
           } else if (tab == AgroTab.lotes) {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (_) => const MapOnboardingScreen()));
+            // Ya estamos en la lista de lotes, no hacemos nada
           } else if (tab == AgroTab.perfil) {
             Navigator.pushReplacement(context,
                 MaterialPageRoute(builder: (_) => const ProfileScreen()));

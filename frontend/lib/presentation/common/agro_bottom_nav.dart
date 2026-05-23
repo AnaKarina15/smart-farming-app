@@ -18,7 +18,11 @@ class AgroBottomNav extends StatelessWidget {
     int pendingTasks = 0;
     try {
       final provider = context.watch<TareasProvider>();
-      pendingTasks = provider.tareas.length;
+      pendingTasks = provider.pendingCount;
+      // Disparar recarga en segundo plano si todavía no hay tareas cargadas
+      if (!provider.hasTareas && !provider.isLoading) {
+        Future.microtask(() => provider.cargarSiNoHay());
+      }
     } catch (_) {
       // Evita excepciones si el provider no estuviera en el árbol de este contexto específico
     }

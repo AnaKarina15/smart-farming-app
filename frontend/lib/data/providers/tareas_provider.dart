@@ -62,6 +62,15 @@ class TareasProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   bool get hasTareas => _tareas.isNotEmpty;
+  /// Cantidad de tareas pendientes — usado por el badge del nav.
+  int get pendingCount => _tareas.length;
+
+  /// Carga las tareas solo si aún no hay ninguna (evita recargas redundantes).
+  /// Ideal para disparar en segundo plano desde el árbol de providers.
+  Future<void> cargarSiNoHay() async {
+    if (_tareas.isNotEmpty || _isLoading) return;
+    await cargarTareas();
+  }
 
   // ─── Punto de entrada ──────────────────────────────────
 

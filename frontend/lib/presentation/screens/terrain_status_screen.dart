@@ -354,74 +354,77 @@ class _TerrainStatusScreenState extends State<TerrainStatusScreen> {
                 ],
               ),
             const SizedBox(height: 20),
-            Text('CARACTERIZACIÓN DEL SUELO',
-                style: AppText.labelCaps(color: AppColors.onSurface)),
-            const SizedBox(height: 8),
-            Container(
-              height: 56,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceContainerLowest,
-                border: Border.all(color: AppColors.outlineVariant),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Consumer<CatalogosProvider>(
-                builder: (context, provider, child) {
-                  final list = provider.tiposSuelo;
-
-                  return DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: _selectedSueloId,
-                      menuMaxHeight: 220,
-                      isExpanded: true,
-                      hint: Text(
-                        'Seleccionar tipo de suelo...',
-                        style: AppText.bodyMd(color: AppColors.outline),
-                      ),
-                      icon: const Icon(Icons.keyboard_arrow_down,
-                          color: AppColors.onSurfaceVariant),
-                      items: list.map((s) {
-                        return DropdownMenuItem(
-                          value: s.id,
-                          child: Text(s.nombre),
-                        );
-                      }).toList(),
-                      onChanged: (v) {
-                        if (v == null) return;
-                        setState(() {
-                          _selectedSueloId = v;
-                          _recomendaciones = list
-                              .firstWhere((s) => s.id == v)
-                              .cultivosRecomendados;
-                        });
-                      },
-                    ),
-                  );
-                },
-              ),
-            ),
-            if (_recomendaciones != null) ...[
-              const SizedBox(height: 12),
+            if (widget.isPreviousStateOfSiembra != true) ...[
+              Text('CARACTERIZACIÓN DEL SUELO',
+                  style: AppText.labelCaps(color: AppColors.onSurface)),
+              const SizedBox(height: 8),
               Container(
-                padding: const EdgeInsets.all(12),
+                height: 56,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryContainer.withValues(alpha: 0.4),
+                  color: AppColors.surfaceContainerLowest,
+                  border: Border.all(color: AppColors.outlineVariant),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.star, color: AppColors.primary, size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Cultivos recomendados: $_recomendaciones',
-                        style: AppText.bodyMd(color: AppColors.primary)
-                            .copyWith(fontWeight: FontWeight.w600),
+                child: Consumer<CatalogosProvider>(
+                  builder: (context, provider, child) {
+                    final list = provider.tiposSuelo;
+
+                    return DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _selectedSueloId,
+                        menuMaxHeight: 220,
+                        isExpanded: true,
+                        hint: Text(
+                          'Seleccionar tipo de suelo...',
+                          style: AppText.bodyMd(color: AppColors.outline),
+                        ),
+                        icon: const Icon(Icons.keyboard_arrow_down,
+                            color: AppColors.onSurfaceVariant),
+                        items: list.map((s) {
+                          return DropdownMenuItem(
+                            value: s.id,
+                            child: Text(s.nombre),
+                          );
+                        }).toList(),
+                        onChanged: (v) {
+                          if (v == null) return;
+                          setState(() {
+                            _selectedSueloId = v;
+                            _recomendaciones = list
+                                .firstWhere((s) => s.id == v)
+                                .cultivosRecomendados;
+                          });
+                        },
                       ),
-                    ),
-                  ],
+                    );
+                  },
                 ),
               ),
+              if (_recomendaciones != null) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryContainer.withValues(alpha: 0.4),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.star, color: AppColors.primary, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Cultivos recomendados: $_recomendaciones',
+                          style: AppText.bodyMd(color: AppColors.primary)
+                              .copyWith(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              const SizedBox(height: 20),
             ],
             const SizedBox(height: 20),
             Text('NOTAS ADICIONALES',
@@ -487,7 +490,9 @@ class _TerrainStatusScreenState extends State<TerrainStatusScreen> {
                   'loteNombre': _selectedLoteNombre!,
                   if (widget.siembraId != null) 'siembraId': widget.siembraId,
                   'estado': _selectedStatus!,
-                  if (_selectedSueloId != null) 'tipoSueloId': _selectedSueloId,
+                  // La caracterización del suelo solo se registra fuera del flujo de siembra
+                  if (widget.isPreviousStateOfSiembra != true && _selectedSueloId != null)
+                    'tipoSueloId': _selectedSueloId,
                   'notas': _notesController.text.trim().isNotEmpty
                       ? _notesController.text.trim()
                       : null,

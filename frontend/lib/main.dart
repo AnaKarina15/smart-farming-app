@@ -121,9 +121,18 @@ class SmartFarmingApp extends StatelessWidget {
           create: (_) => AdminProvider(adminService),
         ),
 
-        // Provider de tareas inteligentes (Sprint 3)
-        ChangeNotifierProvider<TareasProvider>(
+        // Provider de tareas inteligentes — se carga en segundo plano al autenticarse
+        ChangeNotifierProxyProvider<AuthProvider, TareasProvider>(
           create: (_) => TareasProvider(operacionesService),
+          update: (_, auth, prev) {
+            final provider = prev ?? TareasProvider(operacionesService);
+            // Disparar carga en segundo plano si el usuario está autenticado
+            // y aún no se han cargado tareas
+            if (auth.currentUser != null) {
+              Future.microtask(() => provider.cargarSiNoHay());
+            }
+            return provider;
+          },
         ),
       ],
       child: MaterialApp(

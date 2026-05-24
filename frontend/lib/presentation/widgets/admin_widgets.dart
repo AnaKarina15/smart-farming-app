@@ -317,7 +317,7 @@ class AdminBottomNav extends StatelessWidget {
             _AdminNavItem(
               icon: Icons.person_outline,
               iconActive: Icons.person,
-              label: 'Ajustes',
+              label: 'Perfil',
               active: indiceActivo == 3,
               onTap: () => onTap(3),
             ),

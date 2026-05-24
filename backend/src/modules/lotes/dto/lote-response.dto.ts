@@ -38,6 +38,14 @@ export class LoteResponseDto {
   })
   municipioId!: string | null;
 
+  @ApiProperty({
+    format: 'uuid',
+    required: false,
+    nullable: true,
+    description: 'FK al catalogo de tipos de suelo',
+  })
+  tipoSueloId!: string | null;
+
   @ApiProperty({ required: false, nullable: true })
   latitud!: number | null;
 
@@ -65,6 +73,7 @@ export class LoteResponseDto {
     dto.cultivoActual = lote.cultivoActual;
     dto.cultivoActualId = lote.cultivoActualId;
     dto.municipioId = lote.municipioId;
+    dto.tipoSueloId = lote.tipoSueloId;
     dto.latitud = lote.latitud !== null ? Number(lote.latitud) : null;
     dto.longitud = lote.longitud !== null ? Number(lote.longitud) : null;
     dto.estado = lote.estado;

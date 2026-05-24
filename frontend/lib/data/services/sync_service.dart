@@ -3,20 +3,23 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import '../../core/network/dio_client.dart';
 import '../../core/storage/database_helper.dart';
-import '../../core/network/api_endpoints.dart';
 import '../providers/lotes_provider.dart';
+import 'batch_sync_service.dart';
 
 /// Servicio de sincronización offline → backend.
 ///
 /// Responsabilidades:
 /// 1. Drena la sync_queue cuando hay internet (lotes, etc. del Sprint 1).
-/// 2. Sincroniza registros locales de todas las tablas con `isPendingSync=1`
-///    cuando el backend Sprint 2 esté disponible.
+/// 2. Delega a [BatchSyncService] para sincronizar las operaciones con
+///    el protocolo batch del Sprint 5.
 class SyncService {
   final DioClient _dioClient;
   final DatabaseHelper _db = DatabaseHelper.instance;
+  late final BatchSyncService _batchSync;
 
-  SyncService(this._dioClient);
+  SyncService(this._dioClient) {
+    _batchSync = BatchSyncService(_dioClient);
+  }
 
   // ─── Sincronización principal ─────────────────────────────
 
@@ -29,16 +32,17 @@ class SyncService {
 
     bool huboErrores = false;
 
-    // 1. Drenar la cola genérica (acciones POST/PATCH/DELETE)
+    // 1. Drenar la cola genérica (acciones POST/PATCH/DELETE de lotes)
     huboErrores = !(await _drenaQueueGeneral()) || huboErrores;
 
-    // 2. Recargar lotes desde el backend y actualizar caché local
+    // 2. Sincronizar operaciones via Batch Sync (Sprint 5)
+    final batchOk = await _batchSync.syncBatch();
+    if (!batchOk) huboErrores = true;
+
+    // 3. Recargar lotes desde el backend y actualizar caché local
     if (lotesProvider != null) {
       await lotesProvider.recargar();
     }
-
-    // 3. Sincronizar módulos operativos (Sprint 3)
-    await _syncOperaciones();
 
     return !huboErrores;
   }
@@ -100,107 +104,11 @@ class SyncService {
 
   // ─── Módulos Operativos (Sprint 3) ───────────────────────
 
+  // Método legacy mantenido por compatibilidad retroactiva.
+  // La lógica real de sync de operaciones ahora vive en BatchSyncService.
+  // Puede ser eliminado en una próxima iteración de limpieza.
   Future<void> _syncOperaciones() async {
-    // Orden estricto según la guía:
-    // 1. siembras, 2. riego, 3. fertilizacion, 4. hallazgos, 5. tratamientos, 6. observaciones
-    await _syncModuloOperativo(
-      tabla: DatabaseHelper.tableSiembras,
-      endpointBase: ApiEndpoints.siembras,
-      mapper: (row) => {
-        'loteId': row['loteId'],
-        if (row['cultivoId'] != null) 'cultivoId': row['cultivoId'],
-        if (row['cultivoOtro'] != null) 'cultivoOtro': row['cultivoOtro'],
-        if (row['variedad'] != null) 'variedad': row['variedad'],
-        'fecha': row['fecha'],
-        if (row['cantidadSemillas'] != null) 'cantidadSemillas': row['cantidadSemillas'],
-        if (row['unidad'] != null) 'unidad': row['unidad'],
-        if (row['distanciaEntreFilas'] != null) 'distanciaEntreFilas': row['distanciaEntreFilas'],
-        if (row['distanciaEntrePlantas'] != null) 'distanciaEntrePlantas': row['distanciaEntrePlantas'],
-        if (row['observaciones'] != null) 'observaciones': row['observaciones'],
-      },
-    );
-
-    await _syncModuloOperativo(
-      tabla: DatabaseHelper.tableRiego,
-      endpointBase: ApiEndpoints.riego,
-      mapper: (row) => {
-        'loteId': row['loteId'],
-        'tipo': row['tipo'],
-        if (row['duracionMinutos'] != null) 'duracionMinutos': row['duracionMinutos'],
-        if (row['cantidadLitros'] != null) 'cantidadLitros': row['cantidadLitros'],
-        'fecha': row['fecha'],
-        if (row['humedad'] != null) 'humedad': row['humedad'],
-        if (row['observaciones'] != null) 'observaciones': row['observaciones'],
-      },
-    );
-
-    await _syncModuloOperativo(
-      tabla: DatabaseHelper.tableFertilizacion,
-      endpointBase: ApiEndpoints.fertilizacion,
-      mapper: (row) => {
-        'loteId': row['loteId'],
-        if (row['fertilizanteId'] != null) 'fertilizanteId': row['fertilizanteId'],
-        if (row['fertilizanteOtro'] != null) 'fertilizanteOtro': row['fertilizanteOtro'],
-        if (row['dosis'] != null) 'dosis': row['dosis'],
-        if (row['unidad'] != null) 'unidad': row['unidad'],
-        if (row['metodoAplicacion'] != null) 'metodoAplicacion': row['metodoAplicacion'],
-        'fecha': row['fecha'],
-        if (row['observaciones'] != null) 'observaciones': row['observaciones'],
-      },
-    );
-
-    await _syncModuloOperativo(
-      tabla: DatabaseHelper.tableHallazgos,
-      endpointBase: ApiEndpoints.hallazgos,
-      mapper: (row) => {
-        'loteId': row['loteId'],
-        if (row['plagaId'] != null) 'plagaId': row['plagaId'],
-        if (row['plagaOtro'] != null) 'plagaOtro': row['plagaOtro'],
-        'severidad': row['severidad'],
-        if (row['descripcion'] != null) 'descripcion': row['descripcion'],
-        if (row['fotoPath'] != null) 'fotoPath': row['fotoPath'],
-        'fecha': row['fecha'],
-      },
-    );
-
-    await _syncModuloOperativo(
-      tabla: DatabaseHelper.tableTratamientos,
-      endpointBase: ApiEndpoints.tratamientos,
-      mapper: (row) => {
-        'loteId': row['loteId'],
-        if (row['hallazgoId'] != null) 'hallazgoId': row['hallazgoId'],
-        'producto': row['producto'],
-        if (row['dosis'] != null) 'dosis': row['dosis'],
-        if (row['unidad'] != null) 'unidad': row['unidad'],
-        if (row['metodoAplicacion'] != null) 'metodoAplicacion': row['metodoAplicacion'],
-        'fecha': row['fecha'],
-        if (row['observaciones'] != null) 'observaciones': row['observaciones'],
-      },
-    );
-
-    await _syncModuloOperativo(
-      tabla: DatabaseHelper.tableObservaciones,
-      endpointBase: ApiEndpoints.observaciones,
-      mapper: (row) => {
-        'loteId': row['loteId'],
-        'descripcion': row['descripcion'],
-        if (row['tipo'] != null) 'tipo': row['tipo'],
-        'fecha': row['fecha'],
-      },
-    );
-
-    await _syncModuloOperativo(
-      tabla: DatabaseHelper.tableEstadoTerreno,
-      endpointBase: ApiEndpoints.estadoTerreno,
-      mapper: (row) => {
-        'loteId': row['loteId'],
-        if (row['siembraId'] != null) 'siembraId': row['siembraId'],
-        'estado': row['estado'],
-        if (row['tipoSueloId'] != null) 'tipoSueloId': row['tipoSueloId'],
-        if (row['notas'] != null) 'notas': row['notas'],
-        'createdAt': row['createdAt'],
-      },
-    );
+    // No-op: ahora delega al BatchSyncService
   }
 
   Future<void> _syncModuloOperativo({
@@ -235,20 +143,11 @@ class SyncService {
           );
         }
       } on DioException catch (e) {
-        // Manejo de error específico (400, 403, 404)
-        if (e.response != null && e.response!.statusCode == 404) {
-          // Fake success para endpoints que aún no existen en el Backend
-          await db.update(
-            tabla,
-            {
-              'isPendingSync': 0,
-              'serverId': 'mock_${row['id']}',
-              'syncError': null,
-            },
-            where: 'id = ?',
-            whereArgs: [row['id']],
-          );
-        } else if (e.response != null && (e.response!.statusCode == 400 || e.response!.statusCode == 403)) {
+        // Solo marcar con syncError en errores de negocio (400, 403)
+        // Los 404 ya no generan IDs mock_ — se dejan en cola para el batch sync
+        if (e.response != null &&
+            (e.response!.statusCode == 400 ||
+                e.response!.statusCode == 403)) {
           final errorData = e.response!.data;
           String errorMsg = 'Error desconocido';
           if (errorData is Map && errorData.containsKey('message')) {
@@ -264,6 +163,7 @@ class SyncService {
             whereArgs: [row['id']],
           );
         }
+        // 404 y errores de red: dejar en cola sin modificar
       } catch (_) {
         // Fallos de red se dejan para el siguiente intento
       }

@@ -39,4 +39,22 @@ class ApiEndpoints {
   static const String tratamientos = '/tratamientos';
   static const String observaciones = '/observaciones';
   static const String estadoTerreno = '/estado-terreno';
+
+  // Sprint 4 — Sistema Experto de Recomendaciones
+  static const String recomendaciones = '/recomendaciones';
+  static String recomendacionesLote(String loteId) =>
+      '/recomendaciones/lote/$loteId';
+  static String aplicarRecomendacion(String reglaId) =>
+      '/recomendaciones/$reglaId/aplicar';
+  static String historialRecomendaciones(String loteId) =>
+      '/recomendaciones/historial/$loteId';
+  static const String adminReglas = '/admin/reglas';
+
+  // Sprint 5 — Sync Batch
+  static const String syncBatch = '/sync/batch';
+  static const String syncSince = '/sync/since';
+  static const String syncValidateToken = '/sync/validate-token';
+
+  // Sprint 1 — Cambio de contraseña
+  static const String changePassword = '/users/me/change-password';
 }

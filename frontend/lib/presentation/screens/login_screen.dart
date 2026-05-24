@@ -10,6 +10,7 @@ import 'register_screen.dart';
 import 'map_onboarding_screen.dart';
 import 'home_screen.dart';
 import 'admin_panel_screen.dart';
+import 'change_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -52,6 +53,18 @@ class _LoginScreenState extends State<LoginScreen> {
 
         if (!mounted) return;
         final user = authProvider.currentUser;
+
+        // Sprint 1: Manejo de mustChangePassword
+        if (user != null && user.mustChangePassword) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const ChangePasswordScreen(),
+            ),
+          );
+          return;
+        }
+
         if (user != null && user.role == 'administrador') {
           Navigator.pushReplacement(
             context,
@@ -259,7 +272,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               title: const Text('Recuperar contraseña'),
                               content: const Text(
-                                'Falta implementar esta funcionalidad',
+                                'Para recuperar tu contraseña, contacta al administrador del sistema. Él podrá restablecer tu acceso.',
                               ),
                               actions: [
                                 TextButton(

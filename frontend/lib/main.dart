@@ -21,6 +21,8 @@ import 'presentation/widgets/offline_banner.dart';
 import 'data/services/admin_service.dart';
 import 'data/providers/admin_provider.dart';
 import 'data/providers/tareas_provider.dart';
+import 'data/services/recomendaciones_service.dart';
+import 'data/providers/recomendaciones_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,6 +40,7 @@ void main() async {
   final catalogosSyncService = CatalogosSyncService(catalogosService);
   final operacionesService = OperacionesService(dioClient.dio);
   final adminService = AdminService(dioClient);
+  final recomendacionesService = RecomendacionesService(dioClient);
 
   // Sincronizar catálogos en segundo plano al arrancar
   catalogosSyncService.sincronizarCatalogos();
@@ -51,6 +54,7 @@ void main() async {
     operacionesService: operacionesService,
     dioClient: dioClient,
     adminService: adminService,
+    recomendacionesService: recomendacionesService,
   ));
 }
 
@@ -63,6 +67,7 @@ class SmartFarmingApp extends StatelessWidget {
   final OperacionesService operacionesService;
   final DioClient dioClient;
   final AdminService adminService;
+  final RecomendacionesService recomendacionesService;
 
   const SmartFarmingApp({
     super.key,
@@ -74,6 +79,7 @@ class SmartFarmingApp extends StatelessWidget {
     required this.operacionesService,
     required this.dioClient,
     required this.adminService,
+    required this.recomendacionesService,
   });
 
   @override
@@ -85,6 +91,8 @@ class SmartFarmingApp extends StatelessWidget {
         Provider<LotesService>.value(value: lotesService),
         Provider<SyncService>.value(value: syncService),
         Provider<OperacionesService>.value(value: operacionesService),
+        // DioClient expuesto para ChangePasswordScreen y otros
+        Provider<DioClient>.value(value: dioClient),
 
         // Provider de autenticacion (state management)
         ChangeNotifierProvider<AuthProvider>(
@@ -133,6 +141,11 @@ class SmartFarmingApp extends StatelessWidget {
             }
             return provider;
           },
+        ),
+
+        // Provider del Sistema Experto de Recomendaciones (Sprint 4)
+        ChangeNotifierProvider<RecomendacionesProvider>(
+          create: (_) => RecomendacionesProvider(recomendacionesService),
         ),
       ],
       child: MaterialApp(

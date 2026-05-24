@@ -132,7 +132,7 @@ export class Regla {
   @Column({ type: 'numeric', precision: 12, scale: 2, nullable: true })
   dosisRecomendada!: number | null;
 
-  @Column({ type: 'varchar', length: 30, nullable: true })
+  @Column({ type: 'varchar', length: 90, nullable: true })
   unidadRecomendada!: string | null;
 
   @Column({ type: 'varchar', length: 40, nullable: true })

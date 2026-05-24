@@ -23,6 +23,7 @@ import { RecomendacionesModule } from './modules/recomendaciones/recomendaciones
 import { HallazgosModule } from './modules/hallazgos/hallazgos.module';
 import { RiegoModule } from './modules/riego/riego.module';
 import { SiembrasModule } from './modules/siembras/siembras.module';
+import { SyncModule } from './modules/sync/sync.module';
 import { TratamientosModule } from './modules/tratamientos/tratamientos.module';
 import { EstadoTerrenoModule } from './modules/estado-terreno/estado-terreno.module';
 import { UsersModule } from './modules/users/users.module';
@@ -84,6 +85,7 @@ import { WeatherModule } from './modules/weather/weather.module';
     RecomendacionesModule,
     RiegoModule,
     SiembrasModule,
+    SyncModule,
     TratamientosModule,
     EstadoTerrenoModule,
     HealthModule,

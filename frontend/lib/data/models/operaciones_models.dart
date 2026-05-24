@@ -66,6 +66,24 @@ class Siembra {
     if (distanciaEntrePlantas != null) 'distanciaEntrePlantas': distanciaEntrePlantas,
     if (observaciones != null) 'observaciones': observaciones,
   };
+
+  Map<String, dynamic> toMap() => {
+    'id': id,
+    'loteId': loteId,
+    'loteNombre': loteNombre ?? '',
+    'cultivoId': cultivoId,
+    'cultivo': cultivoNombre ?? cultivoOtro ?? '',
+    'cultivoOtro': cultivoOtro,
+    'variedad': variedad,
+    'fecha': fecha.toUtc().toIso8601String(),
+    'cantidadSemillas': cantidadSemillas,
+    'unidad': unidad,
+    'distanciaEntreFilas': distanciaEntreFilas,
+    'distanciaEntrePlantas': distanciaEntrePlantas,
+    'observaciones': observaciones,
+    'userId': userId,
+    'createdAt': createdAt.toUtc().toIso8601String(),
+  };
 }
 
 class Riego {
@@ -120,6 +138,20 @@ class Riego {
     'fecha': fecha.toUtc().toIso8601String(),
     if (humedad != null) 'humedad': humedad,
     if (observaciones != null) 'observaciones': observaciones,
+  };
+
+  Map<String, dynamic> toMap() => {
+    'id': id,
+    'loteId': loteId,
+    'loteNombre': loteNombre ?? '',
+    'tipo': tipo,
+    'duracionMinutos': duracionMinutos,
+    'cantidadLitros': cantidadLitros,
+    'fecha': fecha.toUtc().toIso8601String(),
+    'humedad': humedad,
+    'observaciones': observaciones,
+    'userId': userId,
+    'createdAt': createdAt.toUtc().toIso8601String(),
   };
 }
 
@@ -183,6 +215,22 @@ class Fertilizacion {
     'fecha': fecha.toUtc().toIso8601String(),
     if (observaciones != null) 'observaciones': observaciones,
   };
+
+  Map<String, dynamic> toMap() => {
+    'id': id,
+    'loteId': loteId,
+    'loteNombre': loteNombre ?? '',
+    'fertilizanteId': fertilizanteId,
+    'tipoFertilizante': fertilizanteNombre ?? fertilizanteOtro ?? '',
+    'fertilizanteOtro': fertilizanteOtro,
+    'dosis': dosis,
+    'unidad': unidad,
+    'metodoAplicacion': metodoAplicacion,
+    'fecha': fecha.toUtc().toIso8601String(),
+    'observaciones': observaciones,
+    'userId': userId,
+    'createdAt': createdAt.toUtc().toIso8601String(),
+  };
 }
 
 class Hallazgo {
@@ -240,6 +288,21 @@ class Hallazgo {
     if (descripcion != null) 'descripcion': descripcion,
     if (fotoPath != null) 'fotoPath': fotoPath,
     'fecha': fecha.toUtc().toIso8601String(),
+  };
+
+  Map<String, dynamic> toMap() => {
+    'id': id,
+    'loteId': loteId,
+    'loteNombre': loteNombre ?? '',
+    'plagaId': plagaId,
+    'tipo': plagaNombre ?? plagaOtro ?? '',
+    'plagaOtro': plagaOtro,
+    'severidad': severidad,
+    'descripcion': descripcion,
+    'fotoPath': fotoPath,
+    'fecha': fecha.toUtc().toIso8601String(),
+    'userId': userId,
+    'createdAt': createdAt.toUtc().toIso8601String(),
   };
 }
 
@@ -303,6 +366,21 @@ class Tratamiento {
     'fecha': fecha.toUtc().toIso8601String(),
     if (observaciones != null) 'observaciones': observaciones,
   };
+
+  Map<String, dynamic> toMap() => {
+    'id': id,
+    'loteId': loteId,
+    'loteNombre': loteNombre ?? '',
+    'hallazgoId': hallazgoId,
+    'producto': producto,
+    'dosis': dosis,
+    'unidad': unidad,
+    'metodoAplicacion': metodoAplicacion,
+    'fecha': fecha.toUtc().toIso8601String(),
+    'observaciones': observaciones,
+    'userId': userId,
+    'createdAt': createdAt.toUtc().toIso8601String(),
+  };
 }
 
 class Observacion {
@@ -345,5 +423,69 @@ class Observacion {
     'descripcion': descripcion,
     if (tipo != null) 'tipo': tipo,
     'fecha': fecha.toUtc().toIso8601String(),
+  };
+  Map<String, dynamic> toMap() => {
+    'id': id,
+    'loteId': loteId,
+    'loteNombre': loteNombre ?? '',
+    'descripcion': descripcion,
+    'tipo': tipo,
+    'fecha': fecha.toUtc().toIso8601String(),
+    'userId': userId,
+    'createdAt': createdAt.toUtc().toIso8601String(),
+  };
+}
+
+class EstadoTerreno {
+  final String id;
+  final String loteId;
+  final String? loteNombre;
+  final String? siembraId;
+  final String estado;
+  final String? observaciones;
+  final String userId;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  EstadoTerreno({
+    required this.id,
+    required this.loteId,
+    this.loteNombre,
+    this.siembraId,
+    required this.estado,
+    this.observaciones,
+    required this.userId,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  factory EstadoTerreno.fromJson(Map<String, dynamic> json) => EstadoTerreno(
+    id: json['id'] ?? '',
+    loteId: json['loteId'] ?? '',
+    loteNombre: json['loteNombre'],
+    siembraId: json['siembraId'],
+    estado: json['estado'] ?? '',
+    observaciones: json['observaciones'],
+    userId: json['userId'] ?? '',
+    createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
+    updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : DateTime.now(),
+  );
+
+  Map<String, dynamic> toCreateJson() => {
+    'loteId': loteId,
+    if (siembraId != null) 'siembraId': siembraId,
+    'estado': estado,
+    if (observaciones != null) 'observaciones': observaciones,
+  };
+
+  Map<String, dynamic> toMap() => {
+    'id': id,
+    'loteId': loteId,
+    'loteNombre': loteNombre ?? '',
+    'siembraId': siembraId,
+    'estado': estado,
+    'notas': observaciones,
+    'userId': userId,
+    'createdAt': createdAt.toUtc().toIso8601String(),
   };
 }

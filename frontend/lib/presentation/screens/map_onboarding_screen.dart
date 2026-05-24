@@ -7,13 +7,9 @@ import '../widgets/custom_app_bar.dart';
 import '../widgets/rugged_button.dart';
 import 'home_screen.dart';
 import 'register_lote_screen.dart';
-import 'tasks_screen.dart';
-import 'profile_screen.dart';
 import 'lotes_list_screen.dart';
 import 'package:provider/provider.dart';
 import '../../data/providers/lotes_provider.dart';
-
-import '../../core/storage/database_helper.dart';
 
 class MapOnboardingScreen extends StatefulWidget {
   const MapOnboardingScreen({super.key});
@@ -154,20 +150,9 @@ class _MapOnboardingScreenState extends State<MapOnboardingScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: AgroBottomNav(
+      bottomNavigationBar: const AgroBottomNav(
         current: AgroTab.lotes,
-        onTap: (tab) {
-          if (tab == AgroTab.home) {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (_) => const HomeScreen()));
-          } else if (tab == AgroTab.tareas) {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (_) => const TasksScreen()));
-          } else if (tab == AgroTab.perfil) {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (_) => const ProfileScreen()));
-          }
-        },
+        isRoot: true,
       ),
     );
   }

@@ -5,14 +5,10 @@ import '../common/agro_bottom_nav.dart';
 import '../widgets/custom_app_bar.dart';
 import '../widgets/offline_banner.dart';
 import 'fertilization_screen.dart';
-import 'home_screen.dart';
 import 'irrigation_screen.dart';
-import 'map_onboarding_screen.dart';
-import 'profile_screen.dart';
 import 'soil_humidity_screen.dart';
 import 'sowing_screen.dart';
 import 'phytosanitary_screen.dart';
-import 'tasks_screen.dart';
 import 'register_lote_screen.dart';
 import 'lote_history_screen.dart';
 import 'terrain_status_screen.dart';
@@ -130,13 +126,29 @@ class _LotesListScreenState extends State<LotesListScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Add lote
                       GestureDetector(
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => const RegisterLoteScreen()),
-                        ),
+                        onTap: () async {
+                          final messenger = ScaffoldMessenger.of(context);
+                          final result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const RegisterLoteScreen()),
+                          );
+                          if (result != null && mounted) {
+                            messenger.showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  result == 'updated'
+                                      ? 'Lote actualizado con éxito'
+                                      : 'Lote registrado con éxito',
+                                  style: AppText.bodyMd(color: Colors.white).copyWith(fontWeight: FontWeight.w600),
+                                ),
+                                backgroundColor: AppColors.primary,
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          }
+                        },
                         child: Container(
                           width: 44,
                           height: 44,
@@ -167,9 +179,7 @@ class _LotesListScreenState extends State<LotesListScreen> {
                                 blurRadius: 6)
                           ],
                         ),
-                        child: const Icon(Icons.gps_fixed,
-                            color: Colors.white, size: 22),
-                      ),
+                      )
                     ],
                   ),
                 ),
@@ -244,22 +254,9 @@ class _LotesListScreenState extends State<LotesListScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: AgroBottomNav(
+      bottomNavigationBar: const AgroBottomNav(
         current: AgroTab.lotes,
-        onTap: (tab) {
-          if (tab == AgroTab.home) {
-            Navigator.pushReplacement(
-                context, MaterialPageRoute(builder: (_) => const HomeScreen()));
-          } else if (tab == AgroTab.lotes) {
-            // Ya estamos en la lista de lotes, no hacemos nada
-          } else if (tab == AgroTab.perfil) {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (_) => const ProfileScreen()));
-          } else if (tab == AgroTab.tareas) {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (_) => const TasksScreen()));
-          }
-        },
+        isRoot: true,
       ),
     );
   }
@@ -284,10 +281,27 @@ class _LotesListScreenState extends State<LotesListScreen> {
           ),
           const SizedBox(height: 24),
           ElevatedButton.icon(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const RegisterLoteScreen()),
-            ),
+            onPressed: () async {
+              final messenger = ScaffoldMessenger.of(context);
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const RegisterLoteScreen()),
+              );
+              if (result != null && mounted) {
+                messenger.showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      result == 'updated'
+                          ? 'Lote actualizado con éxito'
+                          : 'Lote registrado con éxito',
+                      style: AppText.bodyMd(color: Colors.white).copyWith(fontWeight: FontWeight.w600),
+                    ),
+                    backgroundColor: AppColors.primary,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+            },
             icon: const Icon(Icons.add),
             label: const Text('REGISTRAR LOTE'),
             style: ElevatedButton.styleFrom(
@@ -587,13 +601,29 @@ class _LoteCardState extends State<_LoteCard> {
                         onSelected: (val) {
                           setState(() => _isMenuOpen = false);
                           if (val == 'edit') {
+                            final messenger = ScaffoldMessenger.of(context);
                             Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (_) =>
                                     RegisterLoteScreen(loteToEdit: widget.lote),
                               ),
-                            );
+                            ).then((result) {
+                              if (result != null && mounted) {
+                                messenger.showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      result == 'updated'
+                                          ? 'Lote actualizado con éxito'
+                                          : 'Lote registrado con éxito',
+                                      style: AppText.bodyMd(color: Colors.white).copyWith(fontWeight: FontWeight.w600),
+                                    ),
+                                    backgroundColor: AppColors.primary,
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              }
+                            });
                           } else if (val == 'delete') {
                             showDialog(
                               context: context,

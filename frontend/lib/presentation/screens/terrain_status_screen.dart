@@ -4,10 +4,6 @@ import '../../core/theme/app_text.dart';
 import '../widgets/custom_app_bar.dart';
 import '../widgets/rugged_button.dart';
 import '../common/agro_bottom_nav.dart';
-import 'home_screen.dart';
-import 'map_onboarding_screen.dart';
-import 'profile_screen.dart';
-import 'tasks_screen.dart';
 import 'terrain_success_screen.dart';
 import '../../data/providers/catalogos_provider.dart';
 import '../../data/providers/auth_provider.dart';
@@ -153,20 +149,17 @@ class _TerrainStatusScreenState extends State<TerrainStatusScreen> {
 
     try {
       final db = DatabaseHelper.instance;
-      List<Map<String, dynamic>> rows = [];
-      if (currentLoteId != null) {
-        rows = await db.queryWhere(
-          DatabaseHelper.tableSiembras,
-          'loteId = ?',
-          [currentLoteId],
-        );
-      } else if (currentLoteNombre != null) {
-        rows = await db.queryWhere(
-          DatabaseHelper.tableSiembras,
-          'loteNombre = ?',
-          [currentLoteNombre],
-        );
-      }
+      List<Map<String, dynamic>> rows = await db.queryWhere(
+        DatabaseHelper.tableSiembras,
+        'loteId = ? OR loteNombre = ?',
+        [currentLoteId ?? '', currentLoteNombre ?? ''],
+      );
+      List<Map<String, dynamic>> terrenoRows = await db.queryWhere(
+        DatabaseHelper.tableEstadoTerreno,
+        'loteId = ? OR loteNombre = ?',
+        [currentLoteId ?? '', currentLoteNombre ?? ''],
+      );
+      
       if (!mounted) return;
       final provider = context.read<LotesProvider>();
       final matchingLotes = provider.lotes.where(
@@ -176,9 +169,14 @@ class _TerrainStatusScreenState extends State<TerrainStatusScreen> {
           matchingLotes.first.cultivoActual != null &&
           matchingLotes.first.cultivoActual!.isNotEmpty;
 
+      final hasPrevio = terrenoRows.any((r) {
+        final st = (r['estado'] as String?)?.toLowerCase() ?? '';
+        return ['limpio', 'con maleza', 'arado', 'adecuado'].contains(st);
+      });
+
       if (mounted) {
         setState(() {
-          _hasSowing = hasActiveCrop && rows.isNotEmpty;
+          _hasSowing = (hasActiveCrop && rows.isNotEmpty) || hasPrevio;
           _loadingSowingStatus = false;
         });
       }
@@ -532,21 +530,6 @@ class _TerrainStatusScreenState extends State<TerrainStatusScreen> {
       ),
       bottomNavigationBar: AgroBottomNav(
         current: widget.currentTab,
-        onTap: (tab) {
-          if (tab == AgroTab.home) {
-            Navigator.pushReplacement(
-                context, MaterialPageRoute(builder: (_) => const HomeScreen()));
-          } else if (tab == AgroTab.lotes) {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (_) => const MapOnboardingScreen()));
-          } else if (tab == AgroTab.perfil) {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (_) => const ProfileScreen()));
-          } else if (tab == AgroTab.tareas) {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (_) => const TasksScreen()));
-          }
-        },
       ),
     );
   }

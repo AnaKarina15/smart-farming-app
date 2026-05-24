@@ -64,7 +64,7 @@ export class Tratamiento {
   @Column({ type: 'varchar', length: 30, nullable: true })
   unidad!: string | null;
 
-  @Column({ type: 'varchar', length: 50, nullable: true })
+  @Column({ type: 'varchar', length: 150, nullable: true })
   metodoAplicacion!: string | null;
 
   @Column({ type: 'timestamp with time zone' })

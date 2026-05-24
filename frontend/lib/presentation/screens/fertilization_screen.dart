@@ -5,10 +5,6 @@ import '../common/agro_bottom_nav.dart';
 import '../widgets/offline_banner.dart';
 import '../widgets/custom_app_bar.dart';
 import '../widgets/rugged_button.dart';
-import 'home_screen.dart';
-import 'map_onboarding_screen.dart';
-import 'profile_screen.dart';
-import 'tasks_screen.dart';
 import 'package:provider/provider.dart';
 import '../../core/storage/database_helper.dart';
 import '../../data/providers/auth_provider.dart';
@@ -393,21 +389,6 @@ class _FertilizationScreenState extends State<FertilizationScreen> {
       ),
       bottomNavigationBar: AgroBottomNav(
         current: widget.currentTab,
-        onTap: (tab) {
-          if (tab == AgroTab.home) {
-            Navigator.pushReplacement(
-                context, MaterialPageRoute(builder: (_) => const HomeScreen()));
-          } else if (tab == AgroTab.lotes) {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (_) => const MapOnboardingScreen()));
-          } else if (tab == AgroTab.perfil) {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (_) => const ProfileScreen()));
-          } else if (tab == AgroTab.tareas) {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (_) => const TasksScreen()));
-          }
-        },
       ),
     );
   }

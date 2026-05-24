@@ -4,10 +4,6 @@ import '../../core/theme/app_text.dart';
 import '../widgets/custom_app_bar.dart';
 import '../widgets/rugged_button.dart';
 import '../common/agro_bottom_nav.dart';
-import 'home_screen.dart';
-import 'map_onboarding_screen.dart';
-import 'profile_screen.dart';
-import 'tasks_screen.dart';
 import 'viability_success_screen.dart';
 
 class ViabilityScreen extends StatefulWidget {
@@ -142,21 +138,6 @@ class _ViabilityScreenState extends State<ViabilityScreen> {
       ),
       bottomNavigationBar: AgroBottomNav(
         current: widget.currentTab,
-        onTap: (tab) {
-          if (tab == AgroTab.home) {
-            Navigator.pushReplacement(
-                context, MaterialPageRoute(builder: (_) => const HomeScreen()));
-          } else if (tab == AgroTab.lotes) {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (_) => const MapOnboardingScreen()));
-          } else if (tab == AgroTab.perfil) {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (_) => const ProfileScreen()));
-          } else if (tab == AgroTab.tareas) {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (_) => const TasksScreen()));
-          }
-        },
       ),
     );
   }

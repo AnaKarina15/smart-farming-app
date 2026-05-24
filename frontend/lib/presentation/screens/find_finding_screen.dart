@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text.dart';
@@ -9,11 +11,8 @@ import '../widgets/offline_banner.dart';
 import '../widgets/rugged_button.dart';
 import '../common/agro_bottom_nav.dart';
 import 'finding_success_screen.dart';
-import 'home_screen.dart';
-import 'map_onboarding_screen.dart';
-import 'profile_screen.dart';
-import 'tasks_screen.dart';
 import '../../data/providers/catalogos_provider.dart';
+import '../../data/services/sync_service.dart';
 
 class FindFindingScreen extends StatefulWidget {
   final AgroTab currentTab;
@@ -66,6 +65,88 @@ class _FindFindingScreenState extends State<FindFindingScreen> {
     super.dispose();
   }
 
+  Future<void> _pickEvidencia() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const Text(
+                'Agregar evidencia de plaga',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.primary),
+              ),
+              const SizedBox(height: 10),
+              ListTile(
+                leading: const CircleAvatar(
+                  backgroundColor: AppColors.primary,
+                  child: Icon(Icons.camera_alt, color: Colors.white),
+                ),
+                title: const Text('Tomar foto'),
+                subtitle: const Text('Usar la cámara del dispositivo'),
+                onTap: () => Navigator.pop(ctx, ImageSource.camera),
+              ),
+              ListTile(
+                leading: const CircleAvatar(
+                  backgroundColor: AppColors.secondary,
+                  child: Icon(Icons.photo_library, color: Colors.white),
+                ),
+                title: const Text('Elegir de galería'),
+                subtitle: const Text('Seleccionar una imagen de la galería'),
+                onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+              ),
+              if (_fotoPath != null)
+                ListTile(
+                  leading: const CircleAvatar(
+                    backgroundColor: AppColors.error,
+                    child: Icon(Icons.delete, color: Colors.white),
+                  ),
+                  title: const Text('Eliminar foto actual'),
+                  onTap: () {
+                    setState(() {
+                      _fotoPath = null;
+                    });
+                    Navigator.pop(ctx);
+                  },
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (source == null) return;
+
+    final picker = ImagePicker();
+    final XFile? pickedFile = await picker.pickImage(
+      source: source,
+      maxWidth: 1024,
+      maxHeight: 1024,
+      imageQuality: 85,
+    );
+
+    if (pickedFile != null) {
+      setState(() {
+        _fotoPath = pickedFile.path;
+      });
+    }
+  }
+
   Future<void> _guardarHallazgo() async {
     final plagaOtroValido = _usandoPlagaOtro && _plagaOtroCtrl.text.trim().isNotEmpty;
     final plagaIdValido = !_usandoPlagaOtro && _selectedPlagaId != null && _selectedPlagaId != 'OTROS';
@@ -104,15 +185,22 @@ class _FindFindingScreenState extends State<FindFindingScreen> {
       if (_fotoPath != null) 'fotoPath': _fotoPath,
     };
 
+    final navigator = Navigator.of(context);
+    final lotesProv = context.read<LotesProvider>();
+    final syncService = context.read<SyncService>();
+
     // OperacionesProvider guarda en SQLite con isPendingSync=1;
     // SyncService lo sube al backend cuando haya conexión.
     await context.read<OperacionesProvider>().crearHallazgo(data);
 
+    try {
+      syncService.syncNow(lotesProvider: lotesProv);
+    } catch (_) {}
+
     setState(() => _guardando = false);
 
     if (!mounted) return;
-    Navigator.pushReplacement(
-      context,
+    navigator.pushReplacement(
       MaterialPageRoute(
         builder: (_) => FindingSuccessScreen(
           lote: _loteNombre ?? '',
@@ -357,49 +445,94 @@ class _FindFindingScreenState extends State<FindFindingScreen> {
             const SizedBox(height: 24),
             _label('EVIDENCIA'),
             GestureDetector(
-              onTap: () async {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Abriendo cámara...')),
-                );
-                await Future.delayed(const Duration(seconds: 1));
-                setState(() {
-                  _fotoPath = 'path/simulado/foto_plaga.jpg';
-                });
-              },
+              onTap: _pickEvidencia,
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 32),
+                height: 180,
                 decoration: BoxDecoration(
-                  color: _fotoPath != null ? AppColors.primaryContainer.withValues(alpha: 0.3) : AppColors.surfaceContainerLowest,
+                  color: AppColors.surfaceContainerLowest,
                   borderRadius: BorderRadius.circular(12),
-                  border: _fotoPath != null ? Border.all(color: AppColors.primary, width: 2) : null,
+                  border: Border.all(
+                    color: _fotoPath != null ? AppColors.primary : AppColors.outlineVariant,
+                    width: _fotoPath != null ? 2 : 1,
+                  ),
                 ),
                 child: Stack(
                   children: [
-                    if (_fotoPath == null)
+                    if (_fotoPath == null) ...[
                       Positioned.fill(
                         child: CustomPaint(
                           painter: _DashedRectPainter(color: AppColors.outline),
                         ),
                       ),
-                    Center(
-                      child: Column(
-                        children: [
-                          Icon(
-                            _fotoPath != null ? Icons.check_circle : Icons.camera_alt_outlined,
-                            color: _fotoPath != null ? AppColors.primary : AppColors.onSurfaceVariant,
-                            size: 32,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            _fotoPath != null ? 'FOTO CAPTURADA' : 'TOMAR FOTO',
-                            style: AppText.labelCaps(
-                              color: _fotoPath != null ? AppColors.primary : AppColors.onSurfaceVariant,
+                      Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.camera_alt_outlined,
+                              color: AppColors.onSurfaceVariant,
+                              size: 32,
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 8),
+                            Text(
+                              'TOMAR FOTO / SUBIR EVIDENCIA',
+                              style: AppText.labelCaps(
+                                color: AppColors.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
+                    ] else ...[
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Image.file(
+                          File(_fotoPath!),
+                          width: double.infinity,
+                          height: double.infinity,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      Positioned(
+                        right: 8,
+                        top: 8,
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _fotoPath = null;
+                            });
+                          },
+                          child: CircleAvatar(
+                            backgroundColor: Colors.black.withValues(alpha: 0.6),
+                            radius: 16,
+                            child: const Icon(Icons.close, color: Colors.white, size: 18),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 8,
+                        left: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.6),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.edit, color: Colors.white, size: 12),
+                              const SizedBox(width: 4),
+                              Text(
+                                'TAP PARA CAMBIAR',
+                                style: AppText.labelCaps(color: Colors.white).copyWith(fontSize: 9),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -415,21 +548,6 @@ class _FindFindingScreenState extends State<FindFindingScreen> {
       ),
       bottomNavigationBar: AgroBottomNav(
         current: widget.currentTab,
-        onTap: (tab) {
-          if (tab == AgroTab.home) {
-            Navigator.pushReplacement(
-                context, MaterialPageRoute(builder: (_) => const HomeScreen()));
-          } else if (tab == AgroTab.lotes) {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (_) => const MapOnboardingScreen()));
-          } else if (tab == AgroTab.perfil) {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (_) => const ProfileScreen()));
-          } else if (tab == AgroTab.tareas) {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (_) => const TasksScreen()));
-          }
-        },
       ),
     );
   }

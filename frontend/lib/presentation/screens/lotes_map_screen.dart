@@ -5,8 +5,6 @@ import '../common/agro_bottom_nav.dart';
 import '../widgets/custom_app_bar.dart';
 import 'lote_history_screen.dart';
 import 'treatment_apply_screen.dart';
-import 'home_screen.dart';
-import 'profile_screen.dart';
 
 class LotesMapScreen extends StatelessWidget {
   final String loteName;
@@ -288,21 +286,8 @@ class LotesMapScreen extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: AgroBottomNav(
+      bottomNavigationBar: const AgroBottomNav(
         current: AgroTab.lotes,
-        onTap: (tab) {
-          if (tab == AgroTab.home) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const HomeScreen()),
-            );
-          } else if (tab == AgroTab.perfil) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const ProfileScreen()),
-            );
-          }
-        },
       ),
     );
   }

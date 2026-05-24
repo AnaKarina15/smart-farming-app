@@ -72,4 +72,15 @@ class OperacionesService {
     final response = await _dio.get('${ApiEndpoints.observaciones}?loteId=$loteId');
     return (response.data['data']['data'] as List).map((e) => Observacion.fromJson(e)).toList();
   }
+
+  // --- ESTADO TERRENO ---
+  Future<EstadoTerreno> createEstadoTerreno(Map<String, dynamic> data) async {
+    final response = await _dio.post(ApiEndpoints.estadoTerreno, data: data);
+    return EstadoTerreno.fromJson(response.data['data']);
+  }
+
+  Future<List<EstadoTerreno>> getEstadosTerreno(String loteId) async {
+    final response = await _dio.get('${ApiEndpoints.estadoTerreno}?loteId=$loteId');
+    return (response.data['data']['data'] as List).map((e) => EstadoTerreno.fromJson(e)).toList();
+  }
 }

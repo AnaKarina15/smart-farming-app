@@ -33,12 +33,10 @@ export class CreateLoteDto {
   @ApiProperty({
     example: 2.5,
     minimum: 0.01,
-    maximum: 5,
-    description: 'Superficie en hectareas (maximo 5 segun el contexto del proyecto)',
+    description: 'Superficie en hectareas',
   })
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0.01)
-  @Max(5, { message: 'La superficie no puede exceder 5 hectareas' })
   superficieHectareas!: number;
 
   @ApiProperty({ example: 'Maiz', required: false, maxLength: 100 })

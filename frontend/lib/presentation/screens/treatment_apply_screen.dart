@@ -5,14 +5,11 @@ import '../common/agro_bottom_nav.dart';
 import '../widgets/custom_app_bar.dart';
 import '../widgets/rugged_button.dart';
 import 'treatment_success_screen.dart';
-import 'home_screen.dart';
-import 'map_onboarding_screen.dart';
-import 'profile_screen.dart';
-import 'tasks_screen.dart';
 import 'package:provider/provider.dart';
 import '../../core/storage/database_helper.dart';
 import '../../data/providers/auth_provider.dart';
 import '../../data/providers/lotes_provider.dart';
+import '../../data/services/sync_service.dart';
 
 class TreatmentApplyScreen extends StatefulWidget {
   final String? alertLoteName;
@@ -43,6 +40,9 @@ class _TreatmentApplyScreenState extends State<TreatmentApplyScreen> {
   @override
   void initState() {
     super.initState();
+    _insumoCtrl.addListener(() {
+      if (mounted) setState(() {});
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = context.read<LotesProvider>();
       if (!provider.hasLotes) {
@@ -91,18 +91,20 @@ class _TreatmentApplyScreenState extends State<TreatmentApplyScreen> {
       backgroundColor: AppColors.background,
       appBar: const CustomAppBar(showBack: true),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(15),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Center(
               child: Text(
-                'Registrar tratamiento',
+                'REGISTRAR TRATAMIENTO',
                 textAlign: TextAlign.center,
-                style: AppText.h1(),
+                style: AppText.labelCaps(color: AppColors.primary),
               ),
             ),
             const SizedBox(height: 5),
+            const Divider(color: AppColors.outlineVariant),
+            const SizedBox(height: 24),
             if (widget.alertLoteName != null) ...[
               // Yellow alert banner
               Container(
@@ -169,7 +171,7 @@ class _TreatmentApplyScreenState extends State<TreatmentApplyScreen> {
               const SizedBox(height: 16),
             ],
             _label('INSUMO QUÍMICO'),
-            _input(_insumoCtrl, 'Ej. Glifosato 48%'),
+            _buildInsumoPicker(),
             const SizedBox(height: 16),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -191,7 +193,14 @@ class _TreatmentApplyScreenState extends State<TreatmentApplyScreen> {
                       _label('UNIDAD'),
                       _dropdown(
                         value: _unidad,
-                        items: const ['L/ha', 'kg/ha', 'ml/L'],
+                        items: const [
+                          'L/ha',
+                          'kg/ha',
+                          'ml/L',
+                          'g/planta',
+                          'ml/planta',
+                          'kg/lote',
+                        ],
                         onChanged: (v) =>
                             setState(() => _unidad = v ?? _unidad),
                       ),
@@ -202,15 +211,7 @@ class _TreatmentApplyScreenState extends State<TreatmentApplyScreen> {
             ),
             const SizedBox(height: 16),
             _label('MÉTODO DE APLICACIÓN'),
-            _dropdown(
-              value: _metodo,
-              items: const [
-                'Mochila Pulverizadora',
-                'Tractor Pulverizador',
-                'Aplicación Aérea',
-              ],
-              onChanged: (v) => setState(() => _metodo = v ?? _metodo),
-            ),
+            _buildMethodPicker(),
             const SizedBox(height: 16),
             _label('OBSERVACIONES'),
             const SizedBox(height: 8),
@@ -243,8 +244,10 @@ class _TreatmentApplyScreenState extends State<TreatmentApplyScreen> {
                       if (_loteId == null || _insumoCtrl.text.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('Por favor, completa todos los campos requeridos (Insumo y Lote).',
-                              style: AppText.bodyMd(color: Colors.white).copyWith(fontWeight: FontWeight.w600)),
+                            content: Text(
+                                'Por favor, completa todos los campos requeridos (Insumo y Lote).',
+                                style: AppText.bodyMd(color: Colors.white)
+                                    .copyWith(fontWeight: FontWeight.w600)),
                             backgroundColor: AppColors.error,
                             behavior: SnackBarBehavior.floating,
                           ),
@@ -253,6 +256,9 @@ class _TreatmentApplyScreenState extends State<TreatmentApplyScreen> {
                       }
                       setState(() => _guardando = true);
 
+                      final navigator = Navigator.of(context);
+                      final lotesProv = context.read<LotesProvider>();
+                      final syncService = context.read<SyncService>();
                       final user = context.read<AuthProvider>().currentUser;
                       final userId = user?.id ?? 'unknown';
                       final id =
@@ -276,11 +282,14 @@ class _TreatmentApplyScreenState extends State<TreatmentApplyScreen> {
                         'isPendingSync': 1,
                       });
 
-                      if (!context.mounted) return;
+                      try {
+                        syncService.syncNow(lotesProvider: lotesProv);
+                      } catch (_) {}
+
+                      if (!mounted) return;
                       setState(() => _guardando = false);
 
-                      Navigator.pushReplacement(
-                        context,
+                      navigator.pushReplacement(
                         MaterialPageRoute(
                           builder: (_) => TreatmentSuccessScreen(
                             lote: _loteNombre ?? '',
@@ -297,21 +306,6 @@ class _TreatmentApplyScreenState extends State<TreatmentApplyScreen> {
       ),
       bottomNavigationBar: AgroBottomNav(
         current: widget.currentTab,
-        onTap: (tab) {
-          if (tab == AgroTab.home) {
-            Navigator.pushReplacement(
-                context, MaterialPageRoute(builder: (_) => const HomeScreen()));
-          } else if (tab == AgroTab.lotes) {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (_) => const MapOnboardingScreen()));
-          } else if (tab == AgroTab.perfil) {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (_) => const ProfileScreen()));
-          } else if (tab == AgroTab.tareas) {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (_) => const TasksScreen()));
-          }
-        },
       ),
     );
   }
@@ -345,9 +339,11 @@ class _TreatmentApplyScreenState extends State<TreatmentApplyScreen> {
   }
 
   Widget _dropdown({
-    required String value,
+    String? value,
     required List<String> items,
     required ValueChanged<String?> onChanged,
+    String? hint,
+    double? menuMaxHeight = 250,
   }) {
     return Container(
       height: 56,
@@ -359,16 +355,60 @@ class _TreatmentApplyScreenState extends State<TreatmentApplyScreen> {
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
-          value: value,
+          value: value != null && value.isNotEmpty ? value : null,
+          hint: hint != null ? Text(hint, style: AppText.bodyMd(color: AppColors.outline)) : null,
           isExpanded: true,
+          menuMaxHeight: menuMaxHeight,
           icon: const Icon(Icons.arrow_drop_down,
               color: AppColors.onSurfaceVariant),
           items: items
-              .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+              .map((e) => DropdownMenuItem(value: e, child: Text(e, overflow: TextOverflow.ellipsis)))
               .toList(),
           onChanged: onChanged,
         ),
       ),
+    );
+  }
+
+  Widget _buildMethodPicker() {
+    // La lista de métodos de aplicación está definida aquí mismo:
+    return _dropdown(
+      value: _metodo,
+      menuMaxHeight: 220,
+      items: const [
+        'Mochila Pulverizadora',
+        'Tractor Pulverizador',
+        'Riego con fertirriego',
+        'Aplicación localizada',
+      ],
+      onChanged: (v) {
+        if (v != null) setState(() => _metodo = v);
+      },
+    );
+  }
+
+  // ---------- Insumo químico picker ----------
+  Widget _buildInsumoPicker() {
+    final suggestions = const [
+      'Mancozeb',
+      'Carbendazim',
+      'Triazoles',
+      'Clorpirifos',
+      'Imidacloprid',
+      'Lambda-cyhalotrina',
+      'Glifosato',
+      'Paraquat',
+      'Atrazina',
+      'Cobre (oxicloruro, hidróxido)',
+      'Estreptomicina',
+    ];
+    return _dropdown(
+      value: _insumoCtrl.text,
+      hint: 'Selecciona insumo',
+      items: suggestions,
+      onChanged: (v) {
+        if (v != null) setState(() => _insumoCtrl.text = v);
+      },
     );
   }
 }

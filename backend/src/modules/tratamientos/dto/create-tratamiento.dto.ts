@@ -23,6 +23,9 @@ export const METODOS_APLICACION_TRATAMIENTO = [
   'trampa',
   'biologico',
   'manual',
+  'Mochila Pulverizadora',
+  'Tractor Pulverizador',
+  'Riego con fertirriego',
 ] as const;
 
 export class CreateTratamientoDto {
@@ -33,12 +36,11 @@ export class CreateTratamientoDto {
 
   @ApiProperty({
     format: 'uuid',
-    required: false,
+    required: true,
     description: 'ID del hallazgo asociado (si el tratamiento responde a una plaga detectada)',
   })
-  @IsOptional()
   @IsUUID()
-  hallazgoId?: string;
+  hallazgoId!: string;
 
   @ApiProperty({
     example: 'Mancozeb 80% WP',

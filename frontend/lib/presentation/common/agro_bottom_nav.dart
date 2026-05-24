@@ -3,15 +3,59 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text.dart';
 import '../../data/providers/tareas_provider.dart';
+import '../../data/providers/lotes_provider.dart';
+import '../screens/home_screen.dart';
+import '../screens/map_onboarding_screen.dart';
+import '../screens/lotes_list_screen.dart';
+import '../screens/tasks_screen.dart';
+import '../screens/profile_screen.dart';
 
 enum AgroTab { home, lotes, tareas, perfil }
 
 /// BottomNavBar AgroField - 4 tabs con pill indicator en el activo.
 class AgroBottomNav extends StatelessWidget {
   final AgroTab current;
+  final bool isRoot;
   final ValueChanged<AgroTab>? onTap;
 
-  const AgroBottomNav({super.key, required this.current, this.onTap});
+  const AgroBottomNav({
+    super.key,
+    required this.current,
+    this.isRoot = false,
+    this.onTap,
+  });
+
+  static void navigateToTab(BuildContext context, AgroTab tab) {
+    switch (tab) {
+      case AgroTab.home:
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+        );
+        break;
+      case AgroTab.lotes:
+        final hasLotes = context.read<LotesProvider>().hasLotes;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => hasLotes ? const LotesListScreen() : const MapOnboardingScreen(),
+          ),
+        );
+        break;
+      case AgroTab.tareas:
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const TasksScreen()),
+        );
+        break;
+      case AgroTab.perfil:
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const ProfileScreen()),
+        );
+        break;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,6 +65,15 @@ class AgroBottomNav extends StatelessWidget {
       pendingTasks = provider.tareas.length;
     } catch (_) {
       // Evita excepciones si el provider no estuviera en el árbol de este contexto específico
+    }
+
+    void handleTap(AgroTab tab) {
+      if (tab == current && isRoot) return;
+      if (onTap != null) {
+        onTap!(tab);
+      } else {
+        navigateToTab(context, tab);
+      }
     }
 
     return Container(
@@ -41,14 +94,14 @@ class AgroBottomNav extends StatelessWidget {
               iconActive: Icons.home,
               label: 'Inicio',
               active: current == AgroTab.home,
-              onTap: () => onTap?.call(AgroTab.home),
+              onTap: () => handleTap(AgroTab.home),
             ),
             _NavItem(
               icon: Icons.map_outlined,
               iconActive: Icons.map,
               label: 'Lotes',
               active: current == AgroTab.lotes,
-              onTap: () => onTap?.call(AgroTab.lotes),
+              onTap: () => handleTap(AgroTab.lotes),
             ),
             _NavItem(
               icon: Icons.assignment_outlined,
@@ -56,14 +109,14 @@ class AgroBottomNav extends StatelessWidget {
               label: 'Tareas',
               active: current == AgroTab.tareas,
               badgeCount: pendingTasks,
-              onTap: () => onTap?.call(AgroTab.tareas),
+              onTap: () => handleTap(AgroTab.tareas),
             ),
             _NavItem(
               icon: Icons.person_outline,
               iconActive: Icons.person,
               label: 'Perfil',
               active: current == AgroTab.perfil,
-              onTap: () => onTap?.call(AgroTab.perfil),
+              onTap: () => handleTap(AgroTab.perfil),
             ),
           ],
         ),

@@ -23,8 +23,10 @@ class LoteAdmin {
     return LoteAdmin(
       id: json['id'] as String,
       nombre: json['nombre'] as String,
-      superficie: (json['superficie'] as num?)?.toDouble() ?? 0.0,
-      cultivo: json['cultivo'] as String?,
+      // Backend uses 'superficieHectareas' for area
+      superficie: (json['superficieHectareas'] as num?)?.toDouble() ?? 0.0,
+      // Backend provides cultivations via 'cultivoActual' (legacy name)
+      cultivo: json['cultivoActual'] as String? ?? json['cultivoActualId'] as String?,
       estado: json['estado'] as String?,
       propietarioId: json['propietarioId'] as String?,
       propietarioNombre: json['propietarioNombre'] as String?,

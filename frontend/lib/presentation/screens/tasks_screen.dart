@@ -6,14 +6,10 @@ import '../../data/providers/tareas_provider.dart';
 import '../common/agro_bottom_nav.dart';
 import '../widgets/custom_app_bar.dart';
 import '../widgets/offline_banner.dart';
-import 'home_screen.dart';
-import 'map_onboarding_screen.dart';
-import 'profile_screen.dart';
 import 'irrigation_screen.dart';
 import 'evaluation_screen.dart';
 import 'fertilization_screen.dart';
 import 'treatment_apply_screen.dart';
-import 'register_observation_screen.dart';
 
 class TasksScreen extends StatefulWidget {
   const TasksScreen({super.key});
@@ -85,20 +81,9 @@ class _TasksScreenState extends State<TasksScreen> {
         ),
       ),
     ),
-      bottomNavigationBar: AgroBottomNav(
+      bottomNavigationBar: const AgroBottomNav(
         current: AgroTab.tareas,
-        onTap: (tab) {
-          if (tab == AgroTab.home) {
-            Navigator.pushReplacement(
-                context, MaterialPageRoute(builder: (_) => const HomeScreen()));
-          } else if (tab == AgroTab.lotes) {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (_) => const MapOnboardingScreen()));
-          } else if (tab == AgroTab.perfil) {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (_) => const ProfileScreen()));
-          }
-        },
+        isRoot: true,
       ),
     );
   }
@@ -257,40 +242,7 @@ class _TasksScreenState extends State<TasksScreen> {
           ),
         );
 
-      case TareaTipo.observacion:
-        return _TaskCard(
-          icon: Icons.note_add,
-          iconColor: AppColors.onPrimary,
-          iconBgColor: AppColors.primary,
-          cardColor: AppColors.surfaceVariant,
-          title: tarea.titulo,
-          content: RichText(
-            text: TextSpan(
-              style: AppText.bodyMd(color: AppColors.onSurfaceVariant),
-              children: [
-                TextSpan(
-                    text: '${tarea.loteNombre}: ',
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
-                TextSpan(text: tarea.descripcion.replaceFirst('${tarea.loteNombre}: ', '')),
-              ],
-            ),
-          ),
-          actionLabel: tarea.accionLabel,
-          onAction: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => RegisterObservationScreen(
-                loteName: tarea.loteNombre,
-                currentTab: AgroTab.tareas,
-              ),
-            ),
-          ),
-          footer: Text(
-            tarea.motivo,
-            style: AppText.bodyMd(color: AppColors.onSurfaceVariant)
-                .copyWith(fontSize: 13, fontStyle: FontStyle.italic),
-          ),
-        );
+
 
       case TareaTipo.hallazgo:
         return _TaskCard(
@@ -341,30 +293,6 @@ class _TasksScreenState extends State<TasksScreen> {
               ],
             ),
           ),
-          actionLabel: tarea.accionLabel,
-          onAction: () {
-            if (tarea.accionLabel == 'EJECUTAR RIEGO') {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => IrrigationScreen(
-                    fixedLote: tarea.loteNombre,
-                    currentTab: AgroTab.tareas,
-                  ),
-                ),
-              );
-            } else {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => RegisterObservationScreen(
-                    loteName: tarea.loteNombre,
-                    currentTab: AgroTab.tareas,
-                  ),
-                ),
-              );
-            }
-          },
           footer: Text(
             tarea.motivo,
             style: AppText.bodyMd(color: const Color(0xFF0D47A1))

@@ -20,14 +20,6 @@ export class LotesService {
   constructor(private readonly lotesRepo: LotesRepository) {}
 
   async create(propietarioId: string, dto: CreateLoteDto): Promise<LoteResponseDto> {
-    const totalActual = await this.lotesRepo.sumSuperficieByPropietario(propietarioId);
-    if (totalActual + dto.superficieHectareas > SUPERFICIE_MAXIMA_TOTAL) {
-      throw new BadRequestException(
-        `La superficie total no puede exceder ${SUPERFICIE_MAXIMA_TOTAL} hectareas. ` +
-          `Actual: ${totalActual}, intentando agregar: ${dto.superficieHectareas}`,
-      );
-    }
-
     const lote = await this.lotesRepo.create({ ...dto, propietarioId });
     return LoteResponseDto.fromEntity(lote);
   }
@@ -75,16 +67,6 @@ export class LotesService {
       }
     } else {
       await this.assertOwnership(id, userId);
-    }
-
-    if (dto.superficieHectareas !== undefined) {
-      const lote = await this.lotesRepo.findById(id);
-      const totalActual = await this.lotesRepo.sumSuperficieByPropietario(lote!.propietarioId, id);
-      if (totalActual + dto.superficieHectareas > SUPERFICIE_MAXIMA_TOTAL) {
-        throw new BadRequestException(
-          `La superficie total no puede exceder ${SUPERFICIE_MAXIMA_TOTAL} hectareas`,
-        );
-      }
     }
 
     await this.lotesRepo.update(id, dto);

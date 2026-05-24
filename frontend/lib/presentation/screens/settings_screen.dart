@@ -8,6 +8,7 @@ import '../../data/services/sync_service.dart';
 import '../widgets/custom_app_bar.dart';
 import '../widgets/offline_banner.dart';
 import 'welcome_screen.dart';
+import 'global_history_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -214,6 +215,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 24),
 
             // Opciones de configuración
+            _SettingsTile(
+              icon: Icons.history,
+              title: 'HISTORIAL GLOBAL',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const GlobalHistoryScreen()),
+                );
+              },
+            ),
+            const SizedBox(height: 16),
             _SettingsTile(
               icon: Icons.notifications_none,
               title: 'NOTIFICACIONES Y ALERTAS',

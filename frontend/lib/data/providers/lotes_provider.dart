@@ -153,7 +153,12 @@ class LotesProvider extends ChangeNotifier {
           longitud: longitud,
         );
         _lotes.add(lote);
-        await _db.insert(DatabaseHelper.tableLotes, _loteToDb(lote));
+        try {
+          await _db.insert(DatabaseHelper.tableLotes, _loteToDb(lote));
+        } catch (dbError) {
+          debugPrint('Aviso: Lote creado en servidor pero falló caché local: $dbError');
+          // No lanzamos error porque el objetivo principal (guardar en la nube) ya se cumplió.
+        }
         notifyListeners();
         return true;
       } catch (e) {
@@ -162,49 +167,56 @@ class LotesProvider extends ChangeNotifier {
         return false;
       }
     } else {
-      // Offline: guardar local con UUID temporal
-      final tempId = 'local_${DateTime.now().millisecondsSinceEpoch}';
-      final now = DateTime.now().toIso8601String();
-      final loteLocal = {
-        'id': tempId,
-        'nombre': nombre,
-        'descripcion': descripcion,
-        'superficieHectareas': superficieHectareas,
-        'cultivoActual': cultivoActual,
-        'cultivoActualId': cultivoActualId,
-        'municipioId': municipioId,
-        'tipoSueloId': tipoSueloId,
-        'latitud': latitud,
-        'longitud': longitud,
-        'estado': 'saludable',
-        'propietarioId': propietarioId,
-        'createdAt': now,
-        'updatedAt': now,
-        'isPendingSync': 1,
-      };
-      await _db.insert(DatabaseHelper.tableLotes, loteLocal);
-
-      // Encolar para cuando vuelva internet
-      await _db.insert(DatabaseHelper.tableSyncQueue, {
-        'method': 'POST',
-        'endpoint': ApiEndpoints.lotes,
-        'payload': json.encode({
+      try {
+        // Offline: guardar local con UUID temporal
+        final tempId = 'local_${DateTime.now().millisecondsSinceEpoch}';
+        final now = DateTime.now().toIso8601String();
+        final loteLocal = {
+          'id': tempId,
           'nombre': nombre,
-          if (descripcion != null) 'descripcion': descripcion,
+          'descripcion': descripcion,
           'superficieHectareas': superficieHectareas,
-          if (cultivoActual != null && cultivoActual.isNotEmpty) 'cultivoActual': cultivoActual,
-          if (_sanitizeUuid(cultivoActualId) != null) 'cultivoActualId': _sanitizeUuid(cultivoActualId),
-          if (_sanitizeUuid(municipioId) != null) 'municipioId': _sanitizeUuid(municipioId),
-          if (_sanitizeUuid(tipoSueloId) != null) 'tipoSueloId': _sanitizeUuid(tipoSueloId),
-          if (latitud != null) 'latitud': latitud,
-          if (longitud != null) 'longitud': longitud,
-        }),
-        'createdAt': now,
-      });
+          'cultivoActual': cultivoActual,
+          'cultivoActualId': cultivoActualId,
+          'municipioId': municipioId,
+          'tipoSueloId': tipoSueloId,
+          'latitud': latitud,
+          'longitud': longitud,
+          'estado': 'saludable',
+          'propietarioId': propietarioId,
+          'createdAt': now,
+          'updatedAt': now,
+          'isPendingSync': 1,
+        };
+        await _db.insert(DatabaseHelper.tableLotes, loteLocal);
 
-      await _cargarDesdeLocal();
-      await _actualizarContadorPendientes();
-      return true;
+        // Encolar para cuando vuelva internet
+        await _db.insert(DatabaseHelper.tableSyncQueue, {
+          'method': 'POST',
+          'endpoint': ApiEndpoints.lotes,
+          'payload': json.encode({
+            'localId': tempId,
+            'nombre': nombre,
+            if (descripcion != null) 'descripcion': descripcion,
+            'superficieHectareas': superficieHectareas,
+            if (cultivoActual != null && cultivoActual.isNotEmpty) 'cultivoActual': cultivoActual,
+            if (_sanitizeUuid(cultivoActualId) != null) 'cultivoActualId': _sanitizeUuid(cultivoActualId),
+            if (_sanitizeUuid(municipioId) != null) 'municipioId': _sanitizeUuid(municipioId),
+            if (_sanitizeUuid(tipoSueloId) != null) 'tipoSueloId': _sanitizeUuid(tipoSueloId),
+            if (latitud != null) 'latitud': latitud,
+            if (longitud != null) 'longitud': longitud,
+          }),
+          'createdAt': now,
+        });
+
+        await _cargarDesdeLocal();
+        await _actualizarContadorPendientes();
+        return true;
+      } catch (e) {
+        _errorMessage = e.toString();
+        notifyListeners();
+        return false;
+      }
     }
   }
 
@@ -245,25 +257,31 @@ class LotesProvider extends ChangeNotifier {
       );
       _lotes[index] = updated;
 
-      await _db.update(
-        DatabaseHelper.tableLotes,
-        {
-          'nombre': updated.nombre,
-          'descripcion': updated.descripcion,
-          'superficieHectareas': updated.superficieHectareas,
-          'cultivoActual': updated.cultivoActual,
-          'cultivoActualId': updated.cultivoActualId,
-          'municipioId': updated.municipioId,
-          'tipoSueloId': updated.tipoSueloId,
-          'latitud': updated.latitud,
-          'longitud': updated.longitud,
-          'estado': updated.estado,
-          'updatedAt': updated.updatedAt.toIso8601String(),
-          'isPendingSync': 1,
-        },
-        'id = ?',
-        [id],
-      );
+      try {
+        await _db.update(
+          DatabaseHelper.tableLotes,
+          {
+            'nombre': updated.nombre,
+            'descripcion': updated.descripcion,
+            'superficieHectareas': updated.superficieHectareas,
+            'cultivoActual': updated.cultivoActual,
+            'cultivoActualId': updated.cultivoActualId,
+            'municipioId': updated.municipioId,
+            'tipoSueloId': updated.tipoSueloId,
+            'latitud': updated.latitud,
+            'longitud': updated.longitud,
+            'estado': updated.estado,
+            'updatedAt': updated.updatedAt.toIso8601String(),
+            'isPendingSync': 1,
+          },
+          'id = ?',
+          [id],
+        );
+      } catch (e) {
+        _errorMessage = e.toString();
+        notifyListeners();
+        return false;
+      }
     }
 
     final payload = {
@@ -304,15 +322,21 @@ class LotesProvider extends ChangeNotifier {
     }
 
     // Modo offline (encolamos el PATCH)
-    await _db.insert(DatabaseHelper.tableSyncQueue, {
-      'method': 'PATCH',
-      'endpoint': '${ApiEndpoints.lotes}/$id',
-      'payload': json.encode(payload),
-      'createdAt': DateTime.now().toIso8601String(),
-    });
-    await _actualizarContadorPendientes();
-    notifyListeners();
-    return true;
+    try {
+      await _db.insert(DatabaseHelper.tableSyncQueue, {
+        'method': 'PATCH',
+        'endpoint': '${ApiEndpoints.lotes}/$id',
+        'payload': json.encode(payload),
+        'createdAt': DateTime.now().toIso8601String(),
+      });
+      await _actualizarContadorPendientes();
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      notifyListeners();
+      return false;
+    }
   }
 
   /// Elimina un lote (soporte offline).
@@ -324,8 +348,35 @@ class LotesProvider extends ChangeNotifier {
     _lotes.removeWhere((l) => l.id == id);
     await _db.deleteById(DatabaseHelper.tableLotes, id);
 
+    // Limpiar cualquier acción pendiente (POST/PATCH) para este lote de la sync_queue
+    try {
+      final db = await _db.database;
+      if (isLocalOnly) {
+        final queue = await _db.queryAllRows(DatabaseHelper.tableSyncQueue);
+        for (final action in queue) {
+          if (action['payload'] != null) {
+            final Map<String, dynamic> data = json.decode(action['payload'] as String);
+            if (data['localId'] == id) {
+              await db.delete(
+                DatabaseHelper.tableSyncQueue,
+                where: 'id = ?',
+                whereArgs: [action['id']],
+              );
+            }
+          }
+        }
+      } else {
+        await db.delete(
+          DatabaseHelper.tableSyncQueue,
+          where: 'endpoint = ? OR endpoint = ?',
+          whereArgs: ['${ApiEndpoints.lotes}/$id', ApiEndpoints.loteById(id)],
+        );
+      }
+    } catch (e) {
+      debugPrint('[LotesProvider] Error al limpiar cola de sincronización para lote: $e');
+    }
+
     if (isLocalOnly) {
-      // Si era un lote que nunca se subió al servidor, no hacemos nada más
       notifyListeners();
       return true;
     }
@@ -341,15 +392,21 @@ class LotesProvider extends ChangeNotifier {
     }
 
     // Modo offline (o si falló la red): encolamos la tarea para borrarlo luego
-    await _db.insert(DatabaseHelper.tableSyncQueue, {
-      'method': 'DELETE',
-      'endpoint': '${ApiEndpoints.lotes}/$id',
-      'payload': json.encode({}),
-      'createdAt': DateTime.now().toIso8601String(),
-    });
-    await _actualizarContadorPendientes();
-    notifyListeners();
-    return true;
+    try {
+      await _db.insert(DatabaseHelper.tableSyncQueue, {
+        'method': 'DELETE',
+        'endpoint': '${ApiEndpoints.lotes}/$id',
+        'payload': json.encode({}),
+        'createdAt': DateTime.now().toIso8601String(),
+      });
+      await _actualizarContadorPendientes();
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      notifyListeners();
+      return false;
+    }
   }
 
   void clearError() {

@@ -6,9 +6,11 @@ import '../common/agro_bottom_nav.dart';
 import 'offline_banner.dart';
 import '../screens/home_screen.dart';
 import '../screens/map_onboarding_screen.dart';
-import '../screens/profile_screen.dart';
 import '../screens/tasks_screen.dart';
 
+import 'package:provider/provider.dart';
+import '../../data/providers/lotes_provider.dart';
+import '../screens/lotes_list_screen.dart';
 import 'dart:async';
 
 /// Layout reusable para pantallas de éxito (riego, fertilización, siembra…).
@@ -59,7 +61,8 @@ class _SuccessScaffoldState extends State<SuccessScaffold> {
         } else {
           Widget destination;
           if (widget.currentTab == AgroTab.lotes) {
-            destination = const MapOnboardingScreen();
+            final hasLotes = context.read<LotesProvider>().hasLotes;
+            destination = hasLotes ? const LotesListScreen() : const MapOnboardingScreen();
           } else if (widget.currentTab == AgroTab.tareas) {
             destination = const TasksScreen();
           } else {
@@ -277,29 +280,6 @@ class _SuccessScaffoldState extends State<SuccessScaffold> {
       ),
       bottomNavigationBar: AgroBottomNav(
         current: widget.currentTab,
-        onTap: (tab) {
-          if (tab == AgroTab.home) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const HomeScreen()),
-            );
-          } else if (tab == AgroTab.lotes) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const MapOnboardingScreen()),
-            );
-          } else if (tab == AgroTab.perfil) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const ProfileScreen()),
-            );
-          } else if (tab == AgroTab.tareas) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const TasksScreen()),
-            );
-          }
-        },
       ),
     );
   }

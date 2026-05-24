@@ -5,7 +5,7 @@ import '../services/operaciones_service.dart';
 
 // ─── Enums ─────────────────────────────────────────────────
 
-enum TareaTipo { riego, hallazgo, tratamiento, evaluacion, fertilizacion, observacion, clima }
+enum TareaTipo { riego, hallazgo, tratamiento, evaluacion, fertilizacion, clima }
 
 enum TareaPrioridad { alta, media, baja }
 
@@ -18,7 +18,7 @@ class TareaItem {
   final String titulo;
   final String descripcion;
   final String motivo;
-  final String accionLabel;
+  final String? accionLabel;
   final TareaPrioridad prioridad;
 
   // Datos contextuales para pre-llenar las pantallas destino
@@ -34,7 +34,7 @@ class TareaItem {
     required this.titulo,
     required this.descripcion,
     required this.motivo,
-    required this.accionLabel,
+    this.accionLabel,
     required this.prioridad,
     this.hallazgoId,
     this.plagaNombre,
@@ -117,9 +117,6 @@ class TareasProvider extends ChangeNotifier {
         final tareaFert = await _evaluarFertilizacion(loteId, loteNombre);
         if (tareaFert != null) generadas.add(tareaFert);
 
-        // 5. Observación: si no hay en 7+ días
-        final tareaObs = await _evaluarObservacion(loteId, loteNombre);
-        if (tareaObs != null) generadas.add(tareaObs);
 
         // 6. Alerta climática: anomalías según api de clima
         final tareaClima = await _evaluarClima(lote, loteId, loteNombre);
@@ -420,53 +417,6 @@ class TareasProvider extends ChangeNotifier {
     }
   }
 
-  // ─── Regla 5: Observación general ──────────────────────
-
-  Future<TareaItem?> _evaluarObservacion(String loteId, String loteNombre) async {
-    try {
-      final obs = await _db.queryWhere(
-        DatabaseHelper.tableObservaciones,
-        'loteId = ?',
-        [loteId],
-      );
-
-      DateTime? ultimaObs;
-      if (obs.isNotEmpty) {
-        obs.sort((a, b) =>
-            (b['fecha'] as String? ?? '').compareTo(a['fecha'] as String? ?? ''));
-        final fechaStr = obs.first['fecha'] as String?;
-        ultimaObs = fechaStr != null ? DateTime.tryParse(fechaStr) : null;
-      }
-
-      final now = DateTime.now();
-      int diasSinObs = 999;
-      if (ultimaObs != null) {
-        diasSinObs = now.difference(ultimaObs).inDays;
-      }
-
-      // Solo sugerir si lleva 7+ días sin observación
-      if (diasSinObs < 7) return null;
-
-      return TareaItem(
-        tipo: TareaTipo.observacion,
-        loteId: loteId,
-        loteNombre: loteNombre,
-        titulo: 'Registrar Observación',
-        descripcion: ultimaObs == null
-            ? '$loteNombre: Aún no se ha registrado ninguna observación para este lote.'
-            : '$loteNombre: No se ha registrado ninguna observación en los últimos $diasSinObs días.',
-        motivo: ultimaObs == null
-            ? 'Sin registros de observaciones'
-            : 'Hace $diasSinObs días sin registros',
-        accionLabel: 'REGISTRAR OBSERVACIÓN',
-        prioridad: TareaPrioridad.baja,
-      );
-    } catch (e) {
-      debugPrint('[TareasProvider] _evaluarObservacion error: $e');
-      return null;
-    }
-  }
-
   // ─── Regla 6: Alerta Climática ──────────────────────────
 
   Future<TareaItem?> _evaluarClima(Map<String, dynamic> lote, String loteId, String loteNombre) async {
@@ -495,7 +445,6 @@ class TareasProvider extends ChangeNotifier {
           titulo: 'Alerta Climática',
           descripcion: '$loteNombre: Lluvias intensas pronosticadas ($rainStr). Se recomienda posponer la fertilización o el riego.',
           motivo: 'Lluvia inminente detectada',
-          accionLabel: 'REGISTRAR OBSERVACIÓN',
           prioridad: TareaPrioridad.media,
         );
       }
@@ -509,7 +458,6 @@ class TareasProvider extends ChangeNotifier {
           titulo: 'Alerta Climática',
           descripcion: '$loteNombre: Temperatura extrema detectada ($tempStr). Se recomienda incrementar el volumen de riego y regar al amanecer o atardecer.',
           motivo: 'Ola de calor detectada',
-          accionLabel: 'EJECUTAR RIEGO',
           prioridad: TareaPrioridad.alta,
         );
       }
@@ -523,7 +471,6 @@ class TareasProvider extends ChangeNotifier {
           titulo: 'Alerta Climática',
           descripcion: '$loteNombre: Bajas temperaturas registradas ($tempStr). Monitoree el cultivo para prevenir daños por heladas.',
           motivo: 'Helada / Frío detectado',
-          accionLabel: 'REGISTRAR OBSERVACIÓN',
           prioridad: TareaPrioridad.media,
         );
       }

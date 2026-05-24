@@ -4,11 +4,7 @@ import '../../core/theme/app_text.dart';
 import '../widgets/custom_app_bar.dart';
 import '../common/agro_bottom_nav.dart';
 import 'treatment_apply_screen.dart';
-import 'home_screen.dart';
-import 'map_onboarding_screen.dart';
-import 'profile_screen.dart';
-import 'tasks_screen.dart';
-import 'register_observation_screen.dart';
+import 'evaluation_screen.dart';
 
 class ActiveAlertsScreen extends StatelessWidget {
   final AgroTab currentTab;
@@ -71,7 +67,7 @@ class ActiveAlertsScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => RegisterObservationScreen(
+                    builder: (_) => EvaluationScreen(
                       loteName: 'Lote 4',
                       currentTab: currentTab,
                     ),
@@ -84,21 +80,6 @@ class ActiveAlertsScreen extends StatelessWidget {
       ),
       bottomNavigationBar: AgroBottomNav(
         current: currentTab,
-        onTap: (tab) {
-          if (tab == AgroTab.home) {
-            Navigator.pushReplacement(
-                context, MaterialPageRoute(builder: (_) => const HomeScreen()));
-          } else if (tab == AgroTab.lotes) {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (_) => const MapOnboardingScreen()));
-          } else if (tab == AgroTab.perfil) {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (_) => const ProfileScreen()));
-          } else if (tab == AgroTab.tareas) {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (_) => const TasksScreen()));
-          }
-        },
       ),
     );
   }

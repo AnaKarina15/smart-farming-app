@@ -70,6 +70,10 @@ class SyncService {
                 )
               : null;
 
+          if (payload != null) {
+            payload.remove('localId');
+          }
+
           if (method == 'POST') {
             await _dioClient.dio.post(endpoint, data: payload);
           } else if (method == 'PATCH') {

@@ -7,10 +7,7 @@ import '../../data/providers/auth_provider.dart';
 import '../../data/providers/profile_image_provider.dart';
 import '../common/agro_bottom_nav.dart';
 import '../widgets/custom_app_bar.dart';
-import 'home_screen.dart';
 import 'welcome_screen.dart';
-import 'map_onboarding_screen.dart';
-import 'tasks_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -232,22 +229,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       bottomNavigationBar: user?.role == 'administrador'
           ? null
-          : AgroBottomNav(
+          : const AgroBottomNav(
               current: AgroTab.perfil,
-              onTap: (tab) {
-                if (tab == AgroTab.home) {
-                  Navigator.pushReplacement(context,
-                      MaterialPageRoute(builder: (_) => const HomeScreen()));
-                } else if (tab == AgroTab.lotes) {
-                  Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const MapOnboardingScreen()));
-                } else if (tab == AgroTab.tareas) {
-                  Navigator.pushReplacement(context,
-                      MaterialPageRoute(builder: (_) => const TasksScreen()));
-                }
-              },
+              isRoot: true,
             ),
     );
   }

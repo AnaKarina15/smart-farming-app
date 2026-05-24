@@ -8,12 +8,9 @@ import '../widgets/custom_app_bar.dart';
 import 'fertilization_screen.dart';
 import 'irrigation_screen.dart';
 import 'phytosanitary_screen.dart';
-import 'profile_screen.dart';
 import 'soil_humidity_screen.dart';
 import 'sowing_screen.dart';
 import 'terrain_status_screen.dart';
-import 'tasks_screen.dart';
-import 'map_onboarding_screen.dart';
 import '../../data/services/sync_service.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -51,32 +48,9 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: AgroBottomNav(
+      bottomNavigationBar: const AgroBottomNav(
         current: AgroTab.home,
-        onTap: (tab) {
-          switch (tab) {
-            case AgroTab.lotes:
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const MapOnboardingScreen()),
-              );
-              break;
-            case AgroTab.tareas:
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const TasksScreen()),
-              );
-              break;
-            case AgroTab.perfil:
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ProfileScreen()),
-              );
-              break;
-            case AgroTab.home:
-              break;
-          }
-        },
+        isRoot: true,
       ),
     );
   }
@@ -200,14 +174,14 @@ class _HeroSectionState extends State<_HeroSection> {
                         _loteName = "$locality, $area";
                       }
                       if (_loteName.trim().isEmpty) {
-                        _loteName = 'Ubicación Actual';
+                        _loteName = 'Santa Marta, Colombia';
                       }
                     });
                   } else {
-                    setState(() => _loteName = 'Ubicación Actual');
+                    setState(() => _loteName = 'Santa Marta, Colombia');
                   }
                 } catch (_) {
-                  setState(() => _loteName = 'Ubicación Actual');
+                  setState(() => _loteName = 'Santa Marta, Colombia');
                 }
               }
             }
@@ -229,14 +203,14 @@ class _HeroSectionState extends State<_HeroSection> {
                       _loteName = "$locality, $area";
                     }
                     if (_loteName.trim().isEmpty) {
-                      _loteName = 'Ubicación Actual';
+                      _loteName = 'Santa Marta, Colombia';
                     }
                   });
                 } else {
-                  setState(() => _loteName = 'Ubicación Actual');
+                  setState(() => _loteName = 'Santa Marta, Colombia');
                 }
               } catch (_) {
-                setState(() => _loteName = 'Ubicación Actual');
+                setState(() => _loteName = 'Santa Marta, Colombia');
               }
             }
           }
@@ -547,8 +521,10 @@ class _QuickActionsCarouselState extends State<_QuickActionsCarousel> {
         MaterialPageRoute(builder: (_) => destination),
       ),
       child: Container(
-        width: 130,
-        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 12),
+        width: 145,
+        height: 155,
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 8),
         decoration: BoxDecoration(
           color: AppColors.surfaceContainerLowest,
           borderRadius: BorderRadius.circular(24),
@@ -561,6 +537,7 @@ class _QuickActionsCarouselState extends State<_QuickActionsCarousel> {
           ],
         ),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
               width: 64,

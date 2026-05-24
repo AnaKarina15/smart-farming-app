@@ -18,6 +18,7 @@ class _HistoryItem {
   final String id;
   final String table;
   final String title;
+  final String loteNombre;
   final String type;
   final DateTime date;
   final SyncStatus status;
@@ -29,6 +30,7 @@ class _HistoryItem {
     required this.id,
     required this.table,
     required this.title,
+    required this.loteNombre,
     required this.type,
     required this.date,
     required this.status,
@@ -38,16 +40,14 @@ class _HistoryItem {
   });
 }
 
-class LoteHistoryScreen extends StatefulWidget {
-  final String loteName;
-
-  const LoteHistoryScreen({super.key, this.loteName = 'Lote 1'});
+class GlobalHistoryScreen extends StatefulWidget {
+  const GlobalHistoryScreen({super.key});
 
   @override
-  State<LoteHistoryScreen> createState() => _LoteHistoryScreenState();
+  State<GlobalHistoryScreen> createState() => _GlobalHistoryScreenState();
 }
 
-class _LoteHistoryScreenState extends State<LoteHistoryScreen> {
+class _GlobalHistoryScreenState extends State<GlobalHistoryScreen> {
   bool _isLoading = true;
   List<_HistoryItem> _history = [];
 
@@ -60,30 +60,30 @@ class _LoteHistoryScreenState extends State<LoteHistoryScreen> {
   Future<void> _loadHistory() async {
     final db = await DatabaseHelper.instance.database;
     final List<_HistoryItem> items = [];
+    final lotesProvider = context.read<LotesProvider>();
 
-    String? loteId;
+    String getLoteNombre(String? loteId) {
+      if (loteId == null) return 'Lote Desconocido';
+      final lote = lotesProvider.lotes.where((l) => l.id == loteId).firstOrNull;
+      return lote?.nombre ?? 'Lote Desconocido';
+    }
+
     // Sincronizar con el backend antes de leer SQLite
     try {
-      final lotesRows = await db.query(DatabaseHelper.tableLotes, where: 'nombre = ?', whereArgs: [widget.loteName]);
-      if (lotesRows.isNotEmpty) {
-        loteId = lotesRows.first['id'] as String;
-        if (mounted) {
-          await context.read<OperacionesProvider>().sincronizarOperaciones(loteId);
-        }
+      final lotesIds = lotesProvider.lotes.map((l) => l.id).toList();
+      if (lotesIds.isNotEmpty && mounted) {
+        await context.read<OperacionesProvider>().sincronizarTodasLasOperaciones(lotesIds);
       }
     } catch (_) {}
 
-    final whereClause = loteId != null ? 'loteId = ?' : 'loteNombre = ?';
-    final whereArgs = loteId != null ? [loteId] : [widget.loteName];
-
-    final siembras = await db.query(DatabaseHelper.tableSiembras,
-        where: whereClause, whereArgs: whereArgs);
+    final siembras = await db.query(DatabaseHelper.tableSiembras);
     for (var s in siembras) {
       try {
         items.add(_HistoryItem(
           id: s['id'] as String,
           table: DatabaseHelper.tableSiembras,
           title: 'Siembra: ${s['cultivo'] ?? 'Desconocido'}',
+          loteNombre: getLoteNombre(s['loteId'] as String?),
           type: 'siembra',
           date: DateTime.parse(s['createdAt'] as String),
           status: (s['isPendingSync'] as int) == 1 ? SyncStatus.local : SyncStatus.completed,
@@ -97,8 +97,7 @@ class _LoteHistoryScreenState extends State<LoteHistoryScreen> {
     }
 
     // 2. Riego (y Humedad)
-    final riegos = await db.query(DatabaseHelper.tableRiego,
-        where: whereClause, whereArgs: whereArgs);
+    final riegos = await db.query(DatabaseHelper.tableRiego);
     for (var r in riegos) {
       final tipo = r['tipo'] as String? ?? '';
       final isHumedad = tipo.contains('Humedad');
@@ -106,6 +105,7 @@ class _LoteHistoryScreenState extends State<LoteHistoryScreen> {
         id: r['id'] as String,
         table: DatabaseHelper.tableRiego,
         title: isHumedad ? 'Registro Humedad' : 'Riego: ${r['tipo']}',
+        loteNombre: getLoteNombre(r['loteId'] as String?),
         type: isHumedad ? 'humedad' : 'riego',
         date: DateTime.parse(r['createdAt'] as String),
         status: (r['isPendingSync'] as int) == 1 ? SyncStatus.local : SyncStatus.completed,
@@ -116,13 +116,13 @@ class _LoteHistoryScreenState extends State<LoteHistoryScreen> {
     }
 
     // 3. Fertilización
-    final ferts = await db.query(DatabaseHelper.tableFertilizacion,
-        where: whereClause, whereArgs: whereArgs);
+    final ferts = await db.query(DatabaseHelper.tableFertilizacion);
     for (var f in ferts) {
       items.add(_HistoryItem(
         id: f['id'] as String,
         table: DatabaseHelper.tableFertilizacion,
         title: 'Fertilización: ${f['fertilizante'] ?? 'Desconocido'}',
+        loteNombre: getLoteNombre(f['loteId'] as String?),
         type: 'fertilizacion',
         date: DateTime.parse(f['createdAt'] as String),
         status: (f['isPendingSync'] as int) == 1 ? SyncStatus.local : SyncStatus.completed,
@@ -133,13 +133,13 @@ class _LoteHistoryScreenState extends State<LoteHistoryScreen> {
     }
 
     // 4. Plagas y Enfermedades (Hallazgos)
-    final plagas = await db.query(DatabaseHelper.tableHallazgos,
-        where: whereClause, whereArgs: whereArgs);
+    final plagas = await db.query(DatabaseHelper.tableHallazgos);
     for (var p in plagas) {
       items.add(_HistoryItem(
         id: p['id'] as String,
         table: DatabaseHelper.tableHallazgos,
         title: 'Hallazgo: ${p['tipo'] ?? 'Desconocido'}',
+        loteNombre: getLoteNombre(p['loteId'] as String?),
         type: 'plaga',
         date: DateTime.parse(p['createdAt'] as String),
         status: (p['isPendingSync'] as int) == 1 ? SyncStatus.local : SyncStatus.completed,
@@ -150,13 +150,13 @@ class _LoteHistoryScreenState extends State<LoteHistoryScreen> {
     }
 
     // 5. Tratamientos
-    final trat = await db.query(DatabaseHelper.tableTratamientos,
-        where: whereClause, whereArgs: whereArgs);
+    final trat = await db.query(DatabaseHelper.tableTratamientos);
     for (var t in trat) {
       items.add(_HistoryItem(
         id: t['id'] as String,
         table: DatabaseHelper.tableTratamientos,
         title: 'Tratamiento: ${t['producto'] ?? 'Desconocido'}',
+        loteNombre: getLoteNombre(t['loteId'] as String?),
         type: 'tratamiento',
         date: DateTime.parse(t['createdAt'] as String),
         status: (t['isPendingSync'] as int) == 1 ? SyncStatus.local : SyncStatus.completed,
@@ -167,13 +167,13 @@ class _LoteHistoryScreenState extends State<LoteHistoryScreen> {
     }
 
     // 6. Observaciones
-    final obs = await db.query(DatabaseHelper.tableObservaciones,
-        where: whereClause, whereArgs: whereArgs);
+    final obs = await db.query(DatabaseHelper.tableObservaciones);
     for (var o in obs) {
       items.add(_HistoryItem(
         id: o['id'] as String,
         table: DatabaseHelper.tableObservaciones,
         title: 'Observación de Campo',
+        loteNombre: getLoteNombre(o['loteId'] as String?),
         type: 'observacion',
         date: DateTime.parse(o['createdAt'] as String),
         status: (o['isPendingSync'] as int) == 1 ? SyncStatus.local : SyncStatus.completed,
@@ -185,8 +185,7 @@ class _LoteHistoryScreenState extends State<LoteHistoryScreen> {
 
     // 7. Estado del Terreno
     try {
-      final terrenos = await db.query(DatabaseHelper.tableEstadoTerreno,
-          where: whereClause, whereArgs: whereArgs);
+      final terrenos = await db.query(DatabaseHelper.tableEstadoTerreno);
       for (var t in terrenos) {
         final estado = t['estado'] as String;
         final siembraId = t['siembraId'] as String?;
@@ -198,6 +197,7 @@ class _LoteHistoryScreenState extends State<LoteHistoryScreen> {
           id: t['id'] as String,
           table: DatabaseHelper.tableEstadoTerreno,
           title: title,
+          loteNombre: getLoteNombre(t['loteId'] as String?),
           type: 'terreno',
           date: DateTime.parse(t['createdAt'] as String),
           status: (t['isPendingSync'] as int) == 1 ? SyncStatus.local : SyncStatus.completed,
@@ -247,7 +247,7 @@ class _LoteHistoryScreenState extends State<LoteHistoryScreen> {
           children: [
             const OfflineBanner(),
             const SizedBox(height: 16),
-            Text('Historial - ${widget.loteName}', style: AppText.h2()),
+            Text('Historial Global', style: AppText.h2()),
             const SizedBox(height: 16),
             
             if (_isLoading)
@@ -270,15 +270,13 @@ class _LoteHistoryScreenState extends State<LoteHistoryScreen> {
                   iconBg: item.iconBg,
                   iconFg: item.iconFg,
                   title: item.title,
+                  loteNombre: item.loteNombre,
                   time: _formatDate(item.date),
                   status: item.status,
                 ),
               )),
           ],
         ),
-      ),
-      bottomNavigationBar: const AgroBottomNav(
-        current: AgroTab.lotes,
       ),
     );
   }
@@ -290,6 +288,7 @@ class _LoteHistoryScreenState extends State<LoteHistoryScreen> {
     required Color iconBg,
     required Color iconFg,
     required String title,
+    required String loteNombre,
     required String time,
     required SyncStatus status,
   }) {
@@ -337,6 +336,11 @@ class _LoteHistoryScreenState extends State<LoteHistoryScreen> {
                     const SizedBox(width: 8),
                     _badge(status),
                   ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  loteNombre,
+                  style: AppText.bodyMd(color: AppColors.primary).copyWith(fontWeight: FontWeight.w600, fontSize: 13),
                 ),
                 const SizedBox(height: 4),
                 Row(
@@ -395,13 +399,9 @@ class _LoteHistoryScreenState extends State<LoteHistoryScreen> {
                                 whereArgs: [id],
                               );
                               try {
-                                final lotesRows = await db.query(
-                                  DatabaseHelper.tableLotes,
-                                  where: 'nombre = ?',
-                                  whereArgs: [widget.loteName],
-                                );
-                                if (lotesRows.isNotEmpty) {
-                                  final loteId = lotesRows.first['id'] as String;
+                                final sRow = await db.query(DatabaseHelper.tableSiembras, where: 'id = ?', whereArgs: [id]);
+                                if (sRow.isNotEmpty) {
+                                  final loteId = sRow.first['loteId'] as String;
                                   await db.update(
                                     DatabaseHelper.tableLotes,
                                     {'cultivoActual': null, 'cultivoActualId': null},

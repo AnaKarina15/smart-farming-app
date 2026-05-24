@@ -12,10 +12,6 @@ import '../common/agro_bottom_nav.dart';
 import '../widgets/custom_app_bar.dart';
 import '../widgets/rugged_button.dart';
 import '../widgets/offline_banner.dart';
-import 'home_screen.dart';
-import 'map_onboarding_screen.dart';
-import 'profile_screen.dart';
-import 'tasks_screen.dart';
 import 'package:provider/provider.dart';
 import '../../data/providers/lotes_provider.dart';
 import '../../data/providers/auth_provider.dart';
@@ -387,82 +383,66 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
       return;
     }
 
-    // ─── Validar límite de 5 ha en total (suma de todos los lotes) ─────────
+    // ─── Límite de 5 ha eliminado ─────────
     final lotesProvider = context.read<LotesProvider>();
     final isEditing = widget.loteToEdit != null;
-    final currentLoteId = widget.loteToEdit?.id;
-    final otrosLotes = lotesProvider.lotes
-        .where((l) => l.id != currentLoteId)
-        .toList();
-    final totalHaOtros = otrosLotes.fold<double>(
-        0.0, (sum, l) => sum + l.superficieHectareas);
-    final totalFinal = totalHaOtros + areaVal;
-    if (totalFinal > 5.0) {
-      final disponible = (5.0 - totalHaOtros).clamp(0.0, 5.0);
-      _showSnack(
-        'La superficie total de todos tus lotes no puede superar 5 ha. '
-        'Ya tienes ${totalHaOtros.toStringAsFixed(2)} ha registradas. '
-        'Puedes agregar máximo ${disponible.toStringAsFixed(2)} ha más.',
-      );
-      return;
-    }
 
     setState(() => _saving = true);
-    // ─── REAL SAVE ─────────────────────────────────────────
-    final auth = context.read<AuthProvider>();
+    try {
+      // ─── REAL SAVE ─────────────────────────────────────────
+      final auth = context.read<AuthProvider>();
 
-    // Construir descripción completa para offline
-    final partes = <String>[];
-    if (_manualLocationCtrl.text.trim().isNotEmpty) {
-      partes.add(_manualLocationCtrl.text.trim());
-    }
-    if (_manualMunicipioCtrl.text.trim().isNotEmpty) {
-      partes.add(_manualMunicipioCtrl.text.trim());
-    }
-    if (_locationLabel != null && partes.isEmpty) {
-      partes.add(_locationLabel!);
-    }
-    final descripcionFinal =
-        partes.isNotEmpty ? partes.join(' – ') : _locationLabel;
+      // Construir descripción completa para offline
+      final partes = <String>[];
+      if (_manualLocationCtrl.text.trim().isNotEmpty) {
+        partes.add(_manualLocationCtrl.text.trim());
+      }
+      if (_manualMunicipioCtrl.text.trim().isNotEmpty) {
+        partes.add(_manualMunicipioCtrl.text.trim());
+      }
+      if (_locationLabel != null && partes.isEmpty) {
+        partes.add(_locationLabel!);
+      }
+      final descripcionFinal =
+          partes.isNotEmpty ? partes.join(' – ') : _locationLabel;
 
-    bool success = false;
+      bool success = false;
 
-    if (isEditing) {
-      success = await lotesProvider.actualizarLote(
-        id: widget.loteToEdit!.id,
-        nombre: name,
-        descripcion: descripcionFinal,
-        superficieHectareas: double.tryParse(_areaController.text) ?? 0.0,
-        municipioId: _selectedMunicipioId,
-        tipoSueloId: _selectedTipoSueloId,
-        latitud: _lat,
-        longitud: _lng,
-      );
-    } else {
-      success = await lotesProvider.crearLote(
-        nombre: name,
-        descripcion: descripcionFinal,
-        superficieHectareas: double.tryParse(_areaController.text) ?? 0.0,
-        latitud: _lat,
-        longitud: _lng,
-        propietarioId: auth.currentUser?.id ?? 'unknown',
-        municipioId: _selectedMunicipioId,
-        tipoSueloId: _selectedTipoSueloId,
-      );
-    }
+      if (isEditing) {
+        success = await lotesProvider.actualizarLote(
+          id: widget.loteToEdit!.id,
+          nombre: name,
+          descripcion: descripcionFinal,
+          superficieHectareas: double.tryParse(_areaController.text) ?? 0.0,
+          municipioId: _selectedMunicipioId,
+          tipoSueloId: _selectedTipoSueloId,
+          latitud: _lat,
+          longitud: _lng,
+        );
+      } else {
+        success = await lotesProvider.crearLote(
+          nombre: name,
+          descripcion: descripcionFinal,
+          superficieHectareas: double.tryParse(_areaController.text) ?? 0.0,
+          latitud: _lat,
+          longitud: _lng,
+          propietarioId: auth.currentUser?.id ?? 'unknown',
+          municipioId: _selectedMunicipioId,
+          tipoSueloId: _selectedTipoSueloId,
+        );
+      }
 
-    setState(() => _saving = false);
+      setState(() => _saving = false);
 
-    if (!success) {
-      final rawError = lotesProvider.errorMessage ?? '';
-      // Mejorar el mensaje del backend cuando rechaza por límite de área total
-      final friendlyError = rawError.toLowerCase().contains('5') ||
-              rawError.toLowerCase().contains('superficie') ||
-              rawError.toLowerCase().contains('exceed') ||
-              rawError.toLowerCase().contains('total')
-          ? 'La superficie total de todos tus lotes no puede superar 5 hectáreas.'
-          : 'Error al ${isEditing ? 'actualizar' : 'guardar'} el lote: $rawError';
-      _showSnack(friendlyError);
+      if (!success) {
+        final rawError = lotesProvider.errorMessage ?? '';
+        final friendlyError = 'Error al ${isEditing ? 'actualizar' : 'guardar'} el lote: $rawError';
+        _showSnack(friendlyError);
+        return;
+      }
+    } catch (e) {
+      setState(() => _saving = false);
+      _showSnack('Error inesperado al guardar el lote: $e');
       return;
     }
 
@@ -529,7 +509,7 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
     await Future.delayed(const Duration(seconds: 3));
     if (!mounted) return;
     Navigator.pop(context); // Close dialog
-    Navigator.pop(context); // Back to list
+    Navigator.pop(context, isEditing ? 'updated' : 'created'); // Back to list with result
   }
 
   void _showSnack(String msg) {
@@ -1338,21 +1318,6 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
       ),
       bottomNavigationBar: AgroBottomNav(
         current: AgroTab.lotes,
-        onTap: (tab) {
-          if (tab == AgroTab.home) {
-            Navigator.pushReplacement(
-                context, MaterialPageRoute(builder: (_) => const HomeScreen()));
-          } else if (tab == AgroTab.lotes) {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (_) => const MapOnboardingScreen()));
-          } else if (tab == AgroTab.perfil) {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (_) => const ProfileScreen()));
-          } else if (tab == AgroTab.tareas) {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (_) => const TasksScreen()));
-          }
-        },
       ),
     );
   }

@@ -15,7 +15,7 @@ import 'package:path_provider/path_provider.dart';
 /// - observaciones  → observaciones generales del campo
 class DatabaseHelper {
   static const _databaseName = 'AgroField.db';
-  static const _databaseVersion = 7;
+  static const _databaseVersion = 10;
 
   // Nombres de tablas
   static const tableLotes = 'lotes';
@@ -123,6 +123,25 @@ class DatabaseHelper {
     if (oldVersion < 7) {
       // Sprint 4: Tabla de estado del terreno vinculada a lote y siembra
       await _createEstadoTerreno(db);
+    }
+    if (oldVersion < 8) {
+      try {
+        await db.execute('ALTER TABLE $tableLotes ADD COLUMN isPendingSync INTEGER NOT NULL DEFAULT 0');
+      } catch (_) {}
+    }
+    if (oldVersion < 9) {
+      // Parche para asegurar que estas columnas existan en todos los dispositivos
+      try {
+        await db.execute('ALTER TABLE $tableLotes ADD COLUMN cultivoActualId TEXT');
+      } catch (_) {}
+      try {
+        await db.execute('ALTER TABLE $tableLotes ADD COLUMN municipioId TEXT');
+      } catch (_) {}
+    }
+    if (oldVersion < 10) {
+      try {
+        await db.execute('ALTER TABLE $tableObservaciones ADD COLUMN fotoPath TEXT');
+      } catch (_) {}
     }
   }
 
@@ -463,6 +482,7 @@ class DatabaseHelper {
         loteId TEXT NOT NULL,
         loteNombre TEXT NOT NULL,
         descripcion TEXT NOT NULL,
+        fotoPath TEXT,
         tipo TEXT,
         fecha TEXT NOT NULL,
         userId TEXT NOT NULL,

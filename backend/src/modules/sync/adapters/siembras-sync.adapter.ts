@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { EntityManager, MoreThan } from 'typeorm';
 
 import { Cultivo } from '../../catalogos/entities/cultivo.entity';
 import { Siembra } from '../../siembras/entities/siembra.entity';
@@ -50,9 +51,43 @@ export class SiembrasSyncAdapter extends AbstractSyncResourceAdapter<Siembra> {
     });
 
     const saved = await manager.save(entity);
-    await this.updateLoteCultivoActual(manager, loteId, cultivoId, cultivoOtro);
+
+    // Solo refleja el cultivo en el lote si esta siembra es la mas reciente.
+    // Evita que sincronizar una siembra antigua (creada offline hace dias)
+    // sobrescriba el cultivo actual del lote con uno desactualizado.
+    if (await this.esLaSiembraMasReciente(manager, loteId, saved)) {
+      await this.updateLoteCultivoActual(manager, loteId, cultivoId, cultivoOtro);
+    }
 
     return saved.id;
+  }
+
+  /**
+   * Determina si una siembra es la mas reciente del lote (por fecha).
+   * Empate de fecha se desempata por createdAt para un resultado estable.
+   */
+  private async esLaSiembraMasReciente(
+    manager: EntityManager,
+    loteId: string,
+    siembra: Siembra,
+  ): Promise<boolean> {
+    const masNueva = await manager.findOne(Siembra, {
+      where: { loteId, fecha: MoreThan(siembra.fecha) },
+      order: { fecha: 'DESC' },
+    });
+
+    if (masNueva) {
+      return false;
+    }
+
+    // Misma fecha: gana la creada mas recientemente.
+    const mismaFecha = await manager.find(Siembra, {
+      where: { loteId, fecha: siembra.fecha },
+      order: { createdAt: 'DESC' },
+      take: 1,
+    });
+
+    return mismaFecha.length === 0 || mismaFecha[0].id === siembra.id;
   }
 
   protected async buildUpdatePatch(
@@ -93,12 +128,16 @@ export class SiembrasSyncAdapter extends AbstractSyncResourceAdapter<Siembra> {
     );
 
     if (patch.cultivoId !== undefined || patch.cultivoOtro !== undefined) {
-      await this.updateLoteCultivoActual(
-        manager,
-        entity.loteId,
-        (patch.cultivoId as string | null | undefined) ?? entity.cultivoId,
-        (patch.cultivoOtro as string | null | undefined) ?? entity.cultivoOtro,
-      );
+      // Igual que en create: solo refleja el cultivo en el lote si esta
+      // siembra sigue siendo la mas reciente del lote tras la edicion.
+      if (await this.esLaSiembraMasReciente(manager, entity.loteId, entity)) {
+        await this.updateLoteCultivoActual(
+          manager,
+          entity.loteId,
+          (patch.cultivoId as string | null | undefined) ?? entity.cultivoId,
+          (patch.cultivoOtro as string | null | undefined) ?? entity.cultivoOtro,
+        );
+      }
     }
 
     return patch;

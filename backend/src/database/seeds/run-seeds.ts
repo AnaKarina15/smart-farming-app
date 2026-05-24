@@ -8,6 +8,8 @@ import { seedMunicipios } from './catalogos/municipios.seed';
 import { seedPlagas } from './catalogos/plagas.seed';
 import { seedTiposSuelo } from './catalogos/tipos-suelo.seed';
 import { seedAdmin } from './admin.seed';
+import { seedReglasAgricolas } from './reglas';
+
 
 /**
  * Orquesta la ejecucion de todos los seeds del proyecto AgroField.
@@ -34,8 +36,9 @@ async function main(): Promise<void> {
   await seedFertilizantes(AppDataSource);
   await seedTiposSuelo(AppDataSource);
 
-  // Aqui se agregaran mas seeds en proximos sprints:
-  //   await seedReglasAgricolas(AppDataSource);
+  // ─── Sistema experto de recomendaciones (Sprint 4) ─────────
+  console.log('\n-> Seed: Reglas agronomicas del Magdalena');
+  await seedReglasAgricolas(AppDataSource);
 
   await AppDataSource.destroy();
   console.log('\nTodos los seeds completados exitosamente.');

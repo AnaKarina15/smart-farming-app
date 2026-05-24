@@ -173,6 +173,175 @@ export async function seedPlagas(dataSource: DataSource): Promise<void> {
         'Agallas/nudos en raices, plantas raquiticas, marchitamiento aun con suelo humedo, amarillamiento.',
       cultivosAfectados: 'tomate, ahuyama, patilla, frijol, banano',
     },
+
+    // ═══ AMPLIACIÓN SPRINT 4 — Sistema Experto ═══════════════
+    // ─── HONGOS ────────────────────────────────────────────
+    {
+      nombre: 'Monilia',
+      nombreCientifico: 'Moniliophthora roreri',
+      tipo: 'hongo',
+      severidadTipica: 'critica',
+      sintomas:
+        'Manchas cafe en mazorcas, deformacion, masa de esporas blanca-crema sobre el fruto. Impacta 40% de la produccion de cacao en Colombia.',
+      cultivosAfectados: 'cacao',
+    },
+    {
+      nombre: 'Escoba de bruja',
+      nombreCientifico: 'Moniliophthora perniciosa',
+      tipo: 'hongo',
+      severidadTipica: 'critica',
+      sintomas:
+        'Brotes anormales en forma de escoba, engrosamiento de ramas, mazorcas deformes. Puede destruir 100% de una plantacion.',
+      cultivosAfectados: 'cacao',
+    },
+    {
+      nombre: 'Mazorca negra',
+      nombreCientifico: 'Phytophthora palmivora',
+      tipo: 'hongo',
+      severidadTipica: 'alta',
+      sintomas:
+        'Manchas oscuras que cubren la mazorca, pudricion del fruto, perdida total de la mazorca afectada.',
+      cultivosAfectados: 'cacao',
+    },
+    {
+      nombre: 'Phytophthora cinnamomi',
+      nombreCientifico: 'Phytophthora cinnamomi',
+      tipo: 'hongo',
+      severidadTipica: 'critica',
+      sintomas:
+        'Marchitez progresiva, raices podridas color oscuro, muerte regresiva de ramas. Enfermedad mas grave del aguacate a nivel mundial.',
+      cultivosAfectados: 'aguacate',
+    },
+    {
+      nombre: 'Verticillium',
+      nombreCientifico: 'Verticillium dahliae',
+      tipo: 'hongo',
+      severidadTipica: 'alta',
+      sintomas:
+        'Marchitez subita de ramas, amarillamiento unilateral del follaje, oscurecimiento vascular interno.',
+      cultivosAfectados: 'aguacate',
+    },
+    {
+      nombre: 'Mancha angular',
+      nombreCientifico: 'Phaeoisariopsis griseola',
+      tipo: 'hongo',
+      severidadTipica: 'media',
+      sintomas:
+        'Manchas angulares cafe limitadas por las nervaduras en hojas, defoliacion. Frecuente en epoca lluviosa.',
+      cultivosAfectados: 'frijol',
+    },
+    {
+      nombre: 'Roya del frijol',
+      nombreCientifico: 'Uromyces appendiculatus',
+      tipo: 'hongo',
+      severidadTipica: 'media',
+      sintomas:
+        'Pustulas pardo-rojizas con polvo en hojas, defoliacion severa en ataques fuertes.',
+      cultivosAfectados: 'frijol',
+    },
+    {
+      nombre: 'Pyricularia',
+      nombreCientifico: 'Pyricularia oryzae',
+      tipo: 'hongo',
+      severidadTipica: 'critica',
+      sintomas:
+        'Lesiones elipticas con centro gris y margen cafe en hojas, estrangulamiento del cuello de la panicula. Enfermedad mas limitante del arroz en el mundo.',
+      cultivosAfectados: 'arroz',
+    },
+    {
+      nombre: 'Pudrición seca ñame',
+      nombreCientifico: 'Complejo fungico (Fusarium, Rhizopus, Penicillium)',
+      tipo: 'hongo',
+      severidadTipica: 'critica',
+      sintomas:
+        'Pudricion interna seca del tuberculo, deterioro de tejidos, perdida del valor comercial y de la semilla. Mayor perdida economica del ñame en el Caribe.',
+      cultivosAfectados: 'ñame',
+    },
+
+    // ─── INSECTOS ──────────────────────────────────────────
+    {
+      nombre: 'Tuta absoluta',
+      nombreCientifico: 'Tuta absoluta',
+      tipo: 'insecto',
+      severidadTipica: 'critica',
+      sintomas:
+        'Minas o galerias en hojas, perforacion de tallos y frutos. Puede causar perdidas superiores al 50% en tomate.',
+      cultivosAfectados: 'tomate',
+    },
+    {
+      nombre: 'Mión de los pastos',
+      nombreCientifico: 'Aeneolamia spp.',
+      tipo: 'insecto',
+      severidadTipica: 'alta',
+      sintomas:
+        'Espuma blanca en la base de la planta, amarillamiento y secamiento del forraje. Problema mas complejo del Caribe en epoca lluviosa.',
+      cultivosAfectados: 'pasto angleton, brachiaria',
+    },
+    {
+      nombre: 'Mosca midge',
+      nombreCientifico: 'Stenodiplosis sorghicola',
+      tipo: 'insecto',
+      severidadTipica: 'critica',
+      sintomas:
+        'Granos vanos o vacios en la panoja, larvas rojizas en floracion. Puede causar perdidas cercanas al 100% en sorgo.',
+      cultivosAfectados: 'sorgo',
+    },
+    {
+      nombre: 'Leptoglossus zonatus',
+      nombreCientifico: 'Leptoglossus zonatus',
+      tipo: 'insecto',
+      severidadTipica: 'alta',
+      sintomas:
+        'Chinche que succiona frutos y panojas, manchas y deformacion en frutos. Plaga principal del marañon en el Magdalena.',
+      cultivosAfectados: 'mango, marañon, citricos',
+    },
+    {
+      nombre: 'Diaphorina citri',
+      nombreCientifico: 'Diaphorina citri',
+      tipo: 'insecto',
+      severidadTipica: 'critica',
+      sintomas:
+        'Ninfas en brotes tiernos, deformacion de brotes, melaza. Es el insecto vector del HLB (dragon amarillo).',
+      cultivosAfectados: 'citricos',
+    },
+    {
+      nombre: 'Sogata',
+      nombreCientifico: 'Tagosodes orizicolus',
+      tipo: 'insecto',
+      severidadTipica: 'alta',
+      sintomas:
+        'Amarillamiento y secamiento de plantas, daño directo por succion. Es el insecto vector del virus de la hoja blanca del arroz.',
+      cultivosAfectados: 'arroz',
+    },
+    {
+      nombre: 'Chinche de los pastos',
+      nombreCientifico: 'Blissus spp. / Collaria spp.',
+      tipo: 'insecto',
+      severidadTipica: 'media',
+      sintomas:
+        'Amarillamiento de parches de pradera, secamiento del forraje, reduccion de la cobertura del potrero.',
+      cultivosAfectados: 'pasto angleton, brachiaria',
+    },
+
+    // ─── BACTERIAS / VIRUS ─────────────────────────────────
+    {
+      nombre: 'HLB',
+      nombreCientifico: 'Candidatus Liberibacter spp.',
+      tipo: 'bacteria',
+      severidadTipica: 'critica',
+      sintomas:
+        'Moteado asimetrico de hojas, frutos deformes y amargos, brotes amarillos. Enfermedad mas grave de la citricultura mundial. No tiene cura.',
+      cultivosAfectados: 'citricos',
+    },
+    {
+      nombre: 'PRSV',
+      nombreCientifico: 'Papaya ringspot virus',
+      tipo: 'virus',
+      severidadTipica: 'critica',
+      sintomas:
+        'Mosaico y deformacion foliar, anillos en frutos, estrias aceitosas en peciolos. Puede causar hasta 100% de perdidas en papaya.',
+      cultivosAfectados: 'papaya',
+    },
   ];
 
   let creados = 0;

@@ -19,6 +19,7 @@ import { HealthModule } from './modules/health/health.module';
 import { LotesModule } from './modules/lotes/lotes.module';
 import { FertilizacionModule } from './modules/fertilizacion/fertilizacion.module';
 import { ObservacionesModule } from './modules/observaciones/observaciones.module';
+import { RecomendacionesModule } from './modules/recomendaciones/recomendaciones.module';
 import { HallazgosModule } from './modules/hallazgos/hallazgos.module';
 import { RiegoModule } from './modules/riego/riego.module';
 import { SiembrasModule } from './modules/siembras/siembras.module';
@@ -79,6 +80,7 @@ import { WeatherModule } from './modules/weather/weather.module';
     FertilizacionModule,
     HallazgosModule,
     ObservacionesModule,
+    RecomendacionesModule,
     RiegoModule,
     SiembrasModule,
     TratamientosModule,

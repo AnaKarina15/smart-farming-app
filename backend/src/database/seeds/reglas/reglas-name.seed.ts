@@ -1,0 +1,156 @@
+import { ReglaSeed } from './index';
+
+/**
+ * 10 reglas Ñame (Dioscorea spp.) - Sprint 4 AgroField
+ * Fuentes: AGROSAVIA Cereté, ICA, CIAT Caribe
+ */
+export const reglasName: ReglaSeed[] = [
+  {
+    codigo: 'R-NAME-001',
+    nombre: 'Antracnosis del ñame (quemazón)',
+    descripcion: 'Reportada por mayor número de agricultores en Caribe colombiano.',
+    tipoRecomendacion: 'fitosanitario_enfermedad',
+    cultivoNombre: 'Ñame',
+    plagaNombre: 'Antracnosis',
+    severidadMinima: 'media',
+    accionSugerida:
+      'Aplicar fungicida sistémico preventivo. La antracnosis causa quemazón foliar severa y puede ocasionar muerte de planta.',
+    productoSugerido: 'Mancozeb 80% WP o Clorotalonil',
+    dosisRecomendada: 2,
+    unidadRecomendada: 'kg/ha',
+    metodoAplicacion: 'aspersion_foliar',
+    frecuenciaDias: 14,
+    prioridad: 4,
+    fuenteCientifica:
+      'AGROSAVIA - Caracterización socioeconómica ñame Caribe colombiano (Redalyc 2019). ICA Inventario enfermedades ñame.',
+  },
+  {
+    codigo: 'R-NAME-002',
+    nombre: 'Pudrición seca de tubérculos ñame',
+    descripcion: 'Enfermedad de mayor pérdida económica del ñame en almacenamiento.',
+    tipoRecomendacion: 'fitosanitario_enfermedad',
+    cultivoNombre: 'Ñame',
+    plagaNombre: 'Pudrición seca ñame',
+    severidadMinima: 'baja',
+    accionSugerida:
+      'Tratamiento de semilla con Trichoderma harzianum antes de siembra. Almacenamiento ventilado y seco. Eliminar tubérculos con cualquier signo de pudrición.',
+    productoSugerido: 'Trichoderma harzianum',
+    dosisRecomendada: 2,
+    unidadRecomendada: 'g/L (tratamiento semilla)',
+    metodoAplicacion: 'tratamiento_semilla',
+    prioridad: 5,
+    fuenteCientifica:
+      'AGROSAVIA Cereté 2020 - Identificación hongos pudrición seca ñame. CIAT Caribe.',
+  },
+  {
+    codigo: 'R-NAME-003',
+    nombre: 'Marchitez Fusarium ñame',
+    tipoRecomendacion: 'fitosanitario_enfermedad',
+    cultivoNombre: 'Ñame',
+    severidadMinima: 'alta',
+    accionSugerida:
+      'NO hay control químico curativo. Rotación con gramíneas mínimo 3 años. Eliminar plantas afectadas. Solarización del suelo.',
+    metodoAplicacion: 'cultural_+_erradicacion',
+    prioridad: 5,
+    fuenteCientifica: 'ICA - Inventario enfermedades ñame Caribe colombiano.',
+  },
+  {
+    codigo: 'R-NAME-004',
+    nombre: 'Mancha de Phyllosticta ñame',
+    tipoRecomendacion: 'fitosanitario_enfermedad',
+    cultivoNombre: 'Ñame',
+    severidadMinima: 'media',
+    estacion: 'lluviosa',
+    accionSugerida:
+      'Fungicida cúprico preventivo en época lluviosa cuando se observen primeras lesiones foliares.',
+    productoSugerido: 'Oxicloruro de cobre',
+    dosisRecomendada: 3,
+    unidadRecomendada: 'kg/ha',
+    metodoAplicacion: 'aspersion_foliar',
+    frecuenciaDias: 21,
+    prioridad: 3,
+    fuenteCientifica: 'ICA - Inventario enfermedades ñame.',
+  },
+  {
+    codigo: 'R-NAME-005',
+    nombre: 'Mancha zonificada ñame (Rhizoctonia)',
+    tipoRecomendacion: 'fitosanitario_enfermedad',
+    cultivoNombre: 'Ñame',
+    severidadMinima: 'media',
+    accionSugerida:
+      'Mejorar drenaje y reducir densidad de siembra para ventilación. Aplicar Azoxistrobina si severidad supera 20% follaje afectado.',
+    productoSugerido: 'Azoxistrobina',
+    dosisRecomendada: 0.5,
+    unidadRecomendada: 'L/ha',
+    metodoAplicacion: 'aspersion_foliar',
+    prioridad: 3,
+    fuenteCientifica: 'ICA - Manejo Rhizoctonia tubérculos.',
+  },
+  {
+    codigo: 'R-NAME-006',
+    nombre: 'Mancha anillada ñame (Sclerotium rolfsii)',
+    tipoRecomendacion: 'fitosanitario_enfermedad',
+    cultivoNombre: 'Ñame',
+    severidadMinima: 'media',
+    accionSugerida:
+      'Encalado al suelo + rotación. Aplicación de Pencycuron al cuello de la planta como drench.',
+    productoSugerido: 'Pencycuron + Cal agrícola',
+    dosisRecomendada: 1,
+    unidadRecomendada: 'ton cal/ha + drench',
+    metodoAplicacion: 'drench_+_edafica',
+    prioridad: 3,
+    fuenteCientifica: 'ICA - Inventario enfermedades ñame Caribe.',
+  },
+  {
+    codigo: 'R-NAME-007',
+    nombre: 'Virus bandas cloróticas ñame',
+    tipoRecomendacion: 'fitosanitario_enfermedad',
+    cultivoNombre: 'Ñame',
+    severidadMinima: 'baja',
+    accionSugerida:
+      'NO hay tratamiento. Eliminar plantas con síntomas virales y usar material de siembra certificado libre de virus.',
+    metodoAplicacion: 'erradicacion_+_semilla_certificada',
+    prioridad: 4,
+    fuenteCientifica: 'ICA - Virus en cultivos tropicales.',
+  },
+  {
+    codigo: 'R-NAME-008',
+    nombre: 'Selección de tubérculo-semilla sano',
+    tipoRecomendacion: 'manejo_cultural',
+    cultivoNombre: 'Ñame',
+    faseAgronomica: 'preparacion',
+    accionSugerida:
+      'Usar tubérculos-semilla certificados o de plantas sanas. La calidad de semilla es el factor más importante para productividad en ñame.',
+    prioridad: 5,
+    fuenteCientifica: 'AGROSAVIA - Programa mejoramiento ñame.',
+  },
+  {
+    codigo: 'R-NAME-009',
+    nombre: 'Tutorado del ñame Caribe',
+    tipoRecomendacion: 'manejo_cultural',
+    cultivoNombre: 'Ñame',
+    faseAgronomica: 'crecimiento_vegetativo',
+    diasDesdeSiembraMinimo: 45,
+    diasDesdeSiembraMaximo: 90,
+    accionSugerida:
+      'Instalar tutores de 2-3 m. Sin tutorado, rendimientos en ñame espino caen >50%.',
+    prioridad: 4,
+    fuenteCientifica: 'AGROSAVIA Caribe - Manejo agronómico ñame.',
+  },
+  {
+    codigo: 'R-NAME-010',
+    nombre: 'Cercosporiasis ñame',
+    tipoRecomendacion: 'fitosanitario_enfermedad',
+    cultivoNombre: 'Ñame',
+    severidadMinima: 'media',
+    estacion: 'lluviosa',
+    accionSugerida:
+      'Fungicida sistémico. Eliminar hojas con lesiones avanzadas. Mejorar aireación entre plantas.',
+    productoSugerido: 'Tebuconazol',
+    dosisRecomendada: 0.5,
+    unidadRecomendada: 'L/ha',
+    metodoAplicacion: 'aspersion_foliar',
+    prioridad: 3,
+    fuenteCientifica: 'ICA - Inventario enfermedades ñame Caribe.',
+  },
+];

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text.dart';
+import '../../data/providers/tareas_provider.dart';
 
 enum AgroTab { home, lotes, tareas, perfil }
 
@@ -13,6 +15,18 @@ class AgroBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    int pendingTasks = 0;
+    try {
+      final provider = context.watch<TareasProvider>();
+      pendingTasks = provider.pendingCount;
+      // Disparar recarga en segundo plano si todavía no hay tareas cargadas
+      if (!provider.hasTareas && !provider.isLoading) {
+        Future.microtask(() => provider.cargarSiNoHay());
+      }
+    } catch (_) {
+      // Evita excepciones si el provider no estuviera en el árbol de este contexto específico
+    }
+
     return Container(
       height: 80,
       decoration: const BoxDecoration(
@@ -34,7 +48,7 @@ class AgroBottomNav extends StatelessWidget {
               onTap: () => onTap?.call(AgroTab.home),
             ),
             _NavItem(
-              icon: Icons.grid_view_outlined,
+              icon: Icons.map_outlined,
               iconActive: Icons.map,
               label: 'Lotes',
               active: current == AgroTab.lotes,
@@ -45,6 +59,7 @@ class AgroBottomNav extends StatelessWidget {
               iconActive: Icons.assignment,
               label: 'Tareas',
               active: current == AgroTab.tareas,
+              badgeCount: pendingTasks,
               onTap: () => onTap?.call(AgroTab.tareas),
             ),
             _NavItem(
@@ -66,6 +81,7 @@ class _NavItem extends StatelessWidget {
   final IconData iconActive;
   final String label;
   final bool active;
+  final int? badgeCount;
   final VoidCallback onTap;
 
   const _NavItem({
@@ -73,6 +89,7 @@ class _NavItem extends StatelessWidget {
     required this.iconActive,
     required this.label,
     required this.active,
+    this.badgeCount,
     required this.onTap,
   });
 
@@ -81,6 +98,7 @@ class _NavItem extends StatelessWidget {
     final color = active
         ? AppColors.onSecondaryContainer
         : AppColors.onSurfaceVariant;
+    final int count = badgeCount ?? 0;
 
     return InkWell(
       onTap: onTap,
@@ -99,7 +117,40 @@ class _NavItem extends StatelessWidget {
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Icon(active ? iconActive : icon, color: color, size: 22),
+              child: Stack(
+                alignment: Alignment.center,
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(active ? iconActive : icon, color: color, size: 22),
+                  if (count > 0)
+                    Positioned(
+                      top: -2,
+                      right: 12,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: AppColors.primaryFixed,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Center(
+                          child: Text(
+                            '$count',
+                            style: const TextStyle(
+                              color: AppColors.primary,
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                              height: 1.0,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
             const SizedBox(height: 4),
             Text(

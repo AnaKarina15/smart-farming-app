@@ -70,7 +70,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   image: NetworkImage(
                                     user.fotoPerfilUrl!.startsWith('http')
                                         ? user.fotoPerfilUrl!
-                                        : '${ApiEndpoints.baseUrl.replaceAll('/api/v1', '')}${user.fotoPerfilUrl}',
+                                        : user.fotoPerfilUrl!.startsWith('/public')
+                                            ? '${ApiEndpoints.baseUrl.replaceAll('/api/v1', '')}${user.fotoPerfilUrl}'
+                                            : '${ApiEndpoints.baseUrl.replaceAll('/api/v1', '')}/public${user.fotoPerfilUrl}',
                                   ),
                                   fit: BoxFit.cover,
                                 )

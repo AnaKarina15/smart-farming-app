@@ -53,8 +53,21 @@ class SyncService {
         try {
           final method = action['method'] as String;
           final endpoint = action['endpoint'] as String;
-          final payload = action['payload'] != null
-              ? json.decode(action['payload'] as String)
+          final rawPayload = action['payload'] != null
+              ? json.decode(action['payload'] as String) as Map<String, dynamic>
+              : null;
+
+          // Limpiar campos UUID vacíos antes de enviar al servidor
+          // Evita error "must be a UUID" por registros encolados con string vacío
+          final payload = rawPayload != null
+              ? Map<String, dynamic>.fromEntries(
+                  rawPayload.entries.where((e) {
+                    final v = e.value;
+                    if (v == null) return false;
+                    if (v is String && v.isEmpty) return false;
+                    return true;
+                  }),
+                )
               : null;
 
           if (method == 'POST') {
@@ -169,6 +182,19 @@ class SyncService {
         'descripcion': row['descripcion'],
         if (row['tipo'] != null) 'tipo': row['tipo'],
         'fecha': row['fecha'],
+      },
+    );
+
+    await _syncModuloOperativo(
+      tabla: DatabaseHelper.tableEstadoTerreno,
+      endpointBase: ApiEndpoints.estadoTerreno,
+      mapper: (row) => {
+        'loteId': row['loteId'],
+        if (row['siembraId'] != null) 'siembraId': row['siembraId'],
+        'estado': row['estado'],
+        if (row['tipoSueloId'] != null) 'tipoSueloId': row['tipoSueloId'],
+        if (row['notas'] != null) 'notas': row['notas'],
+        'createdAt': row['createdAt'],
       },
     );
   }

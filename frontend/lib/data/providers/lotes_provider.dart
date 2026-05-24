@@ -103,6 +103,17 @@ class LotesProvider extends ChangeNotifier {
   // ─── API pública ─────────────────────────────────────────
 
   /// Recarga forzada (botón "Sincronizar" en Settings).
+  /// Devuelve el valor solo si tiene formato UUID v4 válido, de lo contrario null.
+  /// Evita enviar IDs inválidos al backend ("must be a UUID").
+  String? _sanitizeUuid(String? value) {
+    if (value == null || value.isEmpty) return null;
+    final uuidRegex = RegExp(
+      r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+      caseSensitive: false,
+    );
+    return uuidRegex.hasMatch(value) ? value : null;
+  }
+
   Future<bool> recargar() async {
     _errorMessage = null;
     await _sincronizarConBackend();
@@ -135,9 +146,9 @@ class LotesProvider extends ChangeNotifier {
           descripcion: descripcion,
           superficieHectareas: superficieHectareas,
           cultivoActual: cultivoActual,
-          cultivoActualId: cultivoActualId,
-          municipioId: municipioId,
-          tipoSueloId: tipoSueloId,
+          cultivoActualId: _sanitizeUuid(cultivoActualId),
+          municipioId: _sanitizeUuid(municipioId),
+          tipoSueloId: _sanitizeUuid(tipoSueloId),
           latitud: latitud,
           longitud: longitud,
         );
@@ -181,10 +192,10 @@ class LotesProvider extends ChangeNotifier {
           'nombre': nombre,
           if (descripcion != null) 'descripcion': descripcion,
           'superficieHectareas': superficieHectareas,
-          if (cultivoActual != null) 'cultivoActual': cultivoActual,
-          if (cultivoActualId != null) 'cultivoActualId': cultivoActualId,
-          if (municipioId != null) 'municipioId': municipioId,
-          if (tipoSueloId != null) 'tipoSueloId': tipoSueloId,
+          if (cultivoActual != null && cultivoActual.isNotEmpty) 'cultivoActual': cultivoActual,
+          if (_sanitizeUuid(cultivoActualId) != null) 'cultivoActualId': _sanitizeUuid(cultivoActualId),
+          if (_sanitizeUuid(municipioId) != null) 'municipioId': _sanitizeUuid(municipioId),
+          if (_sanitizeUuid(tipoSueloId) != null) 'tipoSueloId': _sanitizeUuid(tipoSueloId),
           if (latitud != null) 'latitud': latitud,
           if (longitud != null) 'longitud': longitud,
         }),
@@ -204,6 +215,8 @@ class LotesProvider extends ChangeNotifier {
     String? descripcion,
     double? superficieHectareas,
     String? cultivoActual,
+    String? municipioId,
+    String? tipoSueloId,
     double? latitud,
     double? longitud,
   }) async {
@@ -221,8 +234,8 @@ class LotesProvider extends ChangeNotifier {
         superficieHectareas: superficieHectareas ?? old.superficieHectareas,
         cultivoActual: cultivoActual ?? old.cultivoActual,
         cultivoActualId: old.cultivoActualId,
-        municipioId: old.municipioId,
-        tipoSueloId: old.tipoSueloId,
+        municipioId: municipioId ?? old.municipioId,
+        tipoSueloId: tipoSueloId ?? old.tipoSueloId,
         latitud: latitud ?? old.latitud,
         longitud: longitud ?? old.longitud,
         estado: old.estado,
@@ -258,6 +271,8 @@ class LotesProvider extends ChangeNotifier {
       if (descripcion != null) 'descripcion': descripcion,
       if (superficieHectareas != null) 'superficieHectareas': superficieHectareas,
       if (cultivoActual != null) 'cultivoActual': cultivoActual,
+      if (_sanitizeUuid(municipioId) != null) 'municipioId': _sanitizeUuid(municipioId),
+      if (_sanitizeUuid(tipoSueloId) != null) 'tipoSueloId': _sanitizeUuid(tipoSueloId),
       if (latitud != null) 'latitud': latitud,
       if (longitud != null) 'longitud': longitud,
     };
@@ -276,6 +291,8 @@ class LotesProvider extends ChangeNotifier {
           descripcion: descripcion,
           superficieHectareas: superficieHectareas,
           cultivoActual: cultivoActual,
+          municipioId: _sanitizeUuid(municipioId),
+          tipoSueloId: _sanitizeUuid(tipoSueloId),
           latitud: latitud,
           longitud: longitud,
         );

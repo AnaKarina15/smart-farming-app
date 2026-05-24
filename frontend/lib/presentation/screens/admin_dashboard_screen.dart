@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
@@ -63,8 +64,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: _TarjetaResumen(
-                          icono: Icons.person_outline,
-                          label: 'Activos',
+                          icono: Icons.sync,
+                          label: 'Sincronizados',
                           valor: '${stats?.activos ?? 0}',
                         ),
                       ),
@@ -73,9 +74,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
                   const SizedBox(height: 24),
 
-                  // ─── Actividad mensual ────────────────────────────────────
+                  // ─── Distribución por rol (pie) ───────────────────────────
                   const Text(
-                    'Actividad Mensual',
+                    'Distribución por Rol',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
@@ -83,7 +84,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  const _GraficoActividad(),
+                  if (stats != null) _GraficoPieRoles(stats: stats),
 
                   const SizedBox(height: 24),
 
@@ -163,17 +164,38 @@ class _TarjetaResumen extends StatelessWidget {
   }
 }
 
-class _GraficoActividad extends StatelessWidget {
-  // Datos de placeholder de 4 semanas para alinearse exactamente con las etiquetas de la base
-  static const List<double> _semanas = [12, 19, 15, 25];
+// ─── Gráfica de Pie por Rol ───────────────────────────────────────────────────
 
-  const _GraficoActividad();
+class _PieSegment {
+  final String label;
+  final int valor;
+  final Color color;
+  const _PieSegment(this.label, this.valor, this.color);
+}
+
+class _GraficoPieRoles extends StatelessWidget {
+  final StatsAdmin stats;
+  const _GraficoPieRoles({required this.stats});
+
+  static const _colores = [
+    Color(0xFF2E7D32), // Pequeño Productor - verde oscuro
+    Color(0xFF00687E), // Trabajador - teal
+    Color(0xFF6A1B9A), // Gestor - violeta
+    Color(0xFFBA1A1A), // Administrador - rojo
+  ];
 
   @override
   Widget build(BuildContext context) {
+    final segmentos = [
+      _PieSegment('Pequeño Productor', stats.pequenoProductor, _colores[0]),
+      _PieSegment('Trabajador', stats.trabajador, _colores[1]),
+      _PieSegment('Gestor', stats.gestor, _colores[2]),
+      _PieSegment('Administrador', stats.administrador, _colores[3]),
+    ];
+    final total = segmentos.fold<int>(0, (s, e) => s + e.valor);
+
     return Container(
-      height: 160,
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
@@ -186,98 +208,172 @@ class _GraficoActividad extends StatelessWidget {
           ),
         ],
       ),
-      child: CustomPaint(
-        painter: _GraficoPainter(datos: _semanas),
-        child: Align(
-          alignment: Alignment.bottomCenter,
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 4),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4']
-                  .map((l) => Text(
-                        l,
-                        style: const TextStyle(
-                            fontSize: 10,
-                            color: AK.subtext,
-                            fontWeight: FontWeight.w500),
-                      ))
-                  .toList(),
+      child: Column(
+        children: [
+          SizedBox(
+            height: 200,
+            child: CustomPaint(
+              painter: _PiePainter(segmentos: segmentos, total: total),
+              size: const Size.fromHeight(200),
             ),
           ),
-        ),
+          const SizedBox(height: 20),
+          // Leyenda
+          Wrap(
+            spacing: 16,
+            runSpacing: 10,
+            alignment: WrapAlignment.center,
+            children: segmentos.map((s) {
+              final pct = total > 0
+                  ? (s.valor / total * 100).toStringAsFixed(1)
+                  : '0.0';
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: s.color,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    '${s.label} ($pct%)',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: AK.subtext,
+                    ),
+                  ),
+                ],
+              );
+            }).toList(),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _GraficoPainter extends CustomPainter {
-  final List<double> datos;
-  const _GraficoPainter({required this.datos});
+class _PiePainter extends CustomPainter {
+  final List<_PieSegment> segmentos;
+  final int total;
+  const _PiePainter({required this.segmentos, required this.total});
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (datos.isEmpty) return;
-    final maxVal = datos.reduce((a, b) => a > b ? a : b);
-    final minVal = datos.reduce((a, b) => a < b ? a : b);
-    final range = maxVal - minVal == 0 ? 1.0 : maxVal - minVal;
-    final areaH = size.height - 32;
-    final paso = size.width / (datos.length - 1);
+    if (total == 0) return;
 
-    final puntos = List.generate(
-        datos.length,
-        (i) => Offset(
-              i * paso,
-              areaH - ((datos[i] - minVal) / range * (areaH - 16)) + 8,
-            ));
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.shortestSide / 2) * 0.85;
+    const gap = 0.025; // separación en radianes entre sectores
 
-    // Área rellena con curva Bezier cúbica
-    final area = Path()..moveTo(puntos.first.dx, areaH + 8);
-    area.lineTo(puntos.first.dx, puntos.first.dy);
-    for (int i = 0; i < puntos.length - 1; i++) {
-      final p0 = puntos[i];
-      final p1 = puntos[i + 1];
-      final cp1 = Offset(p0.dx + paso / 2, p0.dy);
-      final cp2 = Offset(p1.dx - paso / 2, p1.dy);
-      area.cubicTo(cp1.dx, cp1.dy, cp2.dx, cp2.dy, p1.dx, p1.dy);
+    double startAngle = -3.14159265 / 2; // empezar desde arriba
+
+    for (final seg in segmentos) {
+      if (seg.valor == 0) continue;
+      final sweep = (seg.valor / total) * 2 * 3.14159265 - gap;
+
+      final paint = Paint()
+        ..color = seg.color
+        ..style = PaintingStyle.fill;
+
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        startAngle,
+        sweep,
+        true,
+        paint,
+      );
+
+      // Borde blanco sutil
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        startAngle,
+        sweep,
+        true,
+        Paint()
+          ..color = Colors.white
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2,
+      );
+
+      // Etiqueta de porcentaje dentro del sector
+      final pct = seg.valor / total * 100;
+      if (pct >= 8) {
+        final labelAngle = startAngle + sweep / 2;
+        final labelR = radius * 0.65;
+        final labelPos = Offset(
+          center.dx + labelR * _cos(labelAngle),
+          center.dy + labelR * _sin(labelAngle),
+        );
+        final tp = TextPainter(
+          text: TextSpan(
+            text: '${pct.toStringAsFixed(0)}%',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+        )..layout();
+        tp.paint(
+          canvas,
+          Offset(labelPos.dx - tp.width / 2, labelPos.dy - tp.height / 2),
+        );
+      }
+
+      startAngle += sweep + gap;
     }
-    area.lineTo(puntos.last.dx, areaH + 8);
-    area.close();
-    canvas.drawPath(
-      area,
-      Paint()
-        ..color = AppColors.primary.withValues(alpha: 0.08)
-        ..style = PaintingStyle.fill,
+
+    // Círculo central (efecto donut)
+    canvas.drawCircle(
+      center,
+      radius * 0.42,
+      Paint()..color = Colors.white,
     );
 
-    // Línea suave con curva Bezier cúbica
-    final line = Path()..moveTo(puntos.first.dx, puntos.first.dy);
-    for (int i = 0; i < puntos.length - 1; i++) {
-      final p0 = puntos[i];
-      final p1 = puntos[i + 1];
-      final cp1 = Offset(p0.dx + paso / 2, p0.dy);
-      final cp2 = Offset(p1.dx - paso / 2, p1.dy);
-      line.cubicTo(cp1.dx, cp1.dy, cp2.dx, cp2.dy, p1.dx, p1.dy);
-    }
-    canvas.drawPath(
-      line,
-      Paint()
-        ..color = AppColors.primary
-        ..strokeWidth = 2.5
-        ..style = PaintingStyle.stroke
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round,
+    // Total en el centro
+    final tp = TextPainter(
+      textAlign: TextAlign.center,
+      text: TextSpan(
+        children: [
+          TextSpan(
+            text: '$total',
+            style: TextStyle(
+              color: AppColors.primary,
+              fontSize: 26,
+              fontWeight: FontWeight.w800,
+              height: 1.1,
+            ),
+          ),
+          const TextSpan(
+            text: '\nusuarios',
+            style: TextStyle(
+              color: AK.subtext,
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout(maxWidth: radius * 0.8);
+    tp.paint(
+      canvas,
+      Offset(center.dx - tp.width / 2, center.dy - tp.height / 2),
     );
-
-    // Dibujar puntos/círculos en cada coordenada
-    for (final p in puntos) {
-      canvas.drawCircle(p, 5, Paint()..color = AppColors.primary);
-      canvas.drawCircle(p, 3, Paint()..color = Colors.white);
-    }
   }
 
+  double _cos(double angle) => math.cos(angle);
+  double _sin(double angle) => math.sin(angle);
+
   @override
-  bool shouldRepaint(covariant CustomPainter old) => false;
+  bool shouldRepaint(covariant CustomPainter old) => true;
 }
 
 class _GridRoles extends StatelessWidget {

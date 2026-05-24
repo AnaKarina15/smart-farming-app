@@ -10,10 +10,10 @@ class ApiEndpoints {
     } else if (Platform.isAndroid) {
       // --- CONFIGURACIÓN PARA ANDROID ---
       // Si usas el EMULADOR, descomenta la línea de abajo:
-      // return 'http://10.0.2.2:3000/api/v1';
+      return 'http://10.0.2.2:3000/api/v1';
 
       // Si usas el CELULAR FÍSICO, usa la IP local de tu PC (Wi-Fi: 192.168.0.14):
-      return 'http://192.168.0.14:3000/api/v1';
+      // return 'http://192.168.0.14:3000/api/v1';
     } else {
       // iOS, macOS o Windows Desktop
       return 'http://192.168.0.14:3000/api/v1';
@@ -38,4 +38,5 @@ class ApiEndpoints {
   static const String hallazgos = '/hallazgos';
   static const String tratamientos = '/tratamientos';
   static const String observaciones = '/observaciones';
+  static const String estadoTerreno = '/estado-terreno';
 }

@@ -101,17 +101,51 @@ class _RegisterScreenState extends State<RegisterScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(
-                  height:
-                      24), // Ajustado para dar un buen margen superior sin la flecha
+              const SizedBox(height: 8),
+              IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(
+                  Icons.arrow_back,
+                  color: AppColors.onSurface,
+                  size: 28,
+                ),
+                padding: EdgeInsets.zero,
+              ),
+              const SizedBox(height: 8),
               Center(
-                child: Text(
-                  'Bienvenido a Agrofield',
-                  style: AppText.h2(color: AppColors.onSurface),
-                  textAlign: TextAlign.center,
+                child: Container(
+                  width: 88,
+                  height: 88,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.primaryContainer,
+                  ),
+                  child: const Icon(
+                    Icons.eco,
+                    color: AppColors.onPrimaryContainer,
+                    size: 48,
+                  ),
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
+              Center(
+                child: RichText(
+                  textAlign: TextAlign.center,
+                  text: TextSpan(
+                    text: 'Bienvenido a ',
+                    style: AppText.h2(color: AppColors.onSurface),
+                    children: [
+                      TextSpan(
+                        text: 'AGROFIELD',
+                        style: AppText.h2(
+                          color: AppColors.primary,
+                        ).copyWith(letterSpacing: 2.4, fontWeight: FontWeight.w800),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 6),
               Center(
                 child: Text(
                   'Regístrate para empezar a gestionar tus cultivos',
@@ -119,7 +153,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   textAlign: TextAlign.center,
                 ),
               ),
-              const SizedBox(height: 25),
+              const SizedBox(height: 16),
               Form(
                 key: _formKey,
                 child: Column(

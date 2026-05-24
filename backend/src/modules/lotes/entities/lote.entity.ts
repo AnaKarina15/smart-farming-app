@@ -66,6 +66,13 @@ export class Lote {
   @JoinColumn({ name: 'municipioId' })
   municipio!: Municipio | null;
 
+  /**
+   * FK opcional al tipo de suelo del lote.
+   * Permite caracterizar el suelo al crear el lote.
+   */
+  @Column({ type: 'uuid', nullable: true })
+  tipoSueloId!: string | null;
+
   @Column({ type: 'numeric', precision: 10, scale: 7, nullable: true })
   latitud!: number | null;
 

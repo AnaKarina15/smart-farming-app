@@ -11,8 +11,10 @@ import 'phytosanitary_screen.dart';
 import 'profile_screen.dart';
 import 'soil_humidity_screen.dart';
 import 'sowing_screen.dart';
+import 'terrain_status_screen.dart';
 import 'tasks_screen.dart';
 import 'map_onboarding_screen.dart';
+import '../../data/services/sync_service.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -111,6 +113,7 @@ class _HeroSectionState extends State<_HeroSection> {
           _isOnline = !result.contains(ConnectivityResult.none);
           if (_isOnline) {
             _lastSync = DateTime.now();
+            context.read<SyncService>().syncNow(lotesProvider: context.read<LotesProvider>());
           }
         });
       }
@@ -130,6 +133,7 @@ class _HeroSectionState extends State<_HeroSection> {
         _isOnline = !result.contains(ConnectivityResult.none);
         if (_isOnline) {
           _lastSync = DateTime.now();
+          context.read<SyncService>().syncNow(lotesProvider: context.read<LotesProvider>());
         }
       });
     }
@@ -151,7 +155,8 @@ class _HeroSectionState extends State<_HeroSection> {
         if (permission == LocationPermission.always ||
             permission == LocationPermission.whileInUse) {
           Position position = await Geolocator.getCurrentPosition(
-              locationSettings: const LocationSettings(accuracy: LocationAccuracy.high));
+              locationSettings:
+                  const LocationSettings(accuracy: LocationAccuracy.high));
 
           if (lotes.isNotEmpty) {
             double minDistance = double.infinity;
@@ -485,6 +490,13 @@ class _QuickActionsCarouselState extends State<_QuickActionsCarousel> {
                 const PhytosanitaryScreen(currentTab: AgroTab.home),
               ),
               const SizedBox(width: 25),
+              _action(
+                context,
+                Icons.landscape,
+                'Terreno',
+                const TerrainStatusScreen(currentTab: AgroTab.home),
+              ),
+              const SizedBox(width: 25),
             ],
           ),
         ),
@@ -619,7 +631,8 @@ class _WeatherSectionState extends State<_WeatherSection> {
       }
 
       Position position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+        locationSettings:
+            const LocationSettings(accuracy: LocationAccuracy.high),
       );
 
       final data = await _weatherService.getWeatherData(

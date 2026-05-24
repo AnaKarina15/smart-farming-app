@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text.dart';
-import '../../core/storage/database_helper.dart';
-import '../../data/providers/auth_provider.dart';
 import '../../data/providers/lotes_provider.dart';
+import '../../data/providers/operaciones_provider.dart';
 import '../widgets/custom_app_bar.dart';
 import '../widgets/offline_banner.dart';
 import '../widgets/rugged_button.dart';
@@ -30,15 +29,29 @@ class _FindFindingScreenState extends State<FindFindingScreen> {
   String? _selectedPlagaId;
   String? _selectedPlagaNombre;
   String? _sintomasSugeridos;
-  String _tipo = 'INSECTO';
+  String _tipo = 'INSECTO'; // solo para la UI de tipo detección
+  // Severidad en valores UI: LEVE / MEDIO / CRÍTICO
+  // se convierte al enum del backend: baja / media / alta
   String _severidad = 'MEDIO';
   String? _fotoPath;
   bool _guardando = false;
+  // Para el campo de plaga libre ("Otra plaga/enfermedad")
+  final TextEditingController _plagaOtroCtrl = TextEditingController();
+  bool _usandoPlagaOtro = false;
+
+  /// Convierte la severidad de la UI al enum del backend.
+  /// Backend acepta: baja | media | alta | critica
+  String _severidadBackend() {
+    switch (_severidad) {
+      case 'LEVE':    return 'baja';
+      case 'CRÍTICO': return 'alta';
+      default:        return 'media'; // MEDIO
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    // Cargar lotes si aún no están cargados
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = context.read<LotesProvider>();
       if (!provider.hasLotes) {
@@ -47,12 +60,25 @@ class _FindFindingScreenState extends State<FindFindingScreen> {
     });
   }
 
+  @override
+  void dispose() {
+    _plagaOtroCtrl.dispose();
+    super.dispose();
+  }
+
   Future<void> _guardarHallazgo() async {
-    if (_loteId == null || _selectedPlagaId == null) {
+    final plagaOtroValido = _usandoPlagaOtro && _plagaOtroCtrl.text.trim().isNotEmpty;
+    final plagaIdValido = !_usandoPlagaOtro && _selectedPlagaId != null && _selectedPlagaId != 'OTROS';
+
+    if (_loteId == null || (!plagaIdValido && !plagaOtroValido)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Por favor, completa todos los campos requeridos.',
-            style: AppText.bodyMd(color: Colors.white).copyWith(fontWeight: FontWeight.w600)),
+          content: Text(
+            _loteId == null
+                ? 'Por favor selecciona un lote.'
+                : 'Por favor indica la plaga o escribe su nombre.',
+            style: AppText.bodyMd(color: Colors.white).copyWith(fontWeight: FontWeight.w600),
+          ),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
         ),
@@ -62,25 +88,25 @@ class _FindFindingScreenState extends State<FindFindingScreen> {
 
     setState(() => _guardando = true);
 
-    final user = context.read<AuthProvider>().currentUser;
-    final userId = user?.id ?? 'unknown';
-    final id = 'hallazgo_${DateTime.now().millisecondsSinceEpoch}';
     final now = DateTime.now().toIso8601String();
 
-    await DatabaseHelper.instance.insert(DatabaseHelper.tableHallazgos, {
-      'id': id,
+    // Payload alineado con POST /api/v1/hallazgos (Sprint 3)
+    // - NUNCA se envía userId (el backend lo toma del JWT)
+    // - NUNCA se envía tipo (no existe en el schema de hallazgos)
+    // - severidad debe ser el enum del backend: baja/media/alta/critica
+    final data = <String, dynamic>{
       'loteId': _loteId,
-      'loteNombre': _loteNombre,
-      'tipo': _tipo,
-      'plagaId': _selectedPlagaId,
-      'severidad': _severidad,
-      'descripcion': null,
-      'fotoPath': _fotoPath,
+      'severidad': _severidadBackend(),
       'fecha': now,
-      'userId': userId,
-      'createdAt': now,
       'isPendingSync': 1,
-    });
+      if (plagaIdValido) 'plagaId': _selectedPlagaId,
+      if (plagaOtroValido) 'plagaOtro': _plagaOtroCtrl.text.trim(),
+      if (_fotoPath != null) 'fotoPath': _fotoPath,
+    };
+
+    // OperacionesProvider guarda en SQLite con isPendingSync=1;
+    // SyncService lo sube al backend cuando haya conexión.
+    await context.read<OperacionesProvider>().crearHallazgo(data);
 
     setState(() => _guardando = false);
 
@@ -90,7 +116,9 @@ class _FindFindingScreenState extends State<FindFindingScreen> {
       MaterialPageRoute(
         builder: (_) => FindingSuccessScreen(
           lote: _loteNombre ?? '',
-          findingType: _selectedPlagaNombre ?? _tipo,
+          findingType: plagaOtroValido
+              ? _plagaOtroCtrl.text.trim()
+              : (_selectedPlagaNombre ?? _severidad),
           currentTab: widget.currentTab,
         ),
       ),
@@ -230,13 +258,16 @@ class _FindFindingScreenState extends State<FindFindingScreen> {
                         setState(() {
                           _selectedPlagaId = v;
                           if (v != 'OTROS') {
+                            _usandoPlagaOtro = false;
                             final p = list.firstWhere((p) => p.id == v);
                             _selectedPlagaNombre = p.nombre;
                             _tipo = p.tipo ?? 'INSECTO';
                             _severidad = p.severidadTipica ?? 'MEDIO';
                             _sintomasSugeridos = p.sintomas;
                           } else {
+                            _usandoPlagaOtro = true;
                             _sintomasSugeridos = null;
+                            _selectedPlagaNombre = null;
                           }
                         });
                       },
@@ -245,12 +276,36 @@ class _FindFindingScreenState extends State<FindFindingScreen> {
                 },
               ),
             ),
+            // Campo de texto libre cuando se selecciona "Otra plaga"
+            if (_usandoPlagaOtro) ...[
+              const SizedBox(height: 12),
+              TextField(
+                controller: _plagaOtroCtrl,
+                decoration: InputDecoration(
+                  hintText: 'Escribe el nombre de la plaga o enfermedad',
+                  hintStyle: AppText.bodyMd(color: AppColors.outline),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.outlineVariant),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.outlineVariant),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                ),
+              ),
+            ],
             if (_sintomasSugeridos != null) ...[
               const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE8F5E9), // Verde muy suave para no ser opaco
+                  color: const Color(0xFFE8F5E9),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(

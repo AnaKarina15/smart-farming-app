@@ -10,6 +10,10 @@ import 'register_lote_screen.dart';
 import 'tasks_screen.dart';
 import 'profile_screen.dart';
 import 'lotes_list_screen.dart';
+import 'package:provider/provider.dart';
+import '../../data/providers/lotes_provider.dart';
+
+import '../../core/storage/database_helper.dart';
 
 class MapOnboardingScreen extends StatefulWidget {
   const MapOnboardingScreen({super.key});
@@ -28,10 +32,23 @@ class _MapOnboardingScreenState extends State<MapOnboardingScreen> {
   }
 
   Future<void> _checkLotes() async {
-    final prefs = await SharedPreferences.getInstance();
-    final hasLotes = prefs.getBool('has_lotes') ?? false;
+    // Usamos el LotesProvider para cargar e intentar sincronizar primero
+    final lotesProvider = context.read<LotesProvider>();
+    if (lotesProvider.lotes.isEmpty) {
+      await lotesProvider.init();
+    }
+    
+    final hasLotesReal = lotesProvider.lotes.isNotEmpty;
+
+    if (hasLotesReal) {
+      // Actualizamos SharedPreferences para mantener consistencia
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('has_lotes', true);
+    }
+
     if (!mounted) return;
-    if (hasLotes) {
+
+    if (hasLotesReal) {
       // Already has registered lotes → go directly to list
       Navigator.pushReplacement(
         context,
@@ -107,12 +124,15 @@ class _MapOnboardingScreenState extends State<MapOnboardingScreen> {
                 const SizedBox(height: 32),
                 RuggedButton(
                   text: 'REGISTRAR MI PRIMER LOTE',
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const RegisterLoteScreen(),
-                    ),
-                  ),
+                  onPressed: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const RegisterLoteScreen(),
+                      ),
+                    );
+                    _checkLotes();
+                  },
                   icon: Icons.add,
                 ),
                 const SizedBox(height: 16),

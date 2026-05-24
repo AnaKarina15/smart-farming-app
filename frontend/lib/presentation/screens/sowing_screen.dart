@@ -9,7 +9,6 @@ import 'home_screen.dart';
 import 'map_onboarding_screen.dart';
 import 'profile_screen.dart';
 import 'tasks_screen.dart';
-import 'sowing_success_screen.dart';
 import 'package:provider/provider.dart';
 import '../../core/storage/database_helper.dart';
 import '../../data/providers/auth_provider.dart';
@@ -17,6 +16,7 @@ import '../../data/providers/lotes_provider.dart';
 import '../../data/models/lote_model.dart';
 import 'terrain_status_screen.dart';
 import '../../data/providers/catalogos_provider.dart';
+import '../../data/services/sync_service.dart';
 
 class SowingScreen extends StatefulWidget {
   final String? fixedLote;
@@ -60,14 +60,20 @@ class _SowingScreenState extends State<SowingScreen> {
   }
 
   Future<void> _loadEditData() async {
-    final rows = await DatabaseHelper.instance.queryWhere(
-      DatabaseHelper.tableSiembras, 'id = ?', [widget.idToEdit!]);
+    final rows = await DatabaseHelper.instance
+        .queryWhere(DatabaseHelper.tableSiembras, 'id = ?', [widget.idToEdit!]);
     if (rows.isNotEmpty && mounted) {
       final data = rows.first;
       setState(() {
-        _loteId = data['loteId'];
-        _selectedCultivoId = data['cultivoId'];
-        // _selectedCultivoNombre se auto-cargará desde el catálogo
+        _loteId = data['loteId'] as String?;
+        _loteNombre = data['loteNombre'] as String?;
+        _selectedCultivoId = data['cultivoId'] as String?;
+        _selectedCultivoNombre = data['cultivo'] as String?;
+        // Pre-llenar la fecha guardada en el campo de texto
+        final fechaGuardada = data['fecha'] as String?;
+        if (fechaGuardada != null && fechaGuardada.isNotEmpty) {
+          _dateController.text = fechaGuardada;
+        }
       });
     }
   }
@@ -118,11 +124,11 @@ class _SowingScreenState extends State<SowingScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Registrar Nueva Siembra', style: AppText.h1()),
-                  const SizedBox(height: 5),
                   Text(
-                    'Complete los detalles del lote.',
-                    style: AppText.bodyMd(color: AppColors.onSurfaceVariant),
+                    widget.idToEdit != null
+                        ? 'Editar Siembra'
+                        : 'Registrar Nueva Siembra',
+                    style: AppText.h1(),
                   ),
                   const SizedBox(height: 10),
                   Text('SELECCIONAR CULTIVO', style: AppText.labelCaps()),
@@ -298,7 +304,8 @@ class _SowingScreenState extends State<SowingScreen> {
                             decoration: BoxDecoration(
                               color: AppColors.surfaceContainerLowest,
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: AppColors.outlineVariant),
+                              border:
+                                  Border.all(color: AppColors.outlineVariant),
                             ),
                             child: Row(
                               children: [
@@ -307,18 +314,21 @@ class _SowingScreenState extends State<SowingScreen> {
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        tipoSuelo?.nombre ?? 'Suelo no especificado',
-                                        style: AppText.bodyLg()
-                                            .copyWith(fontWeight: FontWeight.w600),
+                                        tipoSuelo?.nombre ??
+                                            'Suelo no especificado',
+                                        style: AppText.bodyLg().copyWith(
+                                            fontWeight: FontWeight.w600),
                                       ),
                                       if (tipoSuelo?.descripcion != null)
                                         Text(
                                           tipoSuelo!.descripcion!,
                                           style: AppText.bodyMd(
-                                              color: AppColors.onSurfaceVariant),
+                                              color:
+                                                  AppColors.onSurfaceVariant),
                                         ),
                                     ],
                                   ),
@@ -363,6 +373,7 @@ class _SowingScreenState extends State<SowingScreen> {
                         MaterialPageRoute(
                           builder: (_) => TerrainStatusScreen(
                               lote: _loteNombre!,
+                              isPreviousStateOfSiembra: true,
                               currentTab: widget.currentTab),
                         ),
                       );
@@ -453,13 +464,18 @@ class _SowingScreenState extends State<SowingScreen> {
                             }
                             setState(() => _guardando = true);
 
+                            final navigator = Navigator.of(context);
+                            final lotesProv = context.read<LotesProvider>();
+                            final syncService = context.read<SyncService>();
+
                             final finalCropNombre =
                                 _selectedCultivoNombre ?? 'Desconocido';
 
                             final user =
                                 context.read<AuthProvider>().currentUser;
                             final userId = user?.id ?? 'unknown';
-                            final id = widget.idToEdit ?? 'siembra_${DateTime.now().millisecondsSinceEpoch}';
+                            final id = widget.idToEdit ??
+                                'siembra_${DateTime.now().millisecondsSinceEpoch}';
                             final now = DateTime.now().toIso8601String();
 
                             final data = {
@@ -476,24 +492,42 @@ class _SowingScreenState extends State<SowingScreen> {
                             if (widget.idToEdit != null) {
                               data['updatedAt'] = now;
                               await DatabaseHelper.instance.update(
-                                  DatabaseHelper.tableSiembras, data,
-                                  'id = ?', [id]);
+                                  DatabaseHelper.tableSiembras,
+                                  data,
+                                  'id = ?',
+                                  [id]);
                             } else {
                               data['createdAt'] = now;
-                              await DatabaseHelper.instance.insert(
-                                  DatabaseHelper.tableSiembras, data);
+                              await DatabaseHelper.instance
+                                  .insert(DatabaseHelper.tableSiembras, data);
                             }
 
-                            if (!context.mounted) return;
+                            if (_loteId != null) {
+                              try {
+                                await lotesProv.actualizarLote(
+                                  id: _loteId!,
+                                  cultivoActual: finalCropNombre,
+                                );
+                              } catch (_) {}
+                            }
+
+                            // Sincronizar en segundo plano de inmediato
+                            try {
+                              syncService.syncNow(lotesProvider: lotesProv);
+                            } catch (_) {}
+
+                            if (!mounted) return;
                             setState(() => _guardando = false);
 
-                            Navigator.pushReplacement(
-                              context,
+                            navigator.pushReplacement(
                               MaterialPageRoute(
-                                builder: (_) => SowingSuccessScreen(
-                                    lote: _loteNombre ?? '',
-                                    crop: finalCropNombre,
-                                    currentTab: widget.currentTab),
+                                builder: (_) => TerrainStatusScreen(
+                                  lote: _loteNombre ?? '',
+                                  loteId: _loteId,
+                                  siembraId: id,
+                                  isPreviousStateOfSiembra: true,
+                                  currentTab: widget.currentTab,
+                                ),
                               ),
                             );
                           },

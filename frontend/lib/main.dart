@@ -20,6 +20,7 @@ import 'presentation/screens/welcome_screen.dart';
 import 'presentation/widgets/offline_banner.dart';
 import 'data/services/admin_service.dart';
 import 'data/providers/admin_provider.dart';
+import 'data/providers/tareas_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -118,6 +119,20 @@ class SmartFarmingApp extends StatelessWidget {
         // Provider de administración (Sprint 4)
         ChangeNotifierProvider<AdminProvider>(
           create: (_) => AdminProvider(adminService),
+        ),
+
+        // Provider de tareas inteligentes — se carga en segundo plano al autenticarse
+        ChangeNotifierProxyProvider<AuthProvider, TareasProvider>(
+          create: (_) => TareasProvider(operacionesService),
+          update: (_, auth, prev) {
+            final provider = prev ?? TareasProvider(operacionesService);
+            // Disparar carga en segundo plano si el usuario está autenticado
+            // y aún no se han cargado tareas
+            if (auth.currentUser != null) {
+              Future.microtask(() => provider.cargarSiNoHay());
+            }
+            return provider;
+          },
         ),
       ],
       child: MaterialApp(

@@ -9,6 +9,7 @@ export const TIPOS_PLAGA = [
   'maleza',
   'nematodo',
   'acaro',
+  'otro',
 ] as const;
 
 export const SEVERIDADES_PLAGA = ['baja', 'media', 'alta', 'critica'] as const;

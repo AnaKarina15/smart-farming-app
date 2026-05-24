@@ -9,6 +9,8 @@ import { Repository } from 'typeorm';
 
 import { Lote } from '../lotes/entities/lote.entity';
 import { UserRole } from '../users/entities/user-role.enum';
+import { EstadoTerreno } from '../estado-terreno/entities/estado-terreno.entity';
+import { Cultivo } from '../catalogos/entities/cultivo.entity';
 
 import { CreateSiembraDto } from './dto/create-siembra.dto';
 import { ListSiembrasQueryDto } from './dto/list-siembras-query.dto';
@@ -23,6 +25,10 @@ export class SiembrasService {
     private readonly siembrasRepo: SiembrasRepository,
     @InjectRepository(Lote)
     private readonly lotesRepo: Repository<Lote>,
+    @InjectRepository(EstadoTerreno)
+    private readonly estadoTerrenoRepo: Repository<EstadoTerreno>,
+    @InjectRepository(Cultivo)
+    private readonly cultivosRepo: Repository<Cultivo>,
   ) {}
 
   // ════════════════════════════════════════════════════════
@@ -59,6 +65,24 @@ export class SiembrasService {
     });
 
     const saved = await this.siembrasRepo.repo.save(entity);
+
+    try {
+      const lote = await this.lotesRepo.findOne({ where: { id: dto.loteId } });
+      if (lote) {
+        if (dto.cultivoId) {
+          const cultivo = await this.cultivosRepo.findOne({ where: { id: dto.cultivoId } });
+          lote.cultivoActualId = dto.cultivoId;
+          lote.cultivoActual = cultivo ? cultivo.nombre : null;
+        } else {
+          lote.cultivoActualId = null;
+          lote.cultivoActual = dto.cultivoOtro ?? null;
+        }
+        await this.lotesRepo.save(lote);
+      }
+    } catch (e) {
+      console.error('Error al actualizar el cultivo actual del lote:', e);
+    }
+
     return this.findOne(saved.id, userId, userRole);
   }
 
@@ -178,6 +202,24 @@ export class SiembrasService {
     });
 
     await this.siembrasRepo.repo.save(siembra);
+
+    try {
+      const lote = await this.lotesRepo.findOne({ where: { id: siembra.loteId } });
+      if (lote) {
+        if (siembra.cultivoId) {
+          const cultivo = await this.cultivosRepo.findOne({ where: { id: siembra.cultivoId } });
+          lote.cultivoActualId = siembra.cultivoId;
+          lote.cultivoActual = cultivo ? cultivo.nombre : null;
+        } else {
+          lote.cultivoActualId = null;
+          lote.cultivoActual = siembra.cultivoOtro ?? null;
+        }
+        await this.lotesRepo.save(lote);
+      }
+    } catch (e) {
+      console.error('Error al actualizar el cultivo actual del lote en update:', e);
+    }
+
     return this.findOne(id, userId, userRole);
   }
 
@@ -193,6 +235,24 @@ export class SiembrasService {
     if (userRole !== UserRole.ADMINISTRADOR && siembra.userId !== userId) {
       throw new ForbiddenException('No puedes eliminar esta siembra');
     }
+
+    try {
+      await this.estadoTerrenoRepo.softDelete({ siembraId: id });
+    } catch (e) {
+      console.error('Error soft-deleting estado terreno:', e);
+    }
+
+    try {
+      const lote = await this.lotesRepo.findOne({ where: { id: siembra.loteId } });
+      if (lote) {
+        lote.cultivoActualId = null;
+        lote.cultivoActual = null;
+        await this.lotesRepo.save(lote);
+      }
+    } catch (e) {
+      console.error('Error al limpiar el cultivo actual del lote en remove:', e);
+    }
+
     await this.siembrasRepo.repo.softDelete(id);
   }
 

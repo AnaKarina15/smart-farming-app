@@ -39,11 +39,38 @@ class AuthProvider extends ChangeNotifier {
       try {
         final user = await _authService.getCurrentUser();
         _currentUser = user;
+        await _tokenStorage.saveOfflineProfile(user);
         _status = AuthStatus.authenticated;
-      } catch (_) {
-        // Si falla, sesion invalida
-        await _tokenStorage.clearTokens();
-        _status = AuthStatus.unauthenticated;
+      } catch (e) {
+        bool isUnauthorized = false;
+        if (e.toString().contains('401') || e.toString().contains('Unauthorized')) {
+          isUnauthorized = true;
+        }
+        
+        if (isUnauthorized) {
+          // Sesion expirada o invalida
+          await _tokenStorage.clearTokens();
+          _status = AuthStatus.unauthenticated;
+        } else {
+          // Offline o error de red: Restaurar sesion offline
+          final userId = await _tokenStorage.getUserId() ?? 'offline_user';
+          final role = await _tokenStorage.getRole() ?? 'productor';
+          final name = await _tokenStorage.getName() ?? 'Productor Offline';
+          final email = await _tokenStorage.getEmail() ?? 'offline@agrofield.com';
+          final photo = await _tokenStorage.getPhoto();
+
+          _currentUser = UserModel(
+            id: userId,
+            nombreCompleto: name,
+            email: email,
+            role: role,
+            activo: true,
+            fotoPerfilUrl: photo,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          );
+          _status = AuthStatus.authenticated;
+        }
       }
     } else {
       _status = AuthStatus.unauthenticated;
@@ -70,6 +97,7 @@ class AuthProvider extends ChangeNotifier {
         password: password,
       );
       _currentUser = tokens.user;
+      await _tokenStorage.saveOfflineProfile(tokens.user);
       _status = AuthStatus.authenticated;
       notifyListeners();
       return true;
@@ -96,6 +124,7 @@ class AuthProvider extends ChangeNotifier {
         password: password,
       );
       _currentUser = tokens.user;
+      await _tokenStorage.saveOfflineProfile(tokens.user);
       _status = AuthStatus.authenticated;
       notifyListeners();
       return true;

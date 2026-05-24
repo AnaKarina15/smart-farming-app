@@ -54,18 +54,29 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
     super.initState();
     _initDotMarker();
     _nameController =
-        TextEditingController(text: widget.loteToEdit?.nombre ?? ' ');
+        TextEditingController(text: widget.loteToEdit?.nombre ?? '');
     _areaController = TextEditingController(
         text: widget.loteToEdit != null
             ? widget.loteToEdit!.superficieHectareas.toString()
-            : ' ');
+            : '');
     _lat = widget.loteToEdit?.latitud;
     _lng = widget.loteToEdit?.longitud;
     _locationLabel = widget.loteToEdit?.descripcion;
     _selectedMunicipioId = widget.loteToEdit?.municipioId;
     _selectedTipoSueloId = widget.loteToEdit?.tipoSueloId;
+    if (widget.loteToEdit != null) {
+      final desc = widget.loteToEdit!.descripcion ?? '';
+      if (desc.contains(' – ')) {
+        final parts = desc.split(' – ');
+        _manualLocationCtrl.text = parts[0].trim();
+        _manualMunicipioCtrl.text = parts[1].trim();
+      } else {
+        _manualLocationCtrl.text = desc;
+      }
+    }
     if (_lat != null && _lng != null) {
-      _initializePolygon(_lat!, _lng!, ha: widget.loteToEdit?.superficieHectareas);
+      _initializePolygon(_lat!, _lng!,
+          ha: widget.loteToEdit?.superficieHectareas);
     }
     // Cargar catálogos (municipios) si no están cargados
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -73,7 +84,44 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
       if (catalogos.municipios.isEmpty) {
         catalogos.cargarCatalogos();
       }
+      // Si es un lote nuevo (sin coords previas), centrar el mapa en la ubicación actual
+      if (widget.loteToEdit == null) {
+        _autoLocate();
+      }
     });
+  }
+
+  /// Centra el mapa silenciosamente en la ubicación GPS actual al abrir la pantalla.
+  /// No activa el polígono ni la geocodificación — solo mueve la cámara.
+  Future<void> _autoLocate() async {
+    try {
+      LocationPermission perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied) {
+        perm = await Geolocator.requestPermission();
+      }
+      if (perm == LocationPermission.deniedForever ||
+          perm == LocationPermission.denied) {
+        return;
+      }
+
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 10),
+        ),
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _lat = pos.latitude;
+        _lng = pos.longitude;
+      });
+      _mapController?.animateCamera(
+        CameraUpdate.newLatLngZoom(LatLng(pos.latitude, pos.longitude), 15.0),
+      );
+    } catch (_) {
+      // Si falla el GPS silenciosamente, el mapa queda en Valledupar como respaldo
+    }
   }
 
   Future<void> _initDotMarker() async {
@@ -87,8 +135,10 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
     canvas.drawCircle(Offset(size / 2, size / 2), size / 2.0, paint1);
     canvas.drawCircle(Offset(size / 2, size / 2), (size / 2.0) - 4, paint2);
 
-    final dart_ui.Image image = await pictureRecorder.endRecording().toImage(size, size);
-    final ByteData? byteData = await image.toByteData(format: dart_ui.ImageByteFormat.png);
+    final dart_ui.Image image =
+        await pictureRecorder.endRecording().toImage(size, size);
+    final ByteData? byteData =
+        await image.toByteData(format: dart_ui.ImageByteFormat.png);
     final Uint8List uint8List = byteData!.buffer.asUint8List();
 
     if (mounted) {
@@ -125,16 +175,21 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
     );
     textPainter.layout();
 
-    final paint = Paint()..color = const Color(0xFFFF6B00).withValues(alpha: 0.85);
-    final rect = Rect.fromLTRB(0, 0, textPainter.width + 24, textPainter.height + 12);
+    final paint = Paint()
+      ..color = const Color(0xFFFF6B00).withValues(alpha: 0.85);
+    final rect =
+        Rect.fromLTRB(0, 0, textPainter.width + 24, textPainter.height + 12);
     final RRect rrect = RRect.fromRectAndRadius(rect, const Radius.circular(8));
     canvas.drawRRect(rrect, paint);
 
     textPainter.paint(canvas, const Offset(12, 6));
 
-    final dart_ui.Image img = await pictureRecorder.endRecording().toImage(rect.width.toInt(), rect.height.toInt());
-    final ByteData? data = await img.toByteData(format: dart_ui.ImageByteFormat.png);
-    
+    final dart_ui.Image img = await pictureRecorder
+        .endRecording()
+        .toImage(rect.width.toInt(), rect.height.toInt());
+    final ByteData? data =
+        await img.toByteData(format: dart_ui.ImageByteFormat.png);
+
     if (mounted) {
       setState(() {
         _areaMarkerIcon = BitmapDescriptor.bytes(data!.buffer.asUint8List());
@@ -150,21 +205,22 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
       latSum += p.latitude;
       lngSum += p.longitude;
     }
-    return LatLng(latSum / _polygonLatLngs.length, lngSum / _polygonLatLngs.length);
+    return LatLng(
+        latSum / _polygonLatLngs.length, lngSum / _polygonLatLngs.length);
   }
 
   void _initializePolygon(double lat, double lng, {double? ha}) {
     final areaHa = ha ?? double.tryParse(_areaController.text) ?? 1.0;
     final totalAreaM2 = areaHa * 10000.0;
     final sideMeters = math.sqrt(totalAreaM2);
-    
+
     final latRad = lat * math.pi / 180.0;
     final metersPerLat = 111132.95;
     final metersPerLng = 111132.95 * math.cos(latRad);
-    
+
     final dLat = (sideMeters / 2.0) / metersPerLat;
     final dLng = (sideMeters / 2.0) / metersPerLng;
-    
+
     setState(() {
       _polygonLatLngs = [
         LatLng(lat + dLat, lng - dLng),
@@ -220,7 +276,6 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
     _manualMunicipioCtrl.dispose();
     super.dispose();
   }
-
 
   // ─── GPS ──────────────────────────────────────────────────────────────────
   Future<void> _getLocation() async {
@@ -295,7 +350,8 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
           }
         }
       } catch (_) {
-        final fallbackAddress = '${_lat!.toStringAsFixed(5)}, ${_lng!.toStringAsFixed(5)}';
+        final fallbackAddress =
+            '${_lat!.toStringAsFixed(5)}, ${_lng!.toStringAsFixed(5)}';
         setState(() {
           _locationLabel = fallbackAddress;
           _manualLocationCtrl.text = fallbackAddress;
@@ -331,15 +387,29 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
       return;
     }
 
-    if (_selectedTipoSueloId == null) {
-      _showSnack('Por favor selecciona el tipo de suelo de tu lote.');
+    // ─── Validar límite de 5 ha en total (suma de todos los lotes) ─────────
+    final lotesProvider = context.read<LotesProvider>();
+    final isEditing = widget.loteToEdit != null;
+    final currentLoteId = widget.loteToEdit?.id;
+    final otrosLotes = lotesProvider.lotes
+        .where((l) => l.id != currentLoteId)
+        .toList();
+    final totalHaOtros = otrosLotes.fold<double>(
+        0.0, (sum, l) => sum + l.superficieHectareas);
+    final totalFinal = totalHaOtros + areaVal;
+    if (totalFinal > 5.0) {
+      final disponible = (5.0 - totalHaOtros).clamp(0.0, 5.0);
+      _showSnack(
+        'La superficie total de todos tus lotes no puede superar 5 ha. '
+        'Ya tienes ${totalHaOtros.toStringAsFixed(2)} ha registradas. '
+        'Puedes agregar máximo ${disponible.toStringAsFixed(2)} ha más.',
+      );
       return;
     }
 
     setState(() => _saving = true);
     // ─── REAL SAVE ─────────────────────────────────────────
     final auth = context.read<AuthProvider>();
-    final lotesProvider = context.read<LotesProvider>();
 
     // Construir descripción completa para offline
     final partes = <String>[];
@@ -355,7 +425,6 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
     final descripcionFinal =
         partes.isNotEmpty ? partes.join(' – ') : _locationLabel;
 
-    final isEditing = widget.loteToEdit != null;
     bool success = false;
 
     if (isEditing) {
@@ -364,6 +433,8 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
         nombre: name,
         descripcion: descripcionFinal,
         superficieHectareas: double.tryParse(_areaController.text) ?? 0.0,
+        municipioId: _selectedMunicipioId,
+        tipoSueloId: _selectedTipoSueloId,
         latitud: _lat,
         longitud: _lng,
       );
@@ -383,8 +454,15 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
     setState(() => _saving = false);
 
     if (!success) {
-      _showSnack(
-          'Error al ${isEditing ? 'actualizar' : 'guardar'} el lote: ${lotesProvider.errorMessage}');
+      final rawError = lotesProvider.errorMessage ?? '';
+      // Mejorar el mensaje del backend cuando rechaza por límite de área total
+      final friendlyError = rawError.toLowerCase().contains('5') ||
+              rawError.toLowerCase().contains('superficie') ||
+              rawError.toLowerCase().contains('exceed') ||
+              rawError.toLowerCase().contains('total')
+          ? 'La superficie total de todos tus lotes no puede superar 5 hectáreas.'
+          : 'Error al ${isEditing ? 'actualizar' : 'guardar'} el lote: $rawError';
+      _showSnack(friendlyError);
       return;
     }
 
@@ -474,6 +552,7 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
         _lat = loc.latitude;
         _lng = loc.longitude;
         _locationLabel = query;
+        _manualLocationCtrl.text = query;
         _editingZone = true;
       });
       _initializePolygon(loc.latitude, loc.longitude);
@@ -505,7 +584,7 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                     initialCameraPosition: CameraPosition(
                       target: _lat != null && _lng != null
                           ? LatLng(_lat!, _lng!)
-                          : const LatLng(10.46314, -73.25322),
+                          : const LatLng(10.7667, -74.1833),
                       zoom: 14.0,
                     ),
                     mapType: MapType.hybrid,
@@ -521,22 +600,29 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                               _lat = location.latitude;
                               _lng = location.longitude;
                               _locationLabel = 'Buscando dirección...';
-                              _editingZone = true; // Habilita edición de esquinas inmediatamente
+                              _editingZone =
+                                  true; // Habilita edición de esquinas inmediatamente
                             });
-                            _initializePolygon(location.latitude, location.longitude);
+                            _initializePolygon(
+                                location.latitude, location.longitude);
                             try {
                               final placemarks = await placemarkFromCoordinates(
                                   location.latitude, location.longitude);
                               if (placemarks.isNotEmpty) {
                                 final place = placemarks.first;
                                 setState(() {
-                                  _locationLabel =
+                                  final addr =
                                       '${place.locality ?? place.subAdministrativeArea}, ${place.administrativeArea}';
+                                  _locationLabel = addr;
+                                  _manualLocationCtrl.text = addr;
                                 });
                               }
                             } catch (_) {
-                              setState(
-                                  () => _locationLabel = 'Ubicación en mapa');
+                              setState(() {
+                                _locationLabel = 'Ubicación en mapa';
+                                _manualLocationCtrl.text =
+                                    '${location.latitude.toStringAsFixed(5)}, ${location.longitude.toStringAsFixed(5)}';
+                              });
                             }
                           },
                     markers: {
@@ -544,7 +630,8 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                         Marker(
                           markerId: const MarkerId('lote_marker'),
                           position: LatLng(_lat!, _lng!),
-                          infoWindow: InfoWindow(title: _locationLabel ?? 'Lote'),
+                          infoWindow:
+                              InfoWindow(title: _locationLabel ?? 'Lote'),
                         ),
                       if (_editingZone && _polygonLatLngs.isNotEmpty) ...[
                         ..._polygonLatLngs.asMap().entries.map((entry) {
@@ -555,8 +642,9 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                             position: latLng,
                             draggable: true,
                             anchor: const Offset(0.5, 0.5),
-                            icon: _dotMarker ?? BitmapDescriptor.defaultMarkerWithHue(
-                                BitmapDescriptor.hueOrange),
+                            icon: _dotMarker ??
+                                BitmapDescriptor.defaultMarkerWithHue(
+                                    BitmapDescriptor.hueOrange),
                             onDrag: (newLatLng) {
                               setState(() {
                                 _polygonLatLngs[idx] = newLatLng;
@@ -587,7 +675,8 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                           points: _polygonLatLngs,
                           strokeColor: const Color(0xFFFF6B00),
                           strokeWidth: 3,
-                          fillColor: const Color(0xFFFF6B00).withValues(alpha: 0.15),
+                          fillColor:
+                              const Color(0xFFFF6B00).withValues(alpha: 0.15),
                         ),
                     },
                   ),
@@ -644,23 +733,30 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                           Expanded(
                             child: Container(
                               margin: const EdgeInsets.only(right: 12),
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 10),
                               decoration: BoxDecoration(
                                 color: Colors.lightGreen.shade600,
                                 borderRadius: BorderRadius.circular(12),
                                 boxShadow: const [
-                                  BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2))
+                                  BoxShadow(
+                                      color: Colors.black26,
+                                      blurRadius: 4,
+                                      offset: Offset(0, 2))
                                 ],
                               ),
                               child: Row(
                                 children: [
-                                  const Icon(Icons.touch_app, color: Colors.white, size: 18),
+                                  const Icon(Icons.touch_app,
+                                      color: Colors.white, size: 18),
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
                                       'Mantén presionada una esquina para moverla',
                                       style: AppText.bodyMd(color: Colors.white)
-                                          .copyWith(fontSize: 12, fontWeight: FontWeight.w600),
+                                          .copyWith(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600),
                                     ),
                                   ),
                                 ],
@@ -674,11 +770,15 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                             color: AppColors.errorContainer,
                             shape: BoxShape.circle,
                             boxShadow: [
-                              BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 2))
+                              BoxShadow(
+                                  color: Colors.black26,
+                                  blurRadius: 6,
+                                  offset: Offset(0, 2))
                             ],
                           ),
                           child: IconButton(
-                            icon: const Icon(Icons.close, color: AppColors.onErrorContainer, size: 20),
+                            icon: const Icon(Icons.close,
+                                color: AppColors.onErrorContainer, size: 20),
                             tooltip: 'Borrar ubicación y área',
                             onPressed: () {
                               setState(() {
@@ -738,13 +838,18 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                               ? Colors.green.shade700
                               : const Color(0xFFFF6B00),
                           icon: Icon(
-                            _editingZone ? Icons.check : Icons.edit_location_alt,
+                            _editingZone
+                                ? Icons.check
+                                : Icons.edit_location_alt,
                             color: Colors.white,
                           ),
                           label: Text(
-                            _editingZone ? 'Confirmar zona' : 'Definir / Editar zona',
+                            _editingZone
+                                ? 'Confirmar zona'
+                                : 'Definir / Editar zona',
                             style: const TextStyle(
-                                color: Colors.white, fontWeight: FontWeight.w600),
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600),
                           ),
                         ),
                       ],
@@ -806,7 +911,8 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                               decoration: InputDecoration(
                                 filled: true,
                                 fillColor: AppColors.surface,
-                                hintText: 'Ej: Lote El Mirador',
+                                hintText: 'Ej: Lote Norte',
+                                hintStyle: AppText.bodyMd(color: AppColors.outline),
                                 prefixIcon: const Icon(Icons.landscape,
                                     color: AppColors.primary, size: 20),
                                 border: OutlineInputBorder(
@@ -857,7 +963,22 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                             const SizedBox(height: 16),
 
                             // ── Municipio (Catálogo) ──────────────────────────────
-                            Text('MUNICIPIO', style: AppText.labelCaps()),
+                            RichText(
+                              text: TextSpan(children: [
+                                TextSpan(
+                                  text: 'MUNICIPIO',
+                                  style: AppText.labelCaps(),
+                                ),
+                                TextSpan(
+                                  text: '  (opcional)',
+                                  style: AppText.labelCaps().copyWith(
+                                    color: AppColors.outline,
+                                    fontWeight: FontWeight.w400,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ]),
+                            ),
                             const SizedBox(height: 8),
                             Consumer<CatalogosProvider>(
                               builder: (context, provider, child) {
@@ -968,7 +1089,8 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                                             (option as dynamic).id;
                                       });
                                       // Volar al municipio en el mapa
-                                      _searchLocation((option as dynamic).nombre);
+                                      _searchLocation(
+                                          (option as dynamic).nombre);
                                     },
                                     fieldViewBuilder: (ctx, controller,
                                         focusNode, onSubmitted) {
@@ -1010,10 +1132,14 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                                               borderRadius:
                                                   BorderRadius.circular(12),
                                             ),
-                                            child: NotificationListener<ScrollNotification>(
+                                            child: NotificationListener<
+                                                ScrollNotification>(
                                               onNotification: (notification) {
-                                                if (notification is ScrollUpdateNotification) {
-                                                  SystemChannels.textInput.invokeMethod('TextInput.hide');
+                                                if (notification
+                                                    is ScrollUpdateNotification) {
+                                                  SystemChannels.textInput
+                                                      .invokeMethod(
+                                                          'TextInput.hide');
                                                 }
                                                 return true; // Evita propagar el scroll al BottomSheet
                                               },
@@ -1030,7 +1156,8 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                                                     title: Text(
                                                         (option as dynamic)
                                                             .nombre,
-                                                        style: AppText.bodyMd()),
+                                                        style:
+                                                            AppText.bodyMd()),
                                                     onTap: () =>
                                                         onSelected(option),
                                                   );
@@ -1083,7 +1210,22 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                             const SizedBox(height: 16),
 
                             // ── Tipo de Suelo ──────────────────────
-                            Text('TIPO DE SUELO', style: AppText.labelCaps()),
+                            RichText(
+                              text: TextSpan(children: [
+                                TextSpan(
+                                  text: 'TIPO DE SUELO',
+                                  style: AppText.labelCaps(),
+                                ),
+                                TextSpan(
+                                  text: '  (opcional)',
+                                  style: AppText.labelCaps().copyWith(
+                                    color: AppColors.outline,
+                                    fontWeight: FontWeight.w400,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ]),
+                            ),
                             const SizedBox(height: 8),
                             Consumer<CatalogosProvider>(
                               builder: (context, catalogos, child) {
@@ -1133,8 +1275,6 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                             ),
                             const SizedBox(height: 16),
 
-
-
                             // ── GPS button ────────────────────────────────────────
                             SizedBox(
                               width: double.infinity,
@@ -1172,9 +1312,11 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
 
                             // ── Save ──────────────────────────────────────────────
                             RuggedButton(
-                              text: _saving 
-                                ? 'GUARDANDO...' 
-                                : (widget.loteToEdit != null ? 'GUARDAR CAMBIOS' : 'GUARDAR LOTE'),
+                              text: _saving
+                                  ? 'GUARDANDO...'
+                                  : (widget.loteToEdit != null
+                                      ? 'GUARDAR CAMBIOS'
+                                      : 'GUARDAR LOTE'),
                               icon: Icons.save,
                               onPressed: _saving
                                   ? null
@@ -1215,4 +1357,3 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
     );
   }
 }
-

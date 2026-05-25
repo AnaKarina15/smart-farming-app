@@ -440,6 +440,12 @@ class _LoteCard extends StatefulWidget {
 
 class _LoteCardState extends State<_LoteCard> {
   String get _loteName => widget.lote.nombre;
+  String get _siembraLabel {
+    final value = widget.lote.siembraActualNombre ?? widget.lote.cultivoActual;
+    if (value == null || value.trim().isEmpty) return 'Sin siembra';
+    return value.trim();
+  }
+
   bool _isMenuOpen = false;
 
   void _navigate(Widget screen) {
@@ -544,13 +550,14 @@ class _LoteCardState extends State<_LoteCard> {
                         ],
                       ),
                       const SizedBox(height: 8),
-                      Row(
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 6,
                         children: [
                           _Chip(
                             icon: Icons.straighten,
                             label: '${widget.lote.superficieHectareas} hec',
                           ),
-                          const SizedBox(width: 8),
                           _Chip(
                             icon: widget.lote.latitud != null
                                 ? Icons.gps_fixed
@@ -558,6 +565,10 @@ class _LoteCardState extends State<_LoteCard> {
                             label: widget.lote.latitud != null
                                 ? 'GPS ✓'
                                 : 'Sin GPS',
+                          ),
+                          _Chip(
+                            icon: Icons.eco,
+                            label: _siembraLabel,
                           ),
                         ],
                       ),
@@ -871,6 +882,7 @@ class _Chip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      constraints: const BoxConstraints(maxWidth: 150),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: AppColors.surfaceContainer,
@@ -881,9 +893,15 @@ class _Chip extends StatelessWidget {
         children: [
           Icon(icon, size: 12, color: AppColors.onSurfaceVariant),
           const SizedBox(width: 4),
-          Text(label,
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: AppText.bodyMd(color: AppColors.onSurfaceVariant)
-                  .copyWith(fontSize: 11)),
+                  .copyWith(fontSize: 11),
+            ),
+          ),
         ],
       ),
     );

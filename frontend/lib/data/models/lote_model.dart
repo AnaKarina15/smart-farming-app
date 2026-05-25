@@ -13,6 +13,7 @@ class LoteModel {
   final String? cultivoActualId;
   final String? municipioId;
   final String? tipoSueloId;
+  final String? siembraActualNombre;
   final double? latitud;
   final double? longitud;
   final String estado;
@@ -29,6 +30,7 @@ class LoteModel {
     this.cultivoActualId,
     this.municipioId,
     this.tipoSueloId,
+    this.siembraActualNombre,
     this.latitud,
     this.longitud,
     required this.estado,
@@ -38,6 +40,10 @@ class LoteModel {
   });
 
   factory LoteModel.fromJson(Map<String, dynamic> json) {
+    final ultimaSiembra = json['ultimaSiembra'] is Map<String, dynamic>
+        ? json['ultimaSiembra'] as Map<String, dynamic>
+        : null;
+
     return LoteModel(
       id: json['id'] as String,
       nombre: json['nombre'] as String,
@@ -47,8 +53,14 @@ class LoteModel {
       cultivoActualId: json['cultivoActualId'] as String?,
       municipioId: json['municipioId'] as String?,
       tipoSueloId: json['tipoSueloId'] as String?,
-      latitud: json['latitud'] != null ? (json['latitud'] as num).toDouble() : null,
-      longitud: json['longitud'] != null ? (json['longitud'] as num).toDouble() : null,
+      siembraActualNombre: json['siembraActualNombre'] as String? ??
+          ultimaSiembra?['cultivoNombre'] as String? ??
+          ultimaSiembra?['cultivoOtro'] as String?,
+      latitud:
+          json['latitud'] != null ? (json['latitud'] as num).toDouble() : null,
+      longitud: json['longitud'] != null
+          ? (json['longitud'] as num).toDouble()
+          : null,
       estado: json['estado'] as String? ?? 'saludable',
       propietarioId: json['propietarioId'] as String,
       createdAt: DateTime.parse(json['createdAt'] as String),

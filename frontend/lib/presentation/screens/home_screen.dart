@@ -19,7 +19,6 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:intl/intl.dart';
 import '../../core/network/api_endpoints.dart';
 import '../../core/storage/database_helper.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import '../../core/services/weather_service.dart';
 
@@ -65,11 +64,16 @@ class _HeroSection extends StatefulWidget {
 
 class _HeroSectionState extends State<_HeroSection> {
   String _loteName = 'Cargando...';
+  String? _loteLocation;
   String _soilStatus = '--%';
+  String _temperature = '...';
+  String _rainProb = '...';
+  bool _isWeatherLoading = true;
 
   bool _isOnline = true;
   DateTime _lastSync = DateTime.now();
   late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
+  final WeatherService _weatherService = WeatherService();
 
   @override
   void initState() {
@@ -87,7 +91,9 @@ class _HeroSectionState extends State<_HeroSection> {
           _isOnline = !result.contains(ConnectivityResult.none);
           if (_isOnline) {
             _lastSync = DateTime.now();
-            context.read<SyncService>().syncNow(lotesProvider: context.read<LotesProvider>());
+            context
+                .read<SyncService>()
+                .syncNow(lotesProvider: context.read<LotesProvider>());
           }
         });
       }
@@ -107,7 +113,9 @@ class _HeroSectionState extends State<_HeroSection> {
         _isOnline = !result.contains(ConnectivityResult.none);
         if (_isOnline) {
           _lastSync = DateTime.now();
-          context.read<SyncService>().syncNow(lotesProvider: context.read<LotesProvider>());
+          context
+              .read<SyncService>()
+              .syncNow(lotesProvider: context.read<LotesProvider>());
         }
       });
     }
@@ -115,125 +123,131 @@ class _HeroSectionState extends State<_HeroSection> {
 
   Future<void> _fetchData() async {
     try {
-      // 1. Fetch lotes locally
       final lotes =
           await DatabaseHelper.instance.queryAllRows(DatabaseHelper.tableLotes);
+      final latestLote = _latestRegisteredLote(lotes);
 
-      // Obtener ubicación actual y Lote más cercano
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (serviceEnabled) {
-        LocationPermission permission = await Geolocator.checkPermission();
-        if (permission == LocationPermission.denied) {
-          permission = await Geolocator.requestPermission();
-        }
-        if (permission == LocationPermission.always ||
-            permission == LocationPermission.whileInUse) {
-          Position position = await Geolocator.getCurrentPosition(
-              locationSettings:
-                  const LocationSettings(accuracy: LocationAccuracy.high));
-
-          if (lotes.isNotEmpty) {
-            double minDistance = double.infinity;
-            Map<String, dynamic>? closestLote;
-
-            for (var lote in lotes) {
-              if (lote['latitud'] != null && lote['longitud'] != null) {
-                double distance = Geolocator.distanceBetween(
-                    position.latitude,
-                    position.longitude,
-                    (lote['latitud'] as num).toDouble(),
-                    (lote['longitud'] as num).toDouble());
-                if (distance < minDistance) {
-                  minDistance = distance;
-                  closestLote = lote;
-                }
-              }
-            }
-
-            if (mounted) {
-              if (closestLote != null && minDistance < 1000) {
-                // 1km radius
-                setState(() {
-                  _loteName = closestLote!['nombre'];
-                });
-              } else {
-                // Si no hay lote cerca, buscar nombre de ubicación real
-                try {
-                  List<Placemark> placemarks = await placemarkFromCoordinates(
-                      position.latitude, position.longitude);
-                  if (placemarks.isNotEmpty) {
-                    Placemark place = placemarks[0];
-                    setState(() {
-                      String locality = place.locality ?? '';
-                      String area = place.subAdministrativeArea ?? '';
-                      if (locality == area || area.isEmpty) {
-                        _loteName = locality;
-                      } else if (locality.isEmpty) {
-                        _loteName = area;
-                      } else {
-                        _loteName = "$locality, $area";
-                      }
-                      if (_loteName.trim().isEmpty) {
-                        _loteName = 'Santa Marta, Colombia';
-                      }
-                    });
-                  } else {
-                    setState(() => _loteName = 'Santa Marta, Colombia');
-                  }
-                } catch (_) {
-                  setState(() => _loteName = 'Santa Marta, Colombia');
-                }
-              }
-            }
-          } else {
-            if (mounted) {
-              try {
-                List<Placemark> placemarks = await placemarkFromCoordinates(
-                    position.latitude, position.longitude);
-                if (placemarks.isNotEmpty) {
-                  Placemark place = placemarks[0];
-                  setState(() {
-                    String locality = place.locality ?? '';
-                    String area = place.subAdministrativeArea ?? '';
-                    if (locality == area || area.isEmpty) {
-                      _loteName = locality;
-                    } else if (locality.isEmpty) {
-                      _loteName = area;
-                    } else {
-                      _loteName = "$locality, $area";
-                    }
-                    if (_loteName.trim().isEmpty) {
-                      _loteName = 'Santa Marta, Colombia';
-                    }
-                  });
-                } else {
-                  setState(() => _loteName = 'Santa Marta, Colombia');
-                }
-              } catch (_) {
-                setState(() => _loteName = 'Santa Marta, Colombia');
-              }
-            }
-          }
-        } else {
-          if (mounted) {
-            setState(() {
-              _loteName = lotes.isNotEmpty
-                  ? lotes.first['nombre']
-                  : 'Ubicación Desconocida';
-            });
-          }
-        }
-      } else {
+      if (latestLote == null) {
         if (mounted) {
           setState(() {
-            _loteName = lotes.isNotEmpty
-                ? lotes.first['nombre']
-                : 'Ubicación Desconocida';
+            _loteName = 'Sin lotes registrados';
+            _loteLocation = 'Registra un lote para ver su clima';
+            _temperature = '--°C';
+            _rainProb = '--%';
+            _isWeatherLoading = false;
           });
         }
+        await _fetchSoilStatus();
+        return;
       }
 
-      // 2. Fetch soil status
+      final lat = _toDouble(latestLote['latitud']);
+      final lon = _toDouble(latestLote['longitud']);
+      final loteName = (latestLote['nombre'] as String?) ?? 'Último lote';
+
+      String locationLabel = 'Sin coordenadas registradas';
+      if (lat != null && lon != null) {
+        locationLabel = await _locationLabel(lat, lon);
+      }
+
+      if (mounted) {
+        setState(() {
+          _loteName = loteName;
+          _loteLocation = locationLabel;
+        });
+      }
+
+      if (lat != null && lon != null) {
+        await _fetchWeatherForLote(lat, lon);
+      } else if (mounted) {
+        setState(() {
+          _temperature = '--°C';
+          _rainProb = '--%';
+          _isWeatherLoading = false;
+        });
+      }
+
+      await _fetchSoilStatus();
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _soilStatus = '68%';
+          _temperature = '--°C';
+          _rainProb = '--%';
+          _isWeatherLoading = false;
+        });
+      }
+    }
+  }
+
+  Map<String, dynamic>? _latestRegisteredLote(
+      List<Map<String, dynamic>> lotes) {
+    if (lotes.isEmpty) return null;
+
+    final sorted = List<Map<String, dynamic>>.from(lotes);
+    sorted.sort((a, b) {
+      final aDate = _parseDate(a['createdAt']);
+      final bDate = _parseDate(b['createdAt']);
+      return bDate.compareTo(aDate);
+    });
+    return sorted.first;
+  }
+
+  DateTime _parseDate(dynamic value) {
+    return DateTime.tryParse(value?.toString() ?? '') ??
+        DateTime.fromMillisecondsSinceEpoch(0);
+  }
+
+  double? _toDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    return double.tryParse(value.toString());
+  }
+
+  Future<String> _locationLabel(double lat, double lon) async {
+    try {
+      final placemarks = await placemarkFromCoordinates(lat, lon);
+      if (placemarks.isNotEmpty) {
+        final place = placemarks.first;
+        final locality = place.locality?.trim() ?? '';
+        final area = place.subAdministrativeArea?.trim() ?? '';
+        final department = place.administrativeArea?.trim() ?? '';
+
+        final parts = <String>[
+          if (locality.isNotEmpty) locality,
+          if (area.isNotEmpty && area != locality) area,
+          if (department.isNotEmpty &&
+              department != area &&
+              department != locality)
+            department,
+        ];
+
+        if (parts.isNotEmpty) return parts.join(', ');
+      }
+    } catch (_) {
+      // Si el geocoder no responde, se muestra la coordenada del lote.
+    }
+
+    return '${lat.toStringAsFixed(4)}, ${lon.toStringAsFixed(4)}';
+  }
+
+  Future<void> _fetchWeatherForLote(double lat, double lon) async {
+    if (mounted) {
+      setState(() => _isWeatherLoading = true);
+    }
+
+    final data = await _weatherService.getWeatherData(lat, lon);
+    if (mounted) {
+      setState(() {
+        _temperature = data['temperature'] ?? '--°C';
+        _rainProb = data['rainProbability'] ?? '--%';
+        _isWeatherLoading = false;
+      });
+    }
+  }
+
+  Future<void> _fetchSoilStatus() async {
+    try {
       final url = Uri.parse('${ApiEndpoints.baseUrl}/weather/sensor/humidity');
       final response = await http.get(url).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
@@ -250,7 +264,7 @@ class _HeroSectionState extends State<_HeroSection> {
           });
         }
       }
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
         setState(() {
           _soilStatus = '68%';
@@ -312,7 +326,23 @@ class _HeroSectionState extends State<_HeroSection> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(_loteName, style: AppText.h3()),
+                    Text(
+                      _loteName,
+                      style: AppText.h3(),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (_loteLocation != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        _loteLocation!,
+                        style: AppText.bodyMd(
+                          color: AppColors.onSurfaceVariant,
+                        ).copyWith(fontSize: 13),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -335,7 +365,11 @@ class _HeroSectionState extends State<_HeroSection> {
             ],
           ),
           const SizedBox(height: 15),
-          const _WeatherSection(),
+          _WeatherSection(
+            temperature: _temperature,
+            rainProb: _rainProb,
+            isLoading: _isWeatherLoading,
+          ),
           const SizedBox(height: 16),
           // Sync status
           Container(
@@ -566,86 +600,24 @@ class _QuickActionsCarouselState extends State<_QuickActionsCarousel> {
   }
 }
 
-class _WeatherSection extends StatefulWidget {
-  const _WeatherSection();
+class _WeatherSection extends StatelessWidget {
+  const _WeatherSection({
+    required this.temperature,
+    required this.rainProb,
+    required this.isLoading,
+  });
 
-  @override
-  State<_WeatherSection> createState() => _WeatherSectionState();
-}
-
-class _WeatherSectionState extends State<_WeatherSection> {
-  final WeatherService _weatherService = WeatherService();
-  String _temperature = '...';
-  String _rainProb = '...';
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchWeather();
-  }
-
-  Future<void> _fetchWeather() async {
-    try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        _setFallback();
-        return;
-      }
-
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          _setFallback();
-          return;
-        }
-      }
-
-      if (permission == LocationPermission.deniedForever) {
-        _setFallback();
-        return;
-      }
-
-      Position position = await Geolocator.getCurrentPosition(
-        locationSettings:
-            const LocationSettings(accuracy: LocationAccuracy.high),
-      );
-
-      final data = await _weatherService.getWeatherData(
-        position.latitude,
-        position.longitude,
-      );
-
-      if (mounted) {
-        setState(() {
-          _temperature = data['temperature'] ?? '--°C';
-          _rainProb = data['rainProbability'] ?? '--%';
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) _setFallback();
-    }
-  }
-
-  void _setFallback() {
-    if (mounted) {
-      setState(() {
-        _temperature = '--°C';
-        _rainProb = '--%';
-        _isLoading = false;
-      });
-    }
-  }
+  final String temperature;
+  final String rainProb;
+  final bool isLoading;
 
   IconData _getTempIcon() {
-    if (_temperature == '...' || _temperature == '--°C') {
+    if (temperature == '...' || temperature == '--°C') {
       return Icons.thermostat;
     }
     try {
       final val =
-          double.tryParse(_temperature.replaceAll('°C', '').trim()) ?? 25.0;
+          double.tryParse(temperature.replaceAll('°C', '').trim()) ?? 25.0;
       if (val > 30) return Icons.wb_sunny; // Hot
       if (val < 15) return Icons.ac_unit; // Cold
       return Icons.thermostat; // Mild
@@ -655,9 +627,9 @@ class _WeatherSectionState extends State<_WeatherSection> {
   }
 
   IconData _getRainIcon() {
-    if (_rainProb == '...' || _rainProb == '--%') return Icons.water_drop;
+    if (rainProb == '...' || rainProb == '--%') return Icons.water_drop;
     try {
-      final val = double.tryParse(_rainProb.replaceAll('%', '').trim()) ?? 0.0;
+      final val = double.tryParse(rainProb.replaceAll('%', '').trim()) ?? 0.0;
       if (val > 50) return Icons.umbrella; // High chance of rain
       return Icons.water_drop;
     } catch (_) {
@@ -669,10 +641,9 @@ class _WeatherSectionState extends State<_WeatherSection> {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Expanded(
-            child: _buildCard(_getTempIcon(), 'Temperatura', _temperature)),
+        Expanded(child: _buildCard(_getTempIcon(), 'Temperatura', temperature)),
         const SizedBox(width: 8),
-        Expanded(child: _buildCard(_getRainIcon(), 'Prob. Lluvia', _rainProb)),
+        Expanded(child: _buildCard(_getRainIcon(), 'Prob. Lluvia', rainProb)),
       ],
     );
   }
@@ -696,7 +667,7 @@ class _WeatherSectionState extends State<_WeatherSection> {
               color: AppColors.onSurfaceVariant,
             ).copyWith(fontSize: 14),
           ),
-          _isLoading
+          isLoading
               ? const SizedBox(
                   height: 24,
                   width: 24,

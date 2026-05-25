@@ -296,6 +296,7 @@ class LotesProvider extends ChangeNotifier {
         cultivoActualId: old.cultivoActualId,
         municipioId: serverMunicipioId ?? municipioId ?? old.municipioId,
         tipoSueloId: serverTipoSueloId ?? tipoSueloId ?? old.tipoSueloId,
+        siembraActualNombre: old.siembraActualNombre,
         latitud: latitud ?? old.latitud,
         longitud: longitud ?? old.longitud,
         estado: old.estado,

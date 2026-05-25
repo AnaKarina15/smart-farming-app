@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'core/network/dio_client.dart';
@@ -27,8 +28,11 @@ import 'data/providers/recomendaciones_provider.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Inicializar SQLite al arrancar
-  await DatabaseHelper.instance.database;
+  // Inicializar SQLite al arrancar en plataformas nativas.
+  // Flutter Web no soporta sqflite/path_provider de forma nativa.
+  if (!kIsWeb) {
+    await DatabaseHelper.instance.database;
+  }
 
   // Inicializacion de dependencias (poor man's DI)
   final tokenStorage = TokenStorage();
@@ -42,8 +46,10 @@ void main() async {
   final adminService = AdminService(dioClient);
   final recomendacionesService = RecomendacionesService(dioClient);
 
-  // Sincronizar catálogos en segundo plano al arrancar
-  catalogosSyncService.sincronizarCatalogos();
+  // Sincronizar catálogos en segundo plano al arrancar en plataformas nativas.
+  if (!kIsWeb) {
+    catalogosSyncService.sincronizarCatalogos();
+  }
 
   runApp(SmartFarmingApp(
     tokenStorage: tokenStorage,
@@ -116,7 +122,8 @@ class SmartFarmingApp extends StatelessWidget {
 
         // Provider de catálogos (Sprint 2)
         ChangeNotifierProvider<CatalogosProvider>(
-          create: (_) => CatalogosProvider(catalogosSyncService)..cargarCatalogos(),
+          create: (_) =>
+              CatalogosProvider(catalogosSyncService)..cargarCatalogos(),
         ),
 
         // Provider de operaciones (Sprint 3)

@@ -17,6 +17,7 @@ import '../../data/providers/lotes_provider.dart';
 import '../../data/providers/auth_provider.dart';
 import '../../data/providers/catalogos_provider.dart';
 import '../../data/models/lote_model.dart';
+import 'home_screen.dart';
 
 class RegisterLoteScreen extends StatefulWidget {
   final LoteModel? loteToEdit;
@@ -385,13 +386,16 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
 
     // ─── Límite de 5 ha eliminado ─────────
     final lotesProvider = context.read<LotesProvider>();
+    final auth = context.read<AuthProvider>();
     final isEditing = widget.loteToEdit != null;
+    final prefs = await SharedPreferences.getInstance();
+    final isFirstLote = !isEditing &&
+        !lotesProvider.hasLotes &&
+        !(prefs.getBool('has_lotes') ?? false);
 
     setState(() => _saving = true);
     try {
       // ─── REAL SAVE ─────────────────────────────────────────
-      final auth = context.read<AuthProvider>();
-
       // Construir descripción completa para offline
       final partes = <String>[];
       if (_manualLocationCtrl.text.trim().isNotEmpty) {
@@ -436,7 +440,8 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
 
       if (!success) {
         final rawError = lotesProvider.errorMessage ?? '';
-        final friendlyError = 'Error al ${isEditing ? 'actualizar' : 'guardar'} el lote: $rawError';
+        final friendlyError =
+            'Error al ${isEditing ? 'actualizar' : 'guardar'} el lote: $rawError';
         _showSnack(friendlyError);
         return;
       }
@@ -448,9 +453,6 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
 
     if (!mounted) return;
 
-    // Verificar si es el primer lote para mostrar un mensaje especial
-    final prefs = await SharedPreferences.getInstance();
-    final isFirstLote = !(prefs.getBool('has_lotes') ?? false);
     if (!isEditing) {
       await prefs.setBool('has_lotes', true);
     }
@@ -509,7 +511,16 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
     await Future.delayed(const Duration(seconds: 3));
     if (!mounted) return;
     Navigator.pop(context); // Close dialog
-    Navigator.pop(context, isEditing ? 'updated' : 'created'); // Back to list with result
+    if (isFirstLote) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+        (route) => false,
+      );
+      return;
+    }
+    Navigator.pop(
+        context, isEditing ? 'updated' : 'created'); // Back to list with result
   }
 
   void _showSnack(String msg) {
@@ -892,7 +903,8 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                                 filled: true,
                                 fillColor: AppColors.surface,
                                 hintText: 'Ej: Lote Norte',
-                                hintStyle: AppText.bodyMd(color: AppColors.outline),
+                                hintStyle:
+                                    AppText.bodyMd(color: AppColors.outline),
                                 prefixIcon: const Icon(Icons.landscape,
                                     color: AppColors.primary, size: 20),
                                 border: OutlineInputBorder(

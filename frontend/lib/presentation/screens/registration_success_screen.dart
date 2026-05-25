@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/providers/auth_provider.dart';
 import '../widgets/custom_app_bar.dart';
-import 'map_onboarding_screen.dart';
+import 'lotes_list_screen.dart';
 
 import 'dart:async';
 
@@ -12,7 +12,8 @@ class RegistrationSuccessScreen extends StatefulWidget {
   const RegistrationSuccessScreen({super.key});
 
   @override
-  State<RegistrationSuccessScreen> createState() => _RegistrationSuccessScreenState();
+  State<RegistrationSuccessScreen> createState() =>
+      _RegistrationSuccessScreenState();
 }
 
 class _RegistrationSuccessScreenState extends State<RegistrationSuccessScreen> {
@@ -26,7 +27,7 @@ class _RegistrationSuccessScreenState extends State<RegistrationSuccessScreen> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (_) => const MapOnboardingScreen(),
+            builder: (_) => const LotesListScreen(),
           ),
         );
       }
@@ -211,7 +212,7 @@ class _RegistrationSuccessScreenState extends State<RegistrationSuccessScreen> {
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const MapOnboardingScreen(),
+                        builder: (_) => const LotesListScreen(),
                       ),
                     );
                   },

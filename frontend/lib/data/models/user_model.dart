@@ -15,6 +15,10 @@ class UserModel {
   final String? createdBy;
   final String? fotoPerfilUrl;
 
+  /// Si es true, el backend requiere que el usuario cambie su contraseña
+  /// antes de acceder a la app (Sprint 1).
+  final bool mustChangePassword;
+
   UserModel({
     required this.id,
     required this.nombreCompleto,
@@ -27,6 +31,7 @@ class UserModel {
     required this.updatedAt,
     this.createdBy,
     this.fotoPerfilUrl,
+    this.mustChangePassword = false,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -44,6 +49,7 @@ class UserModel {
       updatedAt: DateTime.parse(json['updatedAt'] as String),
       createdBy: json['createdBy'] as String?,
       fotoPerfilUrl: json['fotoPerfilUrl'] as String?,
+      mustChangePassword: json['mustChangePassword'] as bool? ?? false,
     );
   }
 
@@ -85,4 +91,21 @@ class UserModel {
         return role[0].toUpperCase() + role.substring(1);
     }
   }
+
+  // ─── Helpers booleanos de rol (Sprint 1) ─────────────────
+
+  /// true si el usuario es administrador del sistema.
+  bool get esAdmin => role == 'administrador';
+
+  /// true si el usuario es pequeño productor (acceso principal a la app).
+  bool get esProductor => role == 'pequeno_productor';
+
+  /// true si el usuario es gestor de campo.
+  bool get esGestor => role == 'gestor';
+
+  /// true si el usuario es trabajador de campo.
+  bool get esTrabajador => role == 'trabajador';
+
+  /// true si el usuario tiene acceso al panel de administración.
+  bool get tieneAccesoAdmin => esAdmin;
 }

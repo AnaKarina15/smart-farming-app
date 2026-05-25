@@ -15,7 +15,7 @@ import 'package:path_provider/path_provider.dart';
 /// - observaciones  → observaciones generales del campo
 class DatabaseHelper {
   static const _databaseName = 'AgroField.db';
-  static const _databaseVersion = 10;
+  static const _databaseVersion = 11;
 
   // Nombres de tablas
   static const tableLotes = 'lotes';
@@ -34,6 +34,13 @@ class DatabaseHelper {
   static const tableCatPlagas = 'catalogo_plagas';
   static const tableCatFertilizantes = 'catalogo_fertilizantes';
   static const tableCatTiposSuelo = 'catalogo_tipos_suelo';
+
+  // Sistema Experto (Sprint 4)
+  static const tableReglas = 'reglas';
+  static const tableRecomendacionesAplicadas = 'recomendaciones_aplicadas';
+
+  // Sync metadata (Sprint 5)
+  static const tableSyncMetadata = 'sync_metadata';
 
   // Singleton
   DatabaseHelper._privateConstructor();
@@ -143,6 +150,13 @@ class DatabaseHelper {
         await db.execute('ALTER TABLE $tableObservaciones ADD COLUMN fotoPath TEXT');
       } catch (_) {}
     }
+    if (oldVersion < 11) {
+      // Sprint 4: Tablas del Sistema Experto
+      await _createReglas(db);
+      await _createRecomendacionesAplicadas(db);
+      // Sprint 5: Tabla de metadata de sync
+      await _createSyncMetadata(db);
+    }
   }
 
   Future<void> _createAllTables(Database db) async {
@@ -161,6 +175,11 @@ class DatabaseHelper {
     await _createCatalogoFertilizantes(db);
     await _createCatalogoTiposSuelo(db);
     await _createEstadoTerreno(db);
+    // Sprint 4
+    await _createReglas(db);
+    await _createRecomendacionesAplicadas(db);
+    // Sprint 5
+    await _createSyncMetadata(db);
   }
 
   // ─── Datos semilla (offline-first) ────────────────────────
@@ -509,6 +528,55 @@ class DatabaseHelper {
         isPendingSync INTEGER NOT NULL DEFAULT 1,
         serverId TEXT,
         syncError TEXT
+      )
+    ''');
+  }
+
+  // ─── Tablas Sprint 4: Sistema Experto ────────────────────
+
+  Future<void> _createReglas(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS $tableReglas (
+        id TEXT PRIMARY KEY,
+        codigo TEXT,
+        nombre TEXT NOT NULL,
+        tipoRecomendacion TEXT,
+        accionSugerida TEXT,
+        productoSugerido TEXT,
+        dosisRecomendada TEXT,
+        unidadRecomendada TEXT,
+        metodoAplicacion TEXT,
+        prioridad INTEGER DEFAULT 1,
+        fuenteCientifica TEXT,
+        motivoMatch TEXT,
+        loteId TEXT,
+        activo INTEGER DEFAULT 1,
+        syncedAt TEXT
+      )
+    ''');
+  }
+
+  Future<void> _createRecomendacionesAplicadas(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS $tableRecomendacionesAplicadas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        reglaId TEXT NOT NULL,
+        loteId TEXT NOT NULL,
+        decision TEXT NOT NULL,
+        notaProductor TEXT,
+        fecha TEXT NOT NULL,
+        isPendingSync INTEGER DEFAULT 1
+      )
+    ''');
+  }
+
+  // ─── Tabla Sprint 5: Sync Metadata ───────────────────────
+
+  Future<void> _createSyncMetadata(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS $tableSyncMetadata (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
       )
     ''');
   }

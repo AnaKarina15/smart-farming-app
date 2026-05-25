@@ -1,13 +1,18 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 
 class ApiEndpoints {
+  static const String _apiBaseUrl = String.fromEnvironment('API_BASE_URL');
+
   // Usamos un getter para que la URL se decida en tiempo de ejecución
   static String get baseUrl {
+    if (_apiBaseUrl.isNotEmpty) {
+      return _apiBaseUrl;
+    }
+
     if (kIsWeb) {
       // Si es navegador (Chrome/Edge)
       return 'http://localhost:3000/api/v1';
-    } else if (Platform.isAndroid) {
+    } else if (defaultTargetPlatform == TargetPlatform.android) {
       // --- CONFIGURACIÓN PARA ANDROID ---
       // Si usas el EMULADOR, descomenta la línea de abajo:
       return 'http://10.0.2.2:3000/api/v1';

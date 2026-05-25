@@ -1564,8 +1564,12 @@ class DatabaseHelper {
   Future<int> getPendingSyncCount() async {
     final db = await database;
     int total = 0;
+    final syncQueueCount = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM $tableSyncQueue',
+    );
+    total += (syncQueueCount.first['count'] as int? ?? 0);
+
     final tables = [
-      tableSyncQueue,
       tableSiembras,
       tableRiego,
       tableFertilizacion,
@@ -1575,18 +1579,10 @@ class DatabaseHelper {
       tableEstadoTerreno,
     ];
     for (final t in tables) {
-      try {
-        final result = await db.rawQuery(
-          'SELECT COUNT(*) as count FROM $t WHERE isPendingSync = 1',
-        );
-        total += (result.first['count'] as int? ?? 0);
-      } catch (_) {
-        // sync_queue no tiene isPendingSync
-        if (t == tableSyncQueue) {
-          final r = await db.rawQuery('SELECT COUNT(*) as count FROM $t');
-          total += (r.first['count'] as int? ?? 0);
-        }
-      }
+      final result = await db.rawQuery(
+        'SELECT COUNT(*) as count FROM $t WHERE isPendingSync = 1',
+      );
+      total += (result.first['count'] as int? ?? 0);
     }
     return total;
   }

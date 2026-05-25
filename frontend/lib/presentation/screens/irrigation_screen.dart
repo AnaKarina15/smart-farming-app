@@ -54,8 +54,8 @@ class _IrrigationScreenState extends State<IrrigationScreen> {
   }
 
   Future<void> _loadEditData() async {
-    final rows = await DatabaseHelper.instance.queryWhere(
-      DatabaseHelper.tableRiego, 'id = ?', [widget.idToEdit!]);
+    final rows = await DatabaseHelper.instance
+        .queryWhere(DatabaseHelper.tableRiego, 'id = ?', [widget.idToEdit!]);
     if (rows.isNotEmpty && mounted) {
       final data = rows.first;
       setState(() {
@@ -74,17 +74,18 @@ class _IrrigationScreenState extends State<IrrigationScreen> {
     final db = DatabaseHelper.instance;
 
     // Último riego de este lote
-    final riegos = await db.queryWhere(
-      DatabaseHelper.tableRiego, 'loteId = ?', [loteId]);
+    final riegos =
+        await db.queryWhere(DatabaseHelper.tableRiego, 'loteId = ?', [loteId]);
     DateTime? ultimo;
     if (riegos.isNotEmpty) {
-      riegos.sort((a, b) => (b['fecha'] as String).compareTo(a['fecha'] as String));
+      riegos.sort(
+          (a, b) => (b['fecha'] as String).compareTo(a['fecha'] as String));
       ultimo = DateTime.tryParse(riegos.first['fecha'] as String? ?? '');
     }
 
     // Cultivo actual del lote
-    final lotesRows = await db.queryWhere(
-      DatabaseHelper.tableLotes, 'id = ?', [loteId]);
+    final lotesRows =
+        await db.queryWhere(DatabaseHelper.tableLotes, 'id = ?', [loteId]);
     String? cultivo;
     if (lotesRows.isNotEmpty) {
       cultivo = lotesRows.first['cultivoActual'] as String?;
@@ -142,7 +143,8 @@ class _IrrigationScreenState extends State<IrrigationScreen> {
           String? newId;
           String? newNombre;
           if (widget.fixedLote != null) {
-            final found = lotes.where((l) => l.nombre == widget.fixedLote).toList();
+            final found =
+                lotes.where((l) => l.nombre == widget.fixedLote).toList();
             if (found.isNotEmpty) {
               newId = found.first.id;
               newNombre = found.first.nombre;
@@ -193,9 +195,10 @@ class _IrrigationScreenState extends State<IrrigationScreen> {
                   diasTexto = 'Último riego: hace $dias días';
                 }
               }
-              final cultivoTexto = (_cultivoActual != null && _cultivoActual!.isNotEmpty)
-                  ? ' para tu cultivo de ${_cultivoActual!.toLowerCase()}'
-                  : '';
+              final cultivoTexto =
+                  (_cultivoActual != null && _cultivoActual!.isNotEmpty)
+                      ? ' para tu cultivo de ${_cultivoActual!.toLowerCase()}'
+                      : '';
 
               return Container(
                 padding: const EdgeInsets.all(16),
@@ -207,7 +210,8 @@ class _IrrigationScreenState extends State<IrrigationScreen> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.water_drop, color: AppColors.secondary, size: 22),
+                    const Icon(Icons.water_drop,
+                        color: AppColors.secondary, size: 22),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -222,14 +226,16 @@ class _IrrigationScreenState extends State<IrrigationScreen> {
                           const SizedBox(height: 4),
                           Text(
                             'Aplicar ${litros}L en $loteNombre$cultivoTexto.',
-                            style: AppText.bodyMd(color: AppColors.onSecondaryContainer),
+                            style: AppText.bodyMd(
+                                color: AppColors.onSecondaryContainer),
                           ),
                           const SizedBox(height: 6),
                           Text(
                             diasTexto,
                             style: AppText.bodyMd(
                               color: AppColors.onSecondaryContainer,
-                            ).copyWith(fontSize: 12, fontStyle: FontStyle.italic),
+                            ).copyWith(
+                                fontSize: 12, fontStyle: FontStyle.italic),
                           ),
                         ],
                       ),
@@ -328,7 +334,8 @@ class _IrrigationScreenState extends State<IrrigationScreen> {
                     _ultimoRiego == null
                         ? 'Sin registros'
                         : () {
-                            final dias = DateTime.now().difference(_ultimoRiego!).inDays;
+                            final dias =
+                                DateTime.now().difference(_ultimoRiego!).inDays;
                             if (dias == 0) return 'Hoy';
                             if (dias == 1) return 'Ayer';
                             return 'Hace $dias días';
@@ -350,7 +357,8 @@ class _IrrigationScreenState extends State<IrrigationScreen> {
                         if (_liters <= 0) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('Por favor, indica una cantidad de agua mayor a 0 litros.'),
+                              content: Text(
+                                  'Por favor, indica una cantidad de agua mayor a 0 litros.'),
                               backgroundColor: AppColors.error,
                               behavior: SnackBarBehavior.floating,
                             ),
@@ -362,14 +370,15 @@ class _IrrigationScreenState extends State<IrrigationScreen> {
 
                       final user = context.read<AuthProvider>().currentUser;
                       final userId = user?.id ?? 'unknown';
-                      final id = widget.idToEdit ?? 'riego_${DateTime.now().millisecondsSinceEpoch}';
+                      final id = widget.idToEdit ??
+                          'riego_${DateTime.now().millisecondsSinceEpoch}';
                       final now = DateTime.now().toIso8601String();
 
                       final data = {
                         'id': id,
                         'loteId': _loteId,
                         'loteNombre': _loteNombre,
-                        'tipo': 'Manual',
+                        'tipo': 'manual',
                         'duracionMinutos': null,
                         'cantidadLitros': _liters,
                         'fecha': now,
@@ -379,12 +388,11 @@ class _IrrigationScreenState extends State<IrrigationScreen> {
 
                       if (widget.idToEdit != null) {
                         await DatabaseHelper.instance.update(
-                          DatabaseHelper.tableRiego, data,
-                          'id = ?', [id]);
+                            DatabaseHelper.tableRiego, data, 'id = ?', [id]);
                       } else {
                         data['createdAt'] = now;
-                        await DatabaseHelper.instance.insert(
-                          DatabaseHelper.tableRiego, data);
+                        await DatabaseHelper.instance
+                            .insert(DatabaseHelper.tableRiego, data);
                       }
 
                       if (!context.mounted) return;

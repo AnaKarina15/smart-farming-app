@@ -46,11 +46,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final exito = await syncService.syncNow(lotesProvider: lotesProvider);
 
     if (!mounted) return;
+    final sigueOnline = lotesProvider.isOnline;
     setState(() {
       _sincronizando = false;
       _mensajeSync = exito
           ? '✓ Sincronización exitosa'
-          : '✗ Sin conexión. Los datos locales están seguros.';
+          : sigueOnline
+              ? '✗ No se pudieron enviar todos los pendientes. Inténtalo de nuevo.'
+              : '✗ Sin conexión. Los datos locales están seguros.';
     });
   }
 
@@ -60,6 +63,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final pendientes = lotesProvider.pendingSyncCount;
     final isOnline = lotesProvider.isOnline;
     final lastSync = lotesProvider.lastSync;
+    final syncExitosa = _mensajeSync?.startsWith('✓') ?? false;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -127,7 +131,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     style: AppText.bodyMd(color: AppColors.onSurfaceVariant),
                   ),
                   // Pendientes
-                  if (pendientes > 0) ...[
+                  if (!syncExitosa && pendientes > 0) ...[
                     const SizedBox(height: 8),
                     Row(
                       children: [
@@ -142,7 +146,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                       ],
                     ),
-                  ] else ...[
+                  ] else if (!syncExitosa) ...[
                     const SizedBox(height: 8),
                     Row(
                       children: [
@@ -221,7 +225,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const GlobalHistoryScreen()),
+                  MaterialPageRoute(
+                      builder: (_) => const GlobalHistoryScreen()),
                 );
               },
             ),

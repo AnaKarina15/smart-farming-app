@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:dio/dio.dart';
 import '../../core/network/dio_client.dart';
 import '../../core/storage/database_helper.dart';
 import '../providers/lotes_provider.dart';
@@ -32,19 +31,21 @@ class SyncService {
 
     bool huboErrores = false;
 
-    // 1. Drenar la cola genérica (acciones POST/PATCH/DELETE de lotes)
-    huboErrores = !(await _drenaQueueGeneral()) || huboErrores;
-
-    // 2. Sincronizar operaciones via Batch Sync (Sprint 5)
+    // 1. Sincronizar operaciones via Batch Sync (Sprint 5)
     final batchOk = await _batchSync.syncBatch();
     if (!batchOk) huboErrores = true;
+
+    // 2. Drenar la cola genérica (acciones POST/PATCH/DELETE de lotes)
+    // y limpiar entradas duplicadas de operaciones ya sincronizadas por batch.
+    huboErrores = !(await _drenaQueueGeneral()) || huboErrores;
 
     // 3. Recargar lotes desde el backend y actualizar caché local
     if (lotesProvider != null) {
       await lotesProvider.recargar();
     }
 
-    return !huboErrores;
+    final pendientes = await _db.getPendingSyncCount();
+    return !huboErrores && pendientes == 0;
   }
 
   /// Drena la tabla sync_queue: envía cada acción pendiente al backend.
@@ -52,6 +53,7 @@ class SyncService {
     try {
       final queue = await _db.queryAllRows(DatabaseHelper.tableSyncQueue);
       final db = await _db.database;
+      var todoOk = true;
 
       for (final action in queue) {
         try {
@@ -60,6 +62,16 @@ class SyncService {
           final rawPayload = action['payload'] != null
               ? json.decode(action['payload'] as String) as Map<String, dynamic>
               : null;
+
+          final localId = rawPayload?['localId'] as String?;
+          if (await _isStaleOperationQueueItem(endpoint, localId)) {
+            await db.delete(
+              DatabaseHelper.tableSyncQueue,
+              where: 'id = ?',
+              whereArgs: [action['id']],
+            );
+            continue;
+          }
 
           // Limpiar campos UUID vacíos antes de enviar al servidor
           // Evita error "must be a UUID" por registros encolados con string vacío
@@ -93,81 +105,52 @@ class SyncService {
             whereArgs: [action['id']],
           );
         } catch (_) {
+          todoOk = false;
           // Deja la acción en la cola para el próximo intento
         }
       }
-      return true;
+      return todoOk;
     } catch (e) {
       return false;
     }
   }
 
-  // ─── Módulos Operativos (Sprint 3) ───────────────────────
+  Future<bool> _isStaleOperationQueueItem(
+    String endpoint,
+    String? localId,
+  ) async {
+    final table = _operationTableForEndpoint(endpoint);
+    if (table == null) return false;
+    if (localId == null || localId.isEmpty) return true;
 
-  // Método legacy mantenido por compatibilidad retroactiva.
-  // La lógica real de sync de operaciones ahora vive en BatchSyncService.
-  // Puede ser eliminado en una próxima iteración de limpieza.
-  Future<void> _syncOperaciones() async {
-    // No-op: ahora delega al BatchSyncService
+    final rows = await _db.queryWhere(table, 'id = ?', [localId]);
+    if (rows.isEmpty) return true;
+
+    final isPending = rows.first['isPendingSync'] == 1;
+    return !isPending;
   }
 
-  Future<void> _syncModuloOperativo({
-    required String tabla,
-    required String endpointBase,
-    required Map<String, dynamic> Function(Map<String, dynamic>) mapper,
-  }) async {
-    final pendientes = await _db.queryWhere(
-      tabla,
-      'isPendingSync = ? AND syncError IS NULL',
-      [1],
-    );
+  String? _operationTableForEndpoint(String endpoint) {
+    final path = endpoint.split('?').first;
+    final segments = path.split('/').where((s) => s.isNotEmpty).toList();
+    if (segments.isEmpty) return null;
 
-    final db = await _db.database;
+    const endpointTables = {
+      'siembras': DatabaseHelper.tableSiembras,
+      'riego': DatabaseHelper.tableRiego,
+      'fertilizacion': DatabaseHelper.tableFertilizacion,
+      'hallazgos': DatabaseHelper.tableHallazgos,
+      'tratamientos': DatabaseHelper.tableTratamientos,
+      'observaciones': DatabaseHelper.tableObservaciones,
+      'estado-terreno': DatabaseHelper.tableEstadoTerreno,
+    };
 
-    for (final row in pendientes) {
-      try {
-        final payload = mapper(row);
-        final response = await _dioClient.dio.post(endpointBase, data: payload);
-        
-        // 201 Created -> Marcar como sincronizado y guardar serverId
-        if (response.statusCode == 201) {
-          await db.update(
-            tabla,
-            {
-              'isPendingSync': 0,
-              'serverId': response.data['data']['id'],
-              'syncError': null,
-            },
-            where: 'id = ?',
-            whereArgs: [row['id']],
-          );
-        }
-      } on DioException catch (e) {
-        // Solo marcar con syncError en errores de negocio (400, 403)
-        // Los 404 ya no generan IDs mock_ — se dejan en cola para el batch sync
-        if (e.response != null &&
-            (e.response!.statusCode == 400 ||
-                e.response!.statusCode == 403)) {
-          final errorData = e.response!.data;
-          String errorMsg = 'Error desconocido';
-          if (errorData is Map && errorData.containsKey('message')) {
-            final msg = errorData['message'];
-            errorMsg = msg is List ? msg.join('\n') : msg.toString();
-          }
-
-          // Marcar con syncError para revisión manual
-          await db.update(
-            tabla,
-            {'syncError': errorMsg},
-            where: 'id = ?',
-            whereArgs: [row['id']],
-          );
-        }
-        // 404 y errores de red: dejar en cola sin modificar
-      } catch (_) {
-        // Fallos de red se dejan para el siguiente intento
-      }
+    for (final segment in segments) {
+      final table = endpointTables[segment];
+      if (table != null) return table;
     }
+
+    return null;
   }
 
   // ─── Añadir a la cola ─────────────────────────────────────

@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -63,7 +62,7 @@ class BatchSyncService {
 
       // 4. Procesar resultados
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = response.data;
+        final data = _unwrapResponseData(response.data);
         final resultados = (data['results'] as List<dynamic>?) ?? [];
         await _procesarResultados(resultados);
 
@@ -93,8 +92,7 @@ class BatchSyncService {
 
   Future<bool> _validarToken() async {
     try {
-      final response =
-          await _dioClient.dio.get(ApiEndpoints.syncValidateToken);
+      final response = await _dioClient.dio.get(ApiEndpoints.syncValidateToken);
       return response.statusCode == 200;
     } catch (_) {
       return false;
@@ -112,19 +110,20 @@ class BatchSyncService {
 
       final pendientes = await _db.queryWhere(
         tabla,
-        'isPendingSync = ? AND syncError IS NULL',
+        'isPendingSync = ?',
         [1],
       );
 
       for (final row in pendientes) {
-        final localId = '${tabla}:${row['id']}';
-        final payload = _limpiarPayload(row);
+        final localId = '$tabla:${row['id']}';
+        final payload = _limpiarPayload(tabla, row);
 
         items.add({
           'localId': localId,
           'resourceType': resourceType,
           'operation': 'create',
-          'clientUpdatedAt': row['createdAt'] ?? DateTime.now().toIso8601String(),
+          'clientUpdatedAt':
+              row['createdAt'] ?? DateTime.now().toIso8601String(),
           'payload': payload,
         });
       }
@@ -134,12 +133,20 @@ class BatchSyncService {
   }
 
   /// Elimina campos internos que no debe conocer el backend.
-  Map<String, dynamic> _limpiarPayload(Map<String, dynamic> row) {
+  Map<String, dynamic> _limpiarPayload(
+    String tabla,
+    Map<String, dynamic> row,
+  ) {
     final excluir = {
-      'id', 'isPendingSync', 'serverId', 'syncError',
-      'userId', 'loteNombre', 'createdAt',
+      'id',
+      'isPendingSync',
+      'serverId',
+      'syncError',
+      'userId',
+      'loteNombre',
+      'createdAt',
     };
-    return Map.fromEntries(
+    final payload = Map.fromEntries(
       row.entries.where((e) {
         if (excluir.contains(e.key)) return false;
         if (e.value == null) return false;
@@ -147,6 +154,45 @@ class BatchSyncService {
         return true;
       }),
     );
+
+    if (tabla == DatabaseHelper.tableRiego) {
+      final tipo = _normalizarTipoRiego(payload['tipo']);
+      if (tipo != null) {
+        payload['tipo'] = tipo;
+      }
+    }
+
+    return payload;
+  }
+
+  String? _normalizarTipoRiego(dynamic value) {
+    if (value == null) return null;
+
+    final normalized = value
+        .toString()
+        .trim()
+        .toLowerCase()
+        .replaceAll('á', 'a')
+        .replaceAll('é', 'e')
+        .replaceAll('í', 'i')
+        .replaceAll('ó', 'o')
+        .replaceAll('ú', 'u')
+        .replaceAll('ü', 'u')
+        .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+        .replaceAll(RegExp(r'_+'), '_')
+        .replaceAll(RegExp(r'^_|_$'), '');
+
+    const aliases = {
+      'goteo': 'goteo',
+      'aspersion': 'aspersion',
+      'microaspersion': 'microaspersion',
+      'micro_aspersion': 'microaspersion',
+      'gravedad': 'gravedad',
+      'manual': 'manual',
+      'inundacion': 'inundacion',
+    };
+
+    return aliases[normalized] ?? normalized;
   }
 
   // ─── Procesamiento de resultados ──────────────────────────
@@ -188,7 +234,8 @@ class BatchSyncService {
           break;
 
         case 'error':
-          final errorMsg = resultado['error'] as String? ?? 'Error del servidor';
+          final errorMsg =
+              resultado['error'] as String? ?? 'Error del servidor';
           await db.update(
             tabla,
             {'syncError': errorMsg},
@@ -217,8 +264,8 @@ class BatchSyncService {
       final response = await _dioClient.dio.get(url);
       if (response.statusCode != 200) return;
 
-      final data = response.data;
-      final registros = data['data'] as List<dynamic>? ?? [];
+      final data = _unwrapResponseData(response.data);
+      final registros = _flattenChanges(data['changes']);
 
       await _upsertRegistrosLocales(registros);
 
@@ -230,6 +277,48 @@ class BatchSyncService {
     } catch (_) {
       // Pull incremental falla silenciosamente; se reintentará en el próximo sync
     }
+  }
+
+  Map<String, dynamic> _unwrapResponseData(dynamic responseData) {
+    if (responseData is Map<String, dynamic>) {
+      final data = responseData['data'];
+      if (data is Map<String, dynamic>) return data;
+      return responseData;
+    }
+    return {};
+  }
+
+  List<Map<String, dynamic>> _flattenChanges(dynamic changes) {
+    if (changes is! Map<String, dynamic>) return [];
+
+    final pullKeyToResourceType = {
+      'siembras': 'siembras',
+      'riego': 'riego',
+      'fertilizacion': 'fertilizacion',
+      'hallazgos': 'hallazgos',
+      'tratamientos': 'tratamientos',
+      'observaciones': 'observaciones',
+      'estadoTerreno': 'estado-terreno',
+    };
+
+    final registros = <Map<String, dynamic>>[];
+    for (final entry in changes.entries) {
+      final resourceType = pullKeyToResourceType[entry.key];
+      final items = entry.value;
+      if (resourceType == null || items is! List) continue;
+
+      for (final item in items) {
+        if (item is Map<String, dynamic>) {
+          registros.add({
+            'resourceType': resourceType,
+            'payload': item,
+            'deletedAt': item['deletedAt'],
+          });
+        }
+      }
+    }
+
+    return registros;
   }
 
   Future<void> _upsertRegistrosLocales(List<dynamic> registros) async {
@@ -253,7 +342,8 @@ class BatchSyncService {
 
       if (deletedAt != null) {
         // Soft-delete del servidor: eliminar localmente
-        await db.delete(tabla, where: 'serverId = ?', whereArgs: [payload['id']]);
+        await db
+            .delete(tabla, where: 'serverId = ?', whereArgs: [payload['id']]);
       } else {
         // Upsert
         final row = Map<String, dynamic>.from(payload);

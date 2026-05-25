@@ -36,11 +36,14 @@ export class CreateTratamientoDto {
 
   @ApiProperty({
     format: 'uuid',
-    required: true,
-    description: 'ID del hallazgo asociado (si el tratamiento responde a una plaga detectada)',
+    required: false,
+    description:
+      'ID del hallazgo asociado. Opcional: si se omite, el tratamiento es ' +
+      'preventivo (no responde a una plaga detectada previamente).',
   })
+  @IsOptional()
   @IsUUID()
-  hallazgoId!: string;
+  hallazgoId?: string;
 
   @ApiProperty({
     example: 'Mancozeb 80% WP',

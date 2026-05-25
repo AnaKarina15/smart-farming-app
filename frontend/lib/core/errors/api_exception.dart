@@ -30,7 +30,8 @@ class ApiException implements Exception {
       if (message is String) {
         serverMessage = message.replaceAll(RegExp(r'[\[\]]'), '');
       } else if (message is List && message.isNotEmpty) {
-        serverMessage = message.first.toString().replaceAll(RegExp(r'[\[\]]'), '');
+        serverMessage =
+            message.first.toString().replaceAll(RegExp(r'[\[\]]'), '');
       }
     }
 
@@ -39,7 +40,8 @@ class ApiException implements Exception {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
-        message = 'Tiempo de conexion agotado. Verifica tu internet.';
+        message =
+            'El servidor esta tardando en responder. Intenta de nuevo en unos segundos.';
         break;
       case DioExceptionType.connectionError:
         message = 'No se pudo conectar al servidor. Verifica tu internet.';

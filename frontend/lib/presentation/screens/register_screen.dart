@@ -62,13 +62,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
               'Error al crear cuenta. Verifica tus datos.';
           final errorStr = rawMsg.toLowerCase();
 
-          if (errorStr.contains('conexi') ||
-              errorStr.contains('servidor') ||
-              errorStr.contains('internet')) {
+          if (errorStr.contains('conexi') || errorStr.contains('internet')) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(
                   'Sin conexión al servidor. Verifica tu internet.',
+                  style: AppText.bodyMd(color: AppColors.onError),
+                ),
+                backgroundColor: AppColors.error,
+              ),
+            );
+          } else if (errorStr.contains('tardando') ||
+              errorStr.contains('tiempo') ||
+              errorStr.contains('timeout')) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'El servidor está despertando. Espera unos segundos e intenta de nuevo.',
                   style: AppText.bodyMd(color: AppColors.onError),
                 ),
                 backgroundColor: AppColors.error,
@@ -139,7 +149,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         text: 'AGROFIELD',
                         style: AppText.h2(
                           color: AppColors.primary,
-                        ).copyWith(letterSpacing: 2.4, fontWeight: FontWeight.w800),
+                        ).copyWith(
+                            letterSpacing: 2.4, fontWeight: FontWeight.w800),
                       ),
                     ],
                   ),

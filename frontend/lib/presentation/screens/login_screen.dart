@@ -91,7 +91,6 @@ class _LoginScreenState extends State<LoginScreen> {
           final errorStr = (authProvider.errorMessage ?? '').toLowerCase();
 
           if (errorStr.contains('conexi') ||
-              errorStr.contains('servidor') ||
               errorStr.contains('internet') ||
               errorStr.contains('tiempo') ||
               errorStr.contains('timeout')) {

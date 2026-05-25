@@ -7,7 +7,7 @@ import 'api_endpoints.dart';
 /// Configura:
 /// - URL base
 /// - Headers JSON
-/// - Timeouts razonables (15s connect/receive)
+/// - Timeouts amplios para backend en Render free (cold starts)
 /// - Interceptor que agrega JWT automaticamente
 /// - Refresh token automatico cuando expira el access token
 /// - Logging en modo debug
@@ -19,8 +19,8 @@ class DioClient {
     _dio = Dio(
       BaseOptions(
         baseUrl: ApiEndpoints.baseUrl,
-        connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 15),
+        connectTimeout: const Duration(seconds: 60),
+        receiveTimeout: const Duration(seconds: 60),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -56,7 +56,8 @@ class DioClient {
             if (refreshed) {
               // Reintentar la peticion original con el nuevo token
               final newToken = await _tokenStorage.getAccessToken();
-              error.requestOptions.headers['Authorization'] = 'Bearer $newToken';
+              error.requestOptions.headers['Authorization'] =
+                  'Bearer $newToken';
               try {
                 final response = await _dio.fetch(error.requestOptions);
                 return handler.resolve(response);

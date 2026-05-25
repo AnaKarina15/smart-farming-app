@@ -8,5 +8,5 @@ export default registerAs('database', () => ({
   database: process.env.DB_DATABASE || 'agrofield_db',
   synchronize: process.env.DB_SYNCHRONIZE === 'true',
   logging: process.env.DB_LOGGING === 'true',
-  ssl: process.env.DB_SSL === 'true',
+  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
 }));

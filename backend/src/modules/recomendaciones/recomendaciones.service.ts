@@ -20,6 +20,7 @@ import { FaseAgronomica } from './entities/fase-agronomica.enum';
 import { RecomendacionAplicada } from './entities/recomendacion-aplicada.entity';
 import { Regla } from './entities/regla.entity';
 import { RecomendacionesRepository } from './recomendaciones.repository';
+import { ContextoClimaticoService } from './contexto-climatico.service';
 
 /**
  * Service del Sistema Experto de Recomendaciones (Sprint 4).
@@ -56,6 +57,7 @@ export class RecomendacionesService {
     private readonly hallazgosRepo: Repository<Hallazgo>,
     @InjectRepository(Riego)
     private readonly riegosRepo: Repository<Riego>,
+    private readonly contextoClimaticoService: ContextoClimaticoService,
   ) {}
 
   // ════════════════════════════════════════════════════════════
@@ -350,7 +352,8 @@ export class RecomendacionesService {
       : null;
 
     const fase = this.calcularFaseAgronomica(lote.cultivoActualId, diasDesdeSiembra);
-    const estacion = this.calcularEstacionActual(ahora);
+    const contextoClimatico = await this.contextoClimaticoService.getContextoParaLote(loteId);
+    const estacion = contextoClimatico.estacionInferida ?? this.calcularEstacionActual(ahora);
 
     return {
       cultivoId: lote.cultivoActualId,
@@ -360,7 +363,7 @@ export class RecomendacionesService {
       diasSinRiego,
       faseAgronomica: fase,
       estacion,
-      humedadActual: ultimoRiego?.humedad ?? null,
+      humedadActual: contextoClimatico.humedadSuelo ?? ultimoRiego?.humedad ?? null,
     };
   }
 

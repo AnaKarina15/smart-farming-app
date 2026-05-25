@@ -8,6 +8,8 @@ import { WeatherQueryDto } from './dto/weather-query.dto';
 import { WeatherResponseDto } from './dto/weather-response.dto';
 import { WeatherLoteService } from './weather-lote.service';
 import { WeatherService } from './weather.service';
+import { WeatherHistorialQueryDto } from './dto/weather-historial-query.dto';
+import { WeatherHistorialService } from './weather-historial.service';
 
 /**
  * Controller del modulo de clima (Sprint 6).
@@ -23,6 +25,7 @@ export class WeatherController {
   constructor(
     private readonly weatherService: WeatherService,
     private readonly weatherLoteService: WeatherLoteService,
+    private readonly weatherHistorialService: WeatherHistorialService,
   ) {}
 
   @Get('current')
@@ -44,6 +47,21 @@ export class WeatherController {
     @Query('dias') dias?: number,
   ): Promise<WeatherResponseDto> {
     return this.weatherService.getWeather(query.lat, query.lon, dias ? Number(dias) : 5);
+  }
+  @Get('lote/:loteId/historial')
+  @ApiOperation({
+    summary: 'Historial climatico de un lote',
+    description:
+      'Devuelve el historial climatico persistido por lote en un rango de fechas. ' +
+      'El historial se alimenta automaticamente al consultar GET /weather/lote/:loteId.',
+  })
+  @ApiResponse({ status: 200 })
+  getHistorialLote(
+    @CurrentUser() user: JwtPayload,
+    @Param('loteId', ParseUUIDPipe) loteId: string,
+    @Query() query: WeatherHistorialQueryDto,
+  ) {
+    return this.weatherHistorialService.findHistorialLote(loteId, user, query);
   }
 
   @Get('lote/:loteId')

@@ -8,6 +8,8 @@ import { UserRole } from '@/modules/users/entities/user-role.enum';
 
 import { WeatherResponseDto } from './dto/weather-response.dto';
 import { WeatherService } from './weather.service';
+import { WeatherHistorialQueryDto } from './dto/weather-historial-query.dto';
+import { WeatherHistorialService } from './weather-historial.service';
 
 /**
  * Resuelve el clima de un lote a partir de sus coordenadas.
@@ -17,6 +19,7 @@ import { WeatherService } from './weather.service';
 export class WeatherLoteService {
   constructor(
     private readonly weatherService: WeatherService,
+    private readonly weatherHistorialService: WeatherHistorialService,
     @InjectRepository(Lote)
     private readonly lotesRepo: Repository<Lote>,
   ) {}
@@ -38,6 +41,10 @@ export class WeatherLoteService {
       );
     }
 
-    return this.weatherService.getWeather(Number(lote.latitud), Number(lote.longitud), dias);
+    const weather = await this.weatherService.getWeather(Number(lote.latitud), Number(lote.longitud), dias);
+
+    await this.weatherHistorialService.registrarConsultaLote(lote.id, weather);
+
+    return weather;
   }
 }

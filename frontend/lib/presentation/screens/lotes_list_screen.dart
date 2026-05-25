@@ -68,177 +68,182 @@ class _LotesListScreenState extends State<LotesListScreen> {
     final lotes = lotesProvider.lotes;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.white,
       appBar: const CustomAppBar(),
-      body: Column(
-        children: [
-          const OfflineBanner(),
+      body: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
+        ),
+        slivers: [
+          const SliverToBoxAdapter(child: OfflineBanner()),
 
           // ── Success banner ──────────────────────────────────────────────
           if (_showSuccess)
-            Container(
-              color: AppColors.primaryContainer,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              child: Row(
-                children: [
-                  const Icon(Icons.check_circle,
-                      color: AppColors.primary, size: 22),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      'Operación exitosa',
-                      style: AppText.bodyMd(color: AppColors.primary)
-                          .copyWith(fontWeight: FontWeight.w700),
+            SliverToBoxAdapter(
+              child: Container(
+                color: AppColors.primaryContainer,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                child: Row(
+                  children: [
+                    const Icon(Icons.check_circle,
+                        color: AppColors.primary, size: 22),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Operación exitosa',
+                        style: AppText.bodyMd(color: AppColors.primary)
+                            .copyWith(fontWeight: FontWeight.w700),
+                      ),
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close,
-                        color: AppColors.onPrimaryContainer, size: 18),
-                    onPressed: () => setState(() => _showSuccess = false),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
-                ],
+                    IconButton(
+                      icon: const Icon(Icons.close,
+                          color: AppColors.onPrimaryContainer, size: 18),
+                      onPressed: () => setState(() => _showSuccess = false),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
+                ),
               ),
             ),
 
           // ── Aerial map ─────────────────────────────────────────────────
-          SizedBox(
-            height: 220,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                // Background aerial image
-                Image.network(
-                  'https://lh3.googleusercontent.com/aida-public/AB6AXuBsUK2cmiOCSLZbIzw72ZAGUTI9xT45aBEMw-YhRLnceBHfiaicb2r59y5pW0Ognlpok-C8xZoQVJu8VrEZRIlegBzMZBxV9rirIx12D4Nw33aYATZe3JR-zgA_xlzjMx5BVyKklXWXsJVrGtekg1t0ptJCKO2UqAlF5SBFeSTHMUhiC4ZOI5EVaRG2Yh-CMoGhl2BZXDbyKCPVPGUAyXJFg4Ez5d5UyQbx1AHJow1euOOwd87l8bRePyF_hT4QkublwLV8Mg7XwoF-',
-                  fit: BoxFit.cover,
-                  color: Colors.white.withValues(alpha: 0.8),
-                  colorBlendMode: BlendMode.dstIn,
-                ),
-
-                // Polygons
-                CustomPaint(
-                  painter: _AerialMapPainter(
-                    lotes: lotes,
-                    selectedIndex: _selectedLoteIndex,
-                    statusColor: _statusColor,
-                  ),
-                ),
-
-                // Bottom-right: Add button
-                Positioned(
-                  bottom: 16,
-                  right: 16,
-                  child: GestureDetector(
-                    onTap: () async {
-                      final messenger = ScaffoldMessenger.of(context);
-                      final result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const RegisterLoteScreen()),
-                      );
-                      if (result != null && mounted) {
-                        messenger.showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              result == 'updated'
-                                  ? 'Lote actualizado con éxito'
-                                  : 'Lote registrado con éxito',
-                              style: AppText.bodyMd(color: Colors.white)
-                                  .copyWith(fontWeight: FontWeight.w600),
-                            ),
-                            backgroundColor: AppColors.primary,
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
-                      }
-                    },
-                    child: Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        boxShadow: [
-                          BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.2),
-                              blurRadius: 6)
-                        ],
-                      ),
-                      child: const Icon(Icons.add,
-                          color: Colors.black87, size: 24),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // ── Lot cards list ─────────────────────────────────────────────
-          Expanded(
-            child: Container(
-              color: Colors.white,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+          SliverToBoxAdapter(
+            child: SizedBox(
+              height: 220,
+              child: Stack(
+                fit: StackFit.expand,
                 children: [
-                  // Static title row
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Mis Lotes', style: AppText.h2()),
-                        Text('${lotes.length} registrados',
-                            style: AppText.bodyMd(
-                                color: AppColors.onSurfaceVariant)),
-                      ],
+                  // Background aerial image
+                  Image.network(
+                    'https://lh3.googleusercontent.com/aida-public/AB6AXuBsUK2cmiOCSLZbIzw72ZAGUTI9xT45aBEMw-YhRLnceBHfiaicb2r59y5pW0Ognlpok-C8xZoQVJu8VrEZRIlegBzMZBxV9rirIx12D4Nw33aYATZe3JR-zgA_xlzjMx5BVyKklXWXsJVrGtekg1t0ptJCKO2UqAlF5SBFeSTHMUhiC4ZOI5EVaRG2Yh-CMoGhl2BZXDbyKCPVPGUAyXJFg4Ez5d5UyQbx1AHJow1euOOwd87l8bRePyF_hT4QkublwLV8Mg7XwoF-',
+                    fit: BoxFit.cover,
+                    color: Colors.white.withValues(alpha: 0.8),
+                    colorBlendMode: BlendMode.dstIn,
+                  ),
+
+                  // Polygons
+                  CustomPaint(
+                    painter: _AerialMapPainter(
+                      lotes: lotes,
+                      selectedIndex: _selectedLoteIndex,
+                      statusColor: _statusColor,
                     ),
                   ),
-                  const SizedBox(height: 16),
 
-                  // Scrollable cards or Empty State
-                  Expanded(
-                    child: lotes.isEmpty
-                        ? _buildEmptyState(context)
-                        : SingleChildScrollView(
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            child: Column(
-                              children: [
-                                ...List.generate(lotes.length, (i) {
-                                  final lote = lotes[i];
-                                  return Padding(
-                                    padding: const EdgeInsets.only(bottom: 14),
-                                    child: GestureDetector(
-                                      onTap: () {
-                                        setState(() {
-                                          if (_selectedLoteIndex == i) {
-                                            _selectedLoteIndex =
-                                                null; // Toggle to close
-                                          } else {
-                                            _selectedLoteIndex = i;
-                                          }
-                                        });
-                                      },
-                                      child: _LoteCard(
-                                        lote: lote,
-                                        isSelected: _selectedLoteIndex == i,
-                                        statusColor: _statusColor(
-                                            lote.estado == 'alerta'
-                                                ? LoteStatus.alert
-                                                : LoteStatus.active),
-                                      ),
-                                    ),
-                                  );
-                                }),
-                                const SizedBox(height: 8),
-                              ],
+                  // Bottom-right: Add button
+                  Positioned(
+                    bottom: 16,
+                    right: 16,
+                    child: GestureDetector(
+                      onTap: () async {
+                        final messenger = ScaffoldMessenger.of(context);
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const RegisterLoteScreen()),
+                        );
+                        if (result != null && mounted) {
+                          messenger.showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                result == 'updated'
+                                    ? 'Lote actualizado con éxito'
+                                    : 'Lote registrado con éxito',
+                                style: AppText.bodyMd(color: Colors.white)
+                                    .copyWith(fontWeight: FontWeight.w600),
+                              ),
+                              backgroundColor: AppColors.primary,
+                              behavior: SnackBarBehavior.floating,
                             ),
-                          ),
+                          );
+                        }
+                      },
+                      child: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: [
+                            BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.2),
+                                blurRadius: 6)
+                          ],
+                        ),
+                        child: const Icon(Icons.add,
+                            color: Colors.black87, size: 24),
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
           ),
+
+          // ── Lot cards list ─────────────────────────────────────────────
+          SliverToBoxAdapter(
+            child: Container(
+              color: Colors.white,
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Mis Lotes', style: AppText.h2()),
+                  Text('${lotes.length} registrados',
+                      style: AppText.bodyMd(color: AppColors.onSurfaceVariant)),
+                ],
+              ),
+            ),
+          ),
+          if (lotes.isEmpty)
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Container(
+                color: Colors.white,
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+                child: _buildEmptyState(context),
+              ),
+            )
+          else ...[
+            SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, i) {
+                  final lote = lotes[i];
+                  return Container(
+                    color: Colors.white,
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          if (_selectedLoteIndex == i) {
+                            _selectedLoteIndex = null; // Toggle to close
+                          } else {
+                            _selectedLoteIndex = i;
+                          }
+                        });
+                      },
+                      child: _LoteCard(
+                        lote: lote,
+                        isSelected: _selectedLoteIndex == i,
+                        statusColor: _statusColor(lote.estado == 'alerta'
+                            ? LoteStatus.alert
+                            : LoteStatus.active),
+                      ),
+                    ),
+                  );
+                },
+                childCount: lotes.length,
+              ),
+            ),
+            const SliverToBoxAdapter(
+              child: ColoredBox(
+                color: Colors.white,
+                child: SizedBox(height: 24),
+              ),
+            ),
+          ],
         ],
       ),
       bottomNavigationBar: const AgroBottomNav(

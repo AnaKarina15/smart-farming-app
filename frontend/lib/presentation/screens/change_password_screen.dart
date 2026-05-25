@@ -5,11 +5,12 @@ import '../../core/network/api_endpoints.dart';
 import '../../core/network/dio_client.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text.dart';
+import '../../data/providers/lotes_provider.dart';
 import '../../data/providers/auth_provider.dart';
 import '../widgets/rugged_button.dart';
 import '../widgets/rugged_text_field.dart';
 import 'home_screen.dart';
-import 'map_onboarding_screen.dart';
+import 'lotes_list_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Pantalla de cambio de contraseña forzado.
@@ -59,16 +60,20 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
       if (!mounted) return;
 
-      // Navegar al home tras cambio exitoso
+      // Navegar según si ya existen lotes tras cambio exitoso.
+      final lotesProvider = context.read<LotesProvider>();
+      await lotesProvider.init();
+
       final prefs = await SharedPreferences.getInstance();
-      final hasLotes = prefs.getBool('has_lotes') ?? false;
+      final hasLotes = lotesProvider.hasLotes;
+      await prefs.setBool('has_lotes', hasLotes);
 
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
           builder: (_) =>
-              hasLotes ? const HomeScreen() : const MapOnboardingScreen(),
+              hasLotes ? const HomeScreen() : const LotesListScreen(),
         ),
       );
     } on DioException catch (e) {
@@ -135,9 +140,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppColors.error.withOpacity(0.1),
+                    color: AppColors.error.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppColors.error.withOpacity(0.3)),
+                    border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     children: [

@@ -5,11 +5,8 @@ import '../widgets/custom_app_bar.dart';
 import '../common/agro_bottom_nav.dart';
 import 'offline_banner.dart';
 import '../screens/home_screen.dart';
-import '../screens/map_onboarding_screen.dart';
 import '../screens/tasks_screen.dart';
 
-import 'package:provider/provider.dart';
-import '../../data/providers/lotes_provider.dart';
 import '../screens/lotes_list_screen.dart';
 import 'dart:async';
 
@@ -61,14 +58,14 @@ class _SuccessScaffoldState extends State<SuccessScaffold> {
         } else {
           Widget destination;
           if (widget.currentTab == AgroTab.lotes) {
-            final hasLotes = context.read<LotesProvider>().hasLotes;
-            destination = hasLotes ? const LotesListScreen() : const MapOnboardingScreen();
+            destination = const LotesListScreen();
           } else if (widget.currentTab == AgroTab.tareas) {
             destination = const TasksScreen();
           } else {
             destination = const HomeScreen();
           }
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => destination));
+          Navigator.pushReplacement(
+              context, MaterialPageRoute(builder: (_) => destination));
         }
       }
     });
@@ -126,7 +123,9 @@ class _SuccessScaffoldState extends State<SuccessScaffold> {
                           valueListenable: OfflineBanner.showGlobal,
                           builder: (context, isOffline, child) {
                             return Text(
-                              isOffline ? widget.offlineSubtitle : widget.onlineSubtitle,
+                              isOffline
+                                  ? widget.offlineSubtitle
+                                  : widget.onlineSubtitle,
                               textAlign: TextAlign.center,
                               style: AppText.bodyMd(
                                 color: AppColors.onSurfaceVariant,
@@ -167,7 +166,8 @@ class _SuccessScaffoldState extends State<SuccessScaffold> {
                               ],
                             ),
                             const SizedBox(height: 24),
-                            _row('Ubicación', widget.location, AppColors.onSurface),
+                            _row('Ubicación', widget.location,
+                                AppColors.onSurface),
                             const SizedBox(height: 14),
                             const Divider(
                               color: AppColors.outlineVariant,
@@ -198,7 +198,7 @@ class _SuccessScaffoldState extends State<SuccessScaffold> {
                                       Text(
                                         widget.detailValue,
                                         style: AppText.bodyMd(
-                                            color: AppColors.onSurface)
+                                                color: AppColors.onSurface)
                                             .copyWith(
                                                 fontWeight: FontWeight.w600),
                                       ),
@@ -244,7 +244,8 @@ class _SuccessScaffoldState extends State<SuccessScaffold> {
                             color: AppColors.outline,
                           ),
                         ),
-                      if (widget.imageUrl != null || widget.fallbackIcon != null)
+                      if (widget.imageUrl != null ||
+                          widget.fallbackIcon != null)
                         const SizedBox(height: 25),
 
                       // ── Primary Action ───────────────────────

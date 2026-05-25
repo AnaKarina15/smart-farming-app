@@ -45,6 +45,12 @@ class _LotesListScreenState extends State<LotesListScreen> {
   void initState() {
     super.initState();
     _showSuccess = widget.newLoteName != null;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final lotesProvider = context.read<LotesProvider>();
+      if (lotesProvider.lotes.isEmpty) {
+        lotesProvider.init();
+      }
+    });
   }
 
   Color _statusColor(LoteStatus s) {
@@ -119,68 +125,49 @@ class _LotesListScreenState extends State<LotesListScreen> {
                   ),
                 ),
 
-                // Bottom-right: Add + GPS buttons
+                // Bottom-right: Add button
                 Positioned(
                   bottom: 16,
                   right: 16,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      GestureDetector(
-                        onTap: () async {
-                          final messenger = ScaffoldMessenger.of(context);
-                          final result = await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (_) => const RegisterLoteScreen()),
-                          );
-                          if (result != null && mounted) {
-                            messenger.showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  result == 'updated'
-                                      ? 'Lote actualizado con éxito'
-                                      : 'Lote registrado con éxito',
-                                  style: AppText.bodyMd(color: Colors.white).copyWith(fontWeight: FontWeight.w600),
-                                ),
-                                backgroundColor: AppColors.primary,
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
-                          }
-                        },
-                        child: Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(10),
-                            boxShadow: [
-                              BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.2),
-                                  blurRadius: 6)
-                            ],
+                  child: GestureDetector(
+                    onTap: () async {
+                      final messenger = ScaffoldMessenger.of(context);
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const RegisterLoteScreen()),
+                      );
+                      if (result != null && mounted) {
+                        messenger.showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              result == 'updated'
+                                  ? 'Lote actualizado con éxito'
+                                  : 'Lote registrado con éxito',
+                              style: AppText.bodyMd(color: Colors.white)
+                                  .copyWith(fontWeight: FontWeight.w600),
+                            ),
+                            backgroundColor: AppColors.primary,
+                            behavior: SnackBarBehavior.floating,
                           ),
-                          child: const Icon(Icons.add,
-                              color: Colors.black87, size: 24),
-                        ),
+                        );
+                      }
+                    },
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: [
+                          BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.2),
+                              blurRadius: 6)
+                        ],
                       ),
-                      const SizedBox(height: 8),
-                      // GPS / compass
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(10),
-                          boxShadow: [
-                            BoxShadow(
-                                color: AppColors.primary.withValues(alpha: 0.4),
-                                blurRadius: 6)
-                          ],
-                        ),
-                      )
-                    ],
+                      child: const Icon(Icons.add,
+                          color: Colors.black87, size: 24),
+                    ),
                   ),
                 ),
               ],
@@ -294,7 +281,8 @@ class _LotesListScreenState extends State<LotesListScreen> {
                       result == 'updated'
                           ? 'Lote actualizado con éxito'
                           : 'Lote registrado con éxito',
-                      style: AppText.bodyMd(color: Colors.white).copyWith(fontWeight: FontWeight.w600),
+                      style: AppText.bodyMd(color: Colors.white)
+                          .copyWith(fontWeight: FontWeight.w600),
                     ),
                     backgroundColor: AppColors.primary,
                     behavior: SnackBarBehavior.floating,
@@ -616,7 +604,9 @@ class _LoteCardState extends State<_LoteCard> {
                                       result == 'updated'
                                           ? 'Lote actualizado con éxito'
                                           : 'Lote registrado con éxito',
-                                      style: AppText.bodyMd(color: Colors.white).copyWith(fontWeight: FontWeight.w600),
+                                      style: AppText.bodyMd(color: Colors.white)
+                                          .copyWith(
+                                              fontWeight: FontWeight.w600),
                                     ),
                                     backgroundColor: AppColors.primary,
                                     behavior: SnackBarBehavior.floating,

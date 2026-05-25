@@ -3,9 +3,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text.dart';
 import '../../data/providers/tareas_provider.dart';
-import '../../data/providers/lotes_provider.dart';
 import '../screens/home_screen.dart';
-import '../screens/map_onboarding_screen.dart';
 import '../screens/lotes_list_screen.dart';
 import '../screens/tasks_screen.dart';
 import '../screens/profile_screen.dart';
@@ -34,12 +32,9 @@ class AgroBottomNav extends StatelessWidget {
         );
         break;
       case AgroTab.lotes:
-        final hasLotes = context.read<LotesProvider>().hasLotes;
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-            builder: (_) => hasLotes ? const LotesListScreen() : const MapOnboardingScreen(),
-          ),
+          MaterialPageRoute(builder: (_) => const LotesListScreen()),
         );
         break;
       case AgroTab.tareas:
@@ -148,9 +143,8 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = active
-        ? AppColors.onSecondaryContainer
-        : AppColors.onSurfaceVariant;
+    final color =
+        active ? AppColors.onSecondaryContainer : AppColors.onSurfaceVariant;
     final int count = badgeCount ?? 0;
 
     return InkWell(
@@ -165,9 +159,8 @@ class _NavItem extends StatelessWidget {
               width: 64,
               height: 32,
               decoration: BoxDecoration(
-                color: active
-                    ? AppColors.secondaryContainer
-                    : Colors.transparent,
+                color:
+                    active ? AppColors.secondaryContainer : Colors.transparent,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Stack(

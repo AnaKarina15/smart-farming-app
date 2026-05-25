@@ -28,6 +28,7 @@ import { RolesGuard } from '@/common/guards/roles.guard';
 import { UserRole } from '@/modules/users/entities/user-role.enum';
 
 import { CreateLoteDto } from './dto/create-lote.dto';
+import { LoteHistoryResponseDto } from './dto/lote-history-response.dto';
 import { LoteResponseDto } from './dto/lote-response.dto';
 import { UpdateLoteDto } from './dto/update-lote.dto';
 import { LotesService } from './lotes.service';
@@ -90,6 +91,32 @@ export class LotesController {
   @ApiOperation({ summary: '[ADMIN] Estadisticas de lotes' })
   async getStats() {
     return this.lotesService.getStats();
+  }
+
+  @Get('historial/global')
+  @ApiOperation({
+    summary: 'Historial global de operaciones agrícolas',
+    description:
+      'Sincroniza y consulta en una sola respuesta las operaciones de todos los lotes accesibles al usuario.',
+  })
+  @ApiResponse({ status: 200, type: LoteHistoryResponseDto })
+  async getHistorialGlobal(@CurrentUser() user: JwtPayload): Promise<LoteHistoryResponseDto> {
+    return this.lotesService.getHistorialGlobal(user);
+  }
+
+  @Get(':id/historial')
+  @ApiOperation({
+    summary: 'Historial operativo de un lote',
+    description:
+      'Devuelve siembras, riegos, fertilizaciones, hallazgos, tratamientos, observaciones y estado del terreno del lote.',
+  })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiResponse({ status: 200, type: LoteHistoryResponseDto })
+  async getHistorialLote(
+    @CurrentUser() user: JwtPayload,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<LoteHistoryResponseDto> {
+    return this.lotesService.getHistorialLote(id, user);
   }
 
   @Get(':id')

@@ -71,7 +71,8 @@ class _HeroSectionState extends State<_HeroSection> {
   bool _isWeatherLoading = true;
 
   bool _isOnline = true;
-  DateTime _lastSync = DateTime.now();
+  bool _isSyncing = false;
+  DateTime? _lastSync;
   late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
   final WeatherService _weatherService = WeatherService();
 
@@ -79,24 +80,16 @@ class _HeroSectionState extends State<_HeroSection> {
   void initState() {
     super.initState();
     // Inicializar LotesProvider (carga SQLite + sincroniza backend)
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<LotesProvider>().init();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await context.read<LotesProvider>().init();
+      _syncTimestampFromProvider();
+      await _fetchData();
     });
     _fetchData();
     _checkConnectivity();
     _connectivitySubscription =
         Connectivity().onConnectivityChanged.listen((result) {
-      if (mounted) {
-        setState(() {
-          _isOnline = !result.contains(ConnectivityResult.none);
-          if (_isOnline) {
-            _lastSync = DateTime.now();
-            context
-                .read<SyncService>()
-                .syncNow(lotesProvider: context.read<LotesProvider>());
-          }
-        });
-      }
+      unawaited(_handleConnectivity(result));
     });
   }
 
@@ -108,17 +101,64 @@ class _HeroSectionState extends State<_HeroSection> {
 
   Future<void> _checkConnectivity() async {
     final result = await Connectivity().checkConnectivity();
+    await _handleConnectivity(result);
+  }
+
+  Future<void> _handleConnectivity(List<ConnectivityResult> result) async {
+    final isOnline = !result.contains(ConnectivityResult.none);
     if (mounted) {
       setState(() {
-        _isOnline = !result.contains(ConnectivityResult.none);
-        if (_isOnline) {
-          _lastSync = DateTime.now();
-          context
-              .read<SyncService>()
-              .syncNow(lotesProvider: context.read<LotesProvider>());
-        }
+        _isOnline = isOnline;
       });
     }
+
+    if (isOnline) {
+      await _syncNow();
+    }
+  }
+
+  Future<void> _syncNow() async {
+    if (_isSyncing || !mounted) return;
+
+    setState(() => _isSyncing = true);
+
+    final lotesProvider = context.read<LotesProvider>();
+    final success =
+        await context.read<SyncService>().syncNow(lotesProvider: lotesProvider);
+
+    if (!mounted) return;
+
+    setState(() {
+      _lastSync =
+          lotesProvider.lastSync ?? (success ? DateTime.now() : _lastSync);
+      _isSyncing = false;
+    });
+
+    await _fetchData();
+  }
+
+  void _syncTimestampFromProvider() {
+    if (!mounted) return;
+    final providerLastSync = context.read<LotesProvider>().lastSync;
+    if (providerLastSync != null) {
+      setState(() {
+        _lastSync = providerLastSync;
+      });
+    }
+  }
+
+  String _syncStatusText() {
+    if (_isOnline && _isSyncing) {
+      return 'Sincronizando...';
+    }
+
+    final formatted = _lastSync != null
+        ? DateFormat('dd/MM/yyyy HH:mm').format(_lastSync!)
+        : 'pendiente';
+
+    return _isOnline
+        ? 'En línea - última sinc. $formatted'
+        : 'Última sincronización: $formatted';
   }
 
   Future<void> _fetchData() async {
@@ -393,9 +433,7 @@ class _HeroSectionState extends State<_HeroSection> {
                 const SizedBox(width: 8),
                 Flexible(
                   child: Text(
-                    _isOnline
-                        ? 'En línea - ${DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now())}'
-                        : 'Última sincronización: ${DateFormat('dd/MM/yyyy HH:mm').format(_lastSync)}',
+                    _syncStatusText(),
                     style: AppText.bodyMd(
                       color:
                           _isOnline ? Colors.green[800]! : Colors.orange[900]!,

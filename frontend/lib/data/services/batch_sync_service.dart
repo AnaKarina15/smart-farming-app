@@ -65,6 +65,11 @@ class BatchSyncService {
         final data = _unwrapResponseData(response.data);
         final resultados = (data['results'] as List<dynamic>?) ?? [];
         await _procesarResultados(resultados);
+        final tieneErrores = resultados.any(
+          (resultado) =>
+              resultado is Map<String, dynamic> &&
+              resultado['status'] == 'error',
+        );
 
         // Guardar serverTime como nuevo lastPulledAt
         final serverTime = data['serverTime'] as String?;
@@ -74,7 +79,7 @@ class BatchSyncService {
 
         // 5. Pull incremental
         await _pullIncremental();
-        return true;
+        return !tieneErrores;
       }
       return false;
     } on DioException catch (e) {

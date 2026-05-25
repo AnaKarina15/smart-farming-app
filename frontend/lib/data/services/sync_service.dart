@@ -31,21 +31,71 @@ class SyncService {
 
     bool huboErrores = false;
 
-    // 1. Sincronizar operaciones via Batch Sync (Sprint 5)
+    // 1. Crear primero los lotes pendientes.
+    // Las operaciones agrícolas guardadas offline pueden apuntar a un lote
+    // local_..., por eso primero obtenemos el UUID real del backend y lo
+    // propagamos en SQLite antes del batch.
+    final lotesOk = await _drenaQueueLotes();
+    if (!lotesOk) huboErrores = true;
+
+    // 2. Sincronizar operaciones via Batch Sync (Sprint 5)
     final batchOk = await _batchSync.syncBatch();
     if (!batchOk) huboErrores = true;
 
-    // 2. Drenar la cola genérica (acciones POST/PATCH/DELETE de lotes)
+    // 3. Drenar la cola genérica restante (PATCH/DELETE de lotes y limpieza)
     // y limpiar entradas duplicadas de operaciones ya sincronizadas por batch.
     huboErrores = !(await _drenaQueueGeneral()) || huboErrores;
 
-    // 3. Recargar lotes desde el backend y actualizar caché local
+    // 4. Recargar lotes desde el backend y actualizar caché local
     if (lotesProvider != null) {
       await lotesProvider.recargar();
     }
 
     final pendientes = await _db.getPendingSyncCount();
     return !huboErrores && pendientes == 0;
+  }
+
+  Future<bool> _drenaQueueLotes() async {
+    try {
+      final queue = await _db.queryAllRows(DatabaseHelper.tableSyncQueue);
+      final db = await _db.database;
+      var todoOk = true;
+
+      for (final action in queue) {
+        final endpoint = action['endpoint'] as String;
+        final method = (action['method'] as String).toUpperCase();
+
+        if (!_isLoteEndpoint(endpoint) || method != 'POST') continue;
+
+        try {
+          final rawPayload = action['payload'] != null
+              ? json.decode(action['payload'] as String) as Map<String, dynamic>
+              : <String, dynamic>{};
+          final localId = rawPayload['localId'] as String?;
+          final payload = _sanitizePayload(rawPayload)..remove('localId');
+
+          final response = await _dioClient.dio.post(endpoint, data: payload);
+          final data = _unwrapResponseData(response.data);
+          final serverId = data['id'] as String?;
+
+          if (localId != null && localId.isNotEmpty && serverId != null) {
+            await _replaceLocalLoteId(localId: localId, serverId: serverId);
+          }
+
+          await db.delete(
+            DatabaseHelper.tableSyncQueue,
+            where: 'id = ?',
+            whereArgs: [action['id']],
+          );
+        } catch (_) {
+          todoOk = false;
+        }
+      }
+
+      return todoOk;
+    } catch (_) {
+      return false;
+    }
   }
 
   /// Drena la tabla sync_queue: envía cada acción pendiente al backend.
@@ -75,16 +125,8 @@ class SyncService {
 
           // Limpiar campos UUID vacíos antes de enviar al servidor
           // Evita error "must be a UUID" por registros encolados con string vacío
-          final payload = rawPayload != null
-              ? Map<String, dynamic>.fromEntries(
-                  rawPayload.entries.where((e) {
-                    final v = e.value;
-                    if (v == null) return false;
-                    if (v is String && v.isEmpty) return false;
-                    return true;
-                  }),
-                )
-              : null;
+          final payload =
+              rawPayload != null ? _sanitizePayload(rawPayload) : null;
 
           if (payload != null) {
             payload.remove('localId');
@@ -151,6 +193,69 @@ class SyncService {
     }
 
     return null;
+  }
+
+  bool _isLoteEndpoint(String endpoint) {
+    final path = endpoint.split('?').first;
+    final segments = path.split('/').where((s) => s.isNotEmpty).toList();
+    return segments.contains('lotes');
+  }
+
+  Map<String, dynamic> _sanitizePayload(Map<String, dynamic> rawPayload) {
+    return Map<String, dynamic>.fromEntries(
+      rawPayload.entries.where((e) {
+        final v = e.value;
+        if (v == null) return false;
+        if (v is String && v.isEmpty) return false;
+        return true;
+      }),
+    );
+  }
+
+  Map<String, dynamic> _unwrapResponseData(dynamic responseData) {
+    if (responseData is Map<String, dynamic>) {
+      final data = responseData['data'];
+      if (data is Map<String, dynamic>) return data;
+      return responseData;
+    }
+    return {};
+  }
+
+  Future<void> _replaceLocalLoteId({
+    required String localId,
+    required String serverId,
+  }) async {
+    final db = await _db.database;
+    await db.transaction((txn) async {
+      await txn.update(
+        DatabaseHelper.tableLotes,
+        {
+          'id': serverId,
+          'isPendingSync': 0,
+        },
+        where: 'id = ?',
+        whereArgs: [localId],
+      );
+
+      const tablesWithLoteId = [
+        DatabaseHelper.tableSiembras,
+        DatabaseHelper.tableRiego,
+        DatabaseHelper.tableFertilizacion,
+        DatabaseHelper.tableHallazgos,
+        DatabaseHelper.tableTratamientos,
+        DatabaseHelper.tableObservaciones,
+        DatabaseHelper.tableEstadoTerreno,
+      ];
+
+      for (final table in tablesWithLoteId) {
+        await txn.update(
+          table,
+          {'loteId': serverId},
+          where: 'loteId = ?',
+          whereArgs: [localId],
+        );
+      }
+    });
   }
 
   // ─── Añadir a la cola ─────────────────────────────────────

@@ -47,13 +47,17 @@ class LotesProvider extends ChangeNotifier {
 
   /// Inicializar: carga local primero, luego intenta sincronizar.
   Future<void> init() async {
-    await _cargarDesdeLocal();
+    if (!kIsWeb) {
+      await _cargarDesdeLocal();
+    }
     await _sincronizarConBackend();
     await _actualizarContadorPendientes();
   }
 
   /// Carga los lotes desde SQLite (sin necesitar internet).
   Future<void> _cargarDesdeLocal() async {
+    if (kIsWeb) return;
+
     try {
       final rows = await _db.getLotes();
       _lotes = rows.map((row) => _loteFromDb(row)).toList();
@@ -81,10 +85,16 @@ class LotesProvider extends ChangeNotifier {
       _lotes = remoteLotes;
       _lastSync = DateTime.now();
 
-      // Persistir en SQLite
-      final rows = remoteLotes.map((l) => _loteToDb(l)).toList();
-      await _db.clearTable(DatabaseHelper.tableLotes);
-      await _db.upsertLotes(rows);
+      if (!kIsWeb) {
+        try {
+          final rows = remoteLotes.map((l) => _loteToDb(l)).toList();
+          await _db.clearTable(DatabaseHelper.tableLotes);
+          await _db.upsertLotes(rows);
+        } catch (dbError) {
+          debugPrint(
+              '[LotesProvider] No se pudo actualizar cache local: $dbError');
+        }
+      }
 
       _isLoading = false;
       _errorMessage = null;
@@ -118,6 +128,7 @@ class LotesProvider extends ChangeNotifier {
     if (directUuid != null || value == null || value.isEmpty) {
       return directUuid;
     }
+    if (kIsWeb) return null;
 
     try {
       final selectedRows = await _db.queryWhere(table, 'id = ?', [value]);
@@ -306,30 +317,32 @@ class LotesProvider extends ChangeNotifier {
       );
       _lotes[index] = updated;
 
-      try {
-        await _db.update(
-          DatabaseHelper.tableLotes,
-          {
-            'nombre': updated.nombre,
-            'descripcion': updated.descripcion,
-            'superficieHectareas': updated.superficieHectareas,
-            'cultivoActual': updated.cultivoActual,
-            'cultivoActualId': updated.cultivoActualId,
-            'municipioId': updated.municipioId,
-            'tipoSueloId': updated.tipoSueloId,
-            'latitud': updated.latitud,
-            'longitud': updated.longitud,
-            'estado': updated.estado,
-            'updatedAt': updated.updatedAt.toIso8601String(),
-            'isPendingSync': 1,
-          },
-          'id = ?',
-          [id],
-        );
-      } catch (e) {
-        _errorMessage = e.toString();
-        notifyListeners();
-        return false;
+      if (!kIsWeb) {
+        try {
+          await _db.update(
+            DatabaseHelper.tableLotes,
+            {
+              'nombre': updated.nombre,
+              'descripcion': updated.descripcion,
+              'superficieHectareas': updated.superficieHectareas,
+              'cultivoActual': updated.cultivoActual,
+              'cultivoActualId': updated.cultivoActualId,
+              'municipioId': updated.municipioId,
+              'tipoSueloId': updated.tipoSueloId,
+              'latitud': updated.latitud,
+              'longitud': updated.longitud,
+              'estado': updated.estado,
+              'updatedAt': updated.updatedAt.toIso8601String(),
+              'isPendingSync': 1,
+            },
+            'id = ?',
+            [id],
+          );
+        } catch (e) {
+          _errorMessage = e.toString();
+          notifyListeners();
+          return false;
+        }
       }
     }
 
@@ -368,12 +381,19 @@ class LotesProvider extends ChangeNotifier {
         if (remoteIndex != -1) {
           _lotes[remoteIndex] = remoteLote;
         }
-        await _db.update(
-          DatabaseHelper.tableLotes,
-          _loteToDb(remoteLote),
-          'id = ?',
-          [id],
-        );
+        if (!kIsWeb) {
+          try {
+            await _db.update(
+              DatabaseHelper.tableLotes,
+              _loteToDb(remoteLote),
+              'id = ?',
+              [id],
+            );
+          } catch (dbError) {
+            debugPrint(
+                '[LotesProvider] Lote actualizado en servidor pero fallo cache local: $dbError');
+          }
+        }
         notifyListeners();
         return true;
       } catch (e) {
@@ -484,8 +504,18 @@ class LotesProvider extends ChangeNotifier {
   }
 
   Future<void> _actualizarContadorPendientes() async {
-    _pendingSyncCount = await _db.getPendingSyncCount();
-    notifyListeners();
+    if (kIsWeb) {
+      _pendingSyncCount = 0;
+      notifyListeners();
+      return;
+    }
+
+    try {
+      _pendingSyncCount = await _db.getPendingSyncCount();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('[LotesProvider] Error contando pendientes: $e');
+    }
   }
 
   LoteModel _loteFromDb(Map<String, dynamic> row) {

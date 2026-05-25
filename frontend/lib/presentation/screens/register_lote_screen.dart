@@ -79,7 +79,7 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
     // Cargar catálogos (municipios) si no están cargados
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final catalogos = context.read<CatalogosProvider>();
-      if (catalogos.municipios.isEmpty) {
+      if (catalogos.municipios.isEmpty || catalogos.tiposSuelo.isEmpty) {
         await catalogos.cargarCatalogos();
       }
       if (!mounted) return;
@@ -1363,6 +1363,52 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                             Consumer<CatalogosProvider>(
                               builder: (context, catalogos, child) {
                                 final list = catalogos.tiposSuelo;
+                                final selectedTipoSueloId = list.any(
+                                  (suelo) => suelo.id == _selectedTipoSueloId,
+                                )
+                                    ? _selectedTipoSueloId
+                                    : null;
+
+                                if (list.isEmpty) {
+                                  return Container(
+                                    height: 56,
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 16),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.surface,
+                                      border: Border.all(
+                                          color: AppColors.outlineVariant),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.layers_outlined,
+                                            color: AppColors.primary, size: 20),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Text(
+                                            catalogos.isLoading
+                                                ? 'Cargando tipos de suelo...'
+                                                : 'No se pudieron cargar los tipos de suelo',
+                                            style: AppText.bodyMd(
+                                                color: AppColors.outline),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        if (!catalogos.isLoading)
+                                          IconButton(
+                                            icon: const Icon(Icons.refresh,
+                                                color: AppColors.primary,
+                                                size: 20),
+                                            tooltip: 'Reintentar carga',
+                                            onPressed: () =>
+                                                catalogos.cargarCatalogos(),
+                                          ),
+                                      ],
+                                    ),
+                                  );
+                                }
+
                                 return Container(
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 16),
@@ -1374,7 +1420,7 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                                   ),
                                   child: DropdownButtonHideUnderline(
                                     child: DropdownButtonFormField<String>(
-                                      initialValue: _selectedTipoSueloId,
+                                      initialValue: selectedTipoSueloId,
                                       menuMaxHeight: 220,
                                       hint: Text(
                                         'Seleccionar tipo de suelo...',

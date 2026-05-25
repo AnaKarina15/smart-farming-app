@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../../core/storage/database_helper.dart';
 import '../models/catalogos_models.dart';
 import '../services/catalogos_sync_service.dart';
@@ -22,6 +22,13 @@ class CatalogosProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
+    if (kIsWeb) {
+      await _loadFromRemote();
+      _isLoading = false;
+      notifyListeners();
+      return;
+    }
+
     // 1. Cargar lo que haya en la base de datos local rápido
     await _loadFromLocal();
 
@@ -38,28 +45,53 @@ class CatalogosProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> _loadFromRemote() async {
+    try {
+      final res = await _syncService.obtenerCatalogosRemotos();
+
+      cultivos = res.cultivos.map((j) => Cultivo.fromJson(j)).toList();
+      municipios = res.municipios.map((j) => Municipio.fromJson(j)).toList();
+      plagas = res.plagas.map((j) => Plaga.fromJson(j)).toList();
+      fertilizantes =
+          res.fertilizantes.map((j) => Fertilizante.fromJson(j)).toList();
+      tiposSuelo = res.tiposSuelo.map((j) => TipoSuelo.fromJson(j)).toList();
+
+      _sortCatalogos();
+    } catch (e) {
+      debugPrint('Error cargando catálogos remotos: $e');
+    }
+  }
+
   Future<void> _loadFromLocal() async {
     try {
-      final resCultivos = await _db.queryAllRows(DatabaseHelper.tableCatCultivos);
-      final resMunicipios = await _db.queryAllRows(DatabaseHelper.tableCatMunicipios);
+      final resCultivos =
+          await _db.queryAllRows(DatabaseHelper.tableCatCultivos);
+      final resMunicipios =
+          await _db.queryAllRows(DatabaseHelper.tableCatMunicipios);
       final resPlagas = await _db.queryAllRows(DatabaseHelper.tableCatPlagas);
-      final resFertilizantes = await _db.queryAllRows(DatabaseHelper.tableCatFertilizantes);
-      final resTiposSuelo = await _db.queryAllRows(DatabaseHelper.tableCatTiposSuelo);
+      final resFertilizantes =
+          await _db.queryAllRows(DatabaseHelper.tableCatFertilizantes);
+      final resTiposSuelo =
+          await _db.queryAllRows(DatabaseHelper.tableCatTiposSuelo);
 
       cultivos = resCultivos.map((j) => Cultivo.fromJson(j)).toList();
       municipios = resMunicipios.map((j) => Municipio.fromJson(j)).toList();
       plagas = resPlagas.map((j) => Plaga.fromJson(j)).toList();
-      fertilizantes = resFertilizantes.map((j) => Fertilizante.fromJson(j)).toList();
+      fertilizantes =
+          resFertilizantes.map((j) => Fertilizante.fromJson(j)).toList();
       tiposSuelo = resTiposSuelo.map((j) => TipoSuelo.fromJson(j)).toList();
-      
-      // Ordenar por nombre
-      cultivos.sort((a, b) => a.nombre.compareTo(b.nombre));
-      municipios.sort((a, b) => a.nombre.compareTo(b.nombre));
-      plagas.sort((a, b) => a.nombre.compareTo(b.nombre));
-      fertilizantes.sort((a, b) => a.nombre.compareTo(b.nombre));
-      tiposSuelo.sort((a, b) => a.nombre.compareTo(b.nombre));
+
+      _sortCatalogos();
     } catch (e) {
       debugPrint('Error cargando catálogos desde SQLite: $e');
     }
+  }
+
+  void _sortCatalogos() {
+    cultivos.sort((a, b) => a.nombre.compareTo(b.nombre));
+    municipios.sort((a, b) => a.nombre.compareTo(b.nombre));
+    plagas.sort((a, b) => a.nombre.compareTo(b.nombre));
+    fertilizantes.sort((a, b) => a.nombre.compareTo(b.nombre));
+    tiposSuelo.sort((a, b) => a.nombre.compareTo(b.nombre));
   }
 }

@@ -16,6 +16,7 @@ import 'package:provider/provider.dart';
 import '../../data/providers/lotes_provider.dart';
 import '../../data/providers/auth_provider.dart';
 import '../../data/providers/catalogos_provider.dart';
+import '../../data/models/catalogos_models.dart';
 import '../../data/models/lote_model.dart';
 import 'home_screen.dart';
 
@@ -76,11 +77,18 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
           ha: widget.loteToEdit?.superficieHectareas);
     }
     // Cargar catálogos (municipios) si no están cargados
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final catalogos = context.read<CatalogosProvider>();
       if (catalogos.municipios.isEmpty) {
-        catalogos.cargarCatalogos();
+        await catalogos.cargarCatalogos();
       }
+      if (!mounted) return;
+      _syncMunicipioFromAddress(
+        _manualLocationCtrl.text,
+        extraCandidates: [_manualMunicipioCtrl.text],
+        clearPreviousAutoMatch: false,
+      );
+      if (!mounted) return;
       // Si es un lote nuevo (sin coords previas), centrar el mapa en la ubicación actual
       if (widget.loteToEdit == null) {
         _autoLocate();
@@ -260,6 +268,7 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
   }
 
   String? _selectedMunicipioId;
+  String? _addressMatchedMunicipioId;
   String? _selectedTipoSueloId;
 
   List<LatLng> _polygonLatLngs = [];
@@ -272,6 +281,101 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
     _manualLocationCtrl.dispose();
     _manualMunicipioCtrl.dispose();
     super.dispose();
+  }
+
+  String _normalizeAddressPart(String value) {
+    final lower = value.toLowerCase();
+    final withoutAccents = lower
+        .replaceAll('á', 'a')
+        .replaceAll('é', 'e')
+        .replaceAll('í', 'i')
+        .replaceAll('ó', 'o')
+        .replaceAll('ú', 'u')
+        .replaceAll('ü', 'u')
+        .replaceAll('ñ', 'n');
+    return withoutAccents
+        .replaceAll(RegExp(r'[^a-z0-9]+'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+  }
+
+  bool _containsMunicipioName(String source, String municipioName) {
+    final normalizedSource = ' ${_normalizeAddressPart(source)} ';
+    final normalizedMunicipio = ' ${_normalizeAddressPart(municipioName)} ';
+    return normalizedSource.contains(normalizedMunicipio);
+  }
+
+  Municipio? _findMunicipioFromAddress(
+    String address, {
+    Iterable<String?> extraCandidates = const [],
+  }) {
+    final municipios = [...context.read<CatalogosProvider>().municipios]
+      ..sort((a, b) => b.nombre.length.compareTo(a.nombre.length));
+    if (municipios.isEmpty) return null;
+
+    final candidates = <String>[
+      ...extraCandidates.whereType<String>(),
+      address,
+    ].where((value) => value.trim().isNotEmpty).toList();
+
+    for (final candidate in candidates) {
+      final normalizedCandidate = _normalizeAddressPart(candidate);
+      for (final municipio in municipios) {
+        final normalizedMunicipio = _normalizeAddressPart(municipio.nombre);
+        if (normalizedCandidate == normalizedMunicipio ||
+            _containsMunicipioName(candidate, municipio.nombre)) {
+          return municipio;
+        }
+      }
+    }
+    return null;
+  }
+
+  void _applyMunicipioMatch(
+    Municipio? match, {
+    bool clearPreviousAutoMatch = true,
+  }) {
+    if (match != null) {
+      _selectedMunicipioId = match.id;
+      _addressMatchedMunicipioId = match.id;
+      _manualMunicipioCtrl.clear();
+      return;
+    }
+
+    final shouldClearAutoMatch = clearPreviousAutoMatch &&
+        _addressMatchedMunicipioId != null &&
+        _selectedMunicipioId == _addressMatchedMunicipioId;
+    if (shouldClearAutoMatch) {
+      _selectedMunicipioId = null;
+      _addressMatchedMunicipioId = null;
+    }
+  }
+
+  void _syncMunicipioFromAddress(
+    String address, {
+    Iterable<String?> extraCandidates = const [],
+    bool clearPreviousAutoMatch = true,
+  }) {
+    final match = _findMunicipioFromAddress(
+      address,
+      extraCandidates: extraCandidates,
+    );
+    if (match != null &&
+        _selectedMunicipioId == match.id &&
+        _addressMatchedMunicipioId == match.id) {
+      return;
+    }
+    if (match == null &&
+        (!clearPreviousAutoMatch || _addressMatchedMunicipioId == null)) {
+      return;
+    }
+
+    setState(() {
+      _applyMunicipioMatch(
+        match,
+        clearPreviousAutoMatch: clearPreviousAutoMatch,
+      );
+    });
   }
 
   // ─── GPS ──────────────────────────────────────────────────────────────────
@@ -318,33 +422,21 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
           final streetAddress = parts.isNotEmpty
               ? parts.join(', ')
               : '${_lat!.toStringAsFixed(5)}, ${_lng!.toStringAsFixed(5)}';
+          final municipioMatch = _findMunicipioFromAddress(
+            streetAddress,
+            extraCandidates: [
+              p.locality,
+              p.subAdministrativeArea,
+              p.administrativeArea,
+            ],
+          );
 
+          if (!mounted) return;
           setState(() {
             _locationLabel = streetAddress;
             _manualLocationCtrl.text = streetAddress;
+            _applyMunicipioMatch(municipioMatch);
           });
-
-          // Auto-seleccionar municipio si coincide con el catálogo
-          final locality = p.locality;
-          if (locality != null) {
-            if (!mounted) return;
-            final catalogos = context.read<CatalogosProvider>();
-            try {
-              final match = catalogos.municipios.firstWhere(
-                (m) => m.nombre.toLowerCase().contains(locality.toLowerCase()),
-              );
-              setState(() {
-                _selectedMunicipioId = match.id;
-                _manualMunicipioCtrl.clear();
-              });
-            } catch (_) {
-              // No hay coincidencia exacta, se coloca en manual de forma automática en el layout
-              setState(() {
-                _selectedMunicipioId = null;
-                _manualMunicipioCtrl.text = locality;
-              });
-            }
-          }
         }
       } catch (_) {
         final fallbackAddress =
@@ -539,12 +631,33 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
         return;
       }
       final loc = locations.first;
+      final municipioCandidates = <String?>[query];
+      try {
+        final placemarks =
+            await placemarkFromCoordinates(loc.latitude, loc.longitude);
+        if (placemarks.isNotEmpty) {
+          final place = placemarks.first;
+          municipioCandidates.addAll([
+            place.locality,
+            place.subAdministrativeArea,
+            place.administrativeArea,
+          ]);
+        }
+      } catch (_) {
+        // La dirección escrita sigue siendo suficiente para intentar detectar el municipio.
+      }
+      if (!mounted) return;
+      final municipioMatch = _findMunicipioFromAddress(
+        query,
+        extraCandidates: municipioCandidates,
+      );
       setState(() {
         _lat = loc.latitude;
         _lng = loc.longitude;
         _locationLabel = query;
         _manualLocationCtrl.text = query;
         _editingZone = true;
+        _applyMunicipioMatch(municipioMatch);
       });
       _initializePolygon(loc.latitude, loc.longitude);
       _mapController?.animateCamera(
@@ -601,11 +714,22 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                                   location.latitude, location.longitude);
                               if (placemarks.isNotEmpty) {
                                 final place = placemarks.first;
+                                final addr =
+                                    '${place.locality ?? place.subAdministrativeArea}, ${place.administrativeArea}';
+                                final municipioMatch =
+                                    _findMunicipioFromAddress(
+                                  addr,
+                                  extraCandidates: [
+                                    place.locality,
+                                    place.subAdministrativeArea,
+                                    place.administrativeArea,
+                                  ],
+                                );
+                                if (!mounted) return;
                                 setState(() {
-                                  final addr =
-                                      '${place.locality ?? place.subAdministrativeArea}, ${place.administrativeArea}';
                                   _locationLabel = addr;
                                   _manualLocationCtrl.text = addr;
+                                  _applyMunicipioMatch(municipioMatch);
                                 });
                               }
                             } catch (_) {
@@ -781,6 +905,7 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                                 _manualLocationCtrl.clear();
                                 _manualMunicipioCtrl.clear();
                                 _selectedMunicipioId = null;
+                                _addressMatchedMunicipioId = null;
                                 _searchCtrl.clear();
                                 _editingZone = false;
                               });
@@ -1047,6 +1172,19 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                                         .nombre;
                                   } catch (_) {}
                                 }
+                                if (_selectedMunicipioId == null &&
+                                    _manualLocationCtrl.text
+                                        .trim()
+                                        .isNotEmpty) {
+                                  WidgetsBinding.instance
+                                      .addPostFrameCallback((_) {
+                                    if (!mounted) return;
+                                    _syncMunicipioFromAddress(
+                                      _manualLocationCtrl.text,
+                                      clearPreviousAutoMatch: false,
+                                    );
+                                  });
+                                }
 
                                 return Container(
                                   height: 56,
@@ -1079,6 +1217,7 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                                       setState(() {
                                         _selectedMunicipioId =
                                             (option as dynamic).id;
+                                        _addressMatchedMunicipioId = null;
                                       });
                                       // Volar al municipio en el mapa
                                       _searchLocation(
@@ -1173,6 +1312,8 @@ class _RegisterLoteScreenState extends State<RegisterLoteScreen> {
                             TextField(
                               controller: _manualLocationCtrl,
                               textCapitalization: TextCapitalization.sentences,
+                              onChanged: (value) =>
+                                  _syncMunicipioFromAddress(value),
                               onSubmitted: (value) {
                                 if (value.trim().isNotEmpty) {
                                   _searchLocation(value.trim());

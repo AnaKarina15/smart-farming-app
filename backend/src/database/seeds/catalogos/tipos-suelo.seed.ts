@@ -78,6 +78,36 @@ export async function seedTiposSuelo(dataSource: DataSource): Promise<void> {
       descripcion:
         'Suelo de particulas medias, sensacion sedosa. Alta retencion de humedad y fertilidad. Comun en zonas aluviales del rio Magdalena. Susceptible a compactacion.',
     },
+    {
+      nombre: 'Aluvial',
+      clase: 'aluvial',
+      drenaje: 'moderado',
+      retencionHumedadPct: 50.0,
+      phTipico: 6.5,
+      cultivosRecomendados: 'banano, palma, cacao, frutales',
+      descripcion:
+        'Suelo fertil formado por sedimentos de rios y llanuras de inundacion. Buena disponibilidad de nutrientes y humedad.',
+    },
+    {
+      nombre: 'Orgánico (turba)',
+      clase: 'organico',
+      drenaje: 'nulo',
+      retencionHumedadPct: 80.0,
+      phTipico: 5.0,
+      cultivosRecomendados: 'pastos, arroz',
+      descripcion:
+        'Suelo con alto contenido de materia organica, comun en zonas humedas y cienagas. Retiene mucha humedad y puede requerir manejo de drenaje.',
+    },
+    {
+      nombre: 'Vertisol',
+      clase: 'vertisol',
+      drenaje: 'lento',
+      retencionHumedadPct: 60.0,
+      phTipico: 7.2,
+      cultivosRecomendados: 'algodon, sorgo, maiz',
+      descripcion:
+        'Suelo con arcillas expansivas que se agrietan en sequia y se vuelven pesadas con humedad. Requiere manejo cuidadoso de laboreo.',
+    },
   ];
 
   let creados = 0;

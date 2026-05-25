@@ -41,8 +41,7 @@ class LotesProvider extends ChangeNotifier {
   bool get hasLotes => _lotes.isNotEmpty;
 
   /// Nombres de lotes para usar en dropdowns de otras pantallas.
-  List<String> get lotesNombres =>
-      _lotes.map((l) => l.nombre).toList();
+  List<String> get lotesNombres => _lotes.map((l) => l.nombre).toList();
 
   // ─── Inicialización ───────────────────────────────────────
 
@@ -114,6 +113,36 @@ class LotesProvider extends ChangeNotifier {
     return uuidRegex.hasMatch(value) ? value : null;
   }
 
+  Future<String?> _resolveCatalogUuid(String? value, String table) async {
+    final directUuid = _sanitizeUuid(value);
+    if (directUuid != null || value == null || value.isEmpty) {
+      return directUuid;
+    }
+
+    try {
+      final selectedRows = await _db.queryWhere(table, 'id = ?', [value]);
+      if (selectedRows.isEmpty) return null;
+
+      final selectedName = selectedRows.first['nombre'] as String?;
+      if (selectedName == null || selectedName.isEmpty) return null;
+
+      final rowsWithSameName = await _db.queryWhere(
+        table,
+        'LOWER(nombre) = LOWER(?)',
+        [selectedName],
+      );
+      for (final row in rowsWithSameName) {
+        final id = row['id'] as String?;
+        final uuid = _sanitizeUuid(id);
+        if (uuid != null) return uuid;
+      }
+    } catch (e) {
+      debugPrint('[LotesProvider] No se pudo resolver UUID de catálogo: $e');
+    }
+
+    return null;
+  }
+
   Future<bool> recargar() async {
     _errorMessage = null;
     await _sincronizarConBackend();
@@ -138,6 +167,14 @@ class LotesProvider extends ChangeNotifier {
     required String propietarioId,
   }) async {
     final conectado = await _checkConnectivity();
+    final serverMunicipioId = await _resolveCatalogUuid(
+      municipioId,
+      DatabaseHelper.tableCatMunicipios,
+    );
+    final serverTipoSueloId = await _resolveCatalogUuid(
+      tipoSueloId,
+      DatabaseHelper.tableCatTiposSuelo,
+    );
 
     if (conectado) {
       try {
@@ -147,8 +184,8 @@ class LotesProvider extends ChangeNotifier {
           superficieHectareas: superficieHectareas,
           cultivoActual: cultivoActual,
           cultivoActualId: _sanitizeUuid(cultivoActualId),
-          municipioId: _sanitizeUuid(municipioId),
-          tipoSueloId: _sanitizeUuid(tipoSueloId),
+          municipioId: serverMunicipioId,
+          tipoSueloId: serverTipoSueloId,
           latitud: latitud,
           longitud: longitud,
         );
@@ -156,7 +193,8 @@ class LotesProvider extends ChangeNotifier {
         try {
           await _db.insert(DatabaseHelper.tableLotes, _loteToDb(lote));
         } catch (dbError) {
-          debugPrint('Aviso: Lote creado en servidor pero falló caché local: $dbError');
+          debugPrint(
+              'Aviso: Lote creado en servidor pero falló caché local: $dbError');
           // No lanzamos error porque el objetivo principal (guardar en la nube) ya se cumplió.
         }
         notifyListeners();
@@ -178,8 +216,8 @@ class LotesProvider extends ChangeNotifier {
           'superficieHectareas': superficieHectareas,
           'cultivoActual': cultivoActual,
           'cultivoActualId': cultivoActualId,
-          'municipioId': municipioId,
-          'tipoSueloId': tipoSueloId,
+          'municipioId': serverMunicipioId ?? municipioId,
+          'tipoSueloId': serverTipoSueloId ?? tipoSueloId,
           'latitud': latitud,
           'longitud': longitud,
           'estado': 'saludable',
@@ -199,10 +237,12 @@ class LotesProvider extends ChangeNotifier {
             'nombre': nombre,
             if (descripcion != null) 'descripcion': descripcion,
             'superficieHectareas': superficieHectareas,
-            if (cultivoActual != null && cultivoActual.isNotEmpty) 'cultivoActual': cultivoActual,
-            if (_sanitizeUuid(cultivoActualId) != null) 'cultivoActualId': _sanitizeUuid(cultivoActualId),
-            if (_sanitizeUuid(municipioId) != null) 'municipioId': _sanitizeUuid(municipioId),
-            if (_sanitizeUuid(tipoSueloId) != null) 'tipoSueloId': _sanitizeUuid(tipoSueloId),
+            if (cultivoActual != null && cultivoActual.isNotEmpty)
+              'cultivoActual': cultivoActual,
+            if (_sanitizeUuid(cultivoActualId) != null)
+              'cultivoActualId': _sanitizeUuid(cultivoActualId),
+            if (serverMunicipioId != null) 'municipioId': serverMunicipioId,
+            if (serverTipoSueloId != null) 'tipoSueloId': serverTipoSueloId,
             if (latitud != null) 'latitud': latitud,
             if (longitud != null) 'longitud': longitud,
           }),
@@ -234,6 +274,14 @@ class LotesProvider extends ChangeNotifier {
   }) async {
     final conectado = await _checkConnectivity();
     final isLocalOnly = id.startsWith('local_');
+    final serverMunicipioId = await _resolveCatalogUuid(
+      municipioId,
+      DatabaseHelper.tableCatMunicipios,
+    );
+    final serverTipoSueloId = await _resolveCatalogUuid(
+      tipoSueloId,
+      DatabaseHelper.tableCatTiposSuelo,
+    );
 
     // 1. Actualizamos localmente en memoria y SQLite
     final index = _lotes.indexWhere((l) => l.id == id);
@@ -246,8 +294,8 @@ class LotesProvider extends ChangeNotifier {
         superficieHectareas: superficieHectareas ?? old.superficieHectareas,
         cultivoActual: cultivoActual ?? old.cultivoActual,
         cultivoActualId: old.cultivoActualId,
-        municipioId: municipioId ?? old.municipioId,
-        tipoSueloId: tipoSueloId ?? old.tipoSueloId,
+        municipioId: serverMunicipioId ?? municipioId ?? old.municipioId,
+        tipoSueloId: serverTipoSueloId ?? tipoSueloId ?? old.tipoSueloId,
         latitud: latitud ?? old.latitud,
         longitud: longitud ?? old.longitud,
         estado: old.estado,
@@ -287,10 +335,11 @@ class LotesProvider extends ChangeNotifier {
     final payload = {
       if (nombre != null) 'nombre': nombre,
       if (descripcion != null) 'descripcion': descripcion,
-      if (superficieHectareas != null) 'superficieHectareas': superficieHectareas,
+      if (superficieHectareas != null)
+        'superficieHectareas': superficieHectareas,
       if (cultivoActual != null) 'cultivoActual': cultivoActual,
-      if (_sanitizeUuid(municipioId) != null) 'municipioId': _sanitizeUuid(municipioId),
-      if (_sanitizeUuid(tipoSueloId) != null) 'tipoSueloId': _sanitizeUuid(tipoSueloId),
+      if (serverMunicipioId != null) 'municipioId': serverMunicipioId,
+      if (serverTipoSueloId != null) 'tipoSueloId': serverTipoSueloId,
       if (latitud != null) 'latitud': latitud,
       if (longitud != null) 'longitud': longitud,
     };
@@ -303,16 +352,26 @@ class LotesProvider extends ChangeNotifier {
 
     if (conectado) {
       try {
-        await _lotesService.actualizarLote(
+        final remoteLote = await _lotesService.actualizarLote(
           id: id,
           nombre: nombre,
           descripcion: descripcion,
           superficieHectareas: superficieHectareas,
           cultivoActual: cultivoActual,
-          municipioId: _sanitizeUuid(municipioId),
-          tipoSueloId: _sanitizeUuid(tipoSueloId),
+          municipioId: serverMunicipioId,
+          tipoSueloId: serverTipoSueloId,
           latitud: latitud,
           longitud: longitud,
+        );
+        final remoteIndex = _lotes.indexWhere((l) => l.id == id);
+        if (remoteIndex != -1) {
+          _lotes[remoteIndex] = remoteLote;
+        }
+        await _db.update(
+          DatabaseHelper.tableLotes,
+          _loteToDb(remoteLote),
+          'id = ?',
+          [id],
         );
         notifyListeners();
         return true;
@@ -355,7 +414,8 @@ class LotesProvider extends ChangeNotifier {
         final queue = await _db.queryAllRows(DatabaseHelper.tableSyncQueue);
         for (final action in queue) {
           if (action['payload'] != null) {
-            final Map<String, dynamic> data = json.decode(action['payload'] as String);
+            final Map<String, dynamic> data =
+                json.decode(action['payload'] as String);
             if (data['localId'] == id) {
               await db.delete(
                 DatabaseHelper.tableSyncQueue,
@@ -373,7 +433,8 @@ class LotesProvider extends ChangeNotifier {
         );
       }
     } catch (e) {
-      debugPrint('[LotesProvider] Error al limpiar cola de sincronización para lote: $e');
+      debugPrint(
+          '[LotesProvider] Error al limpiar cola de sincronización para lote: $e');
     }
 
     if (isLocalOnly) {
@@ -436,8 +497,10 @@ class LotesProvider extends ChangeNotifier {
       cultivoActualId: row['cultivoActualId'] as String?,
       municipioId: row['municipioId'] as String?,
       tipoSueloId: row['tipoSueloId'] as String?,
-      latitud: row['latitud'] != null ? (row['latitud'] as num).toDouble() : null,
-      longitud: row['longitud'] != null ? (row['longitud'] as num).toDouble() : null,
+      latitud:
+          row['latitud'] != null ? (row['latitud'] as num).toDouble() : null,
+      longitud:
+          row['longitud'] != null ? (row['longitud'] as num).toDouble() : null,
       estado: row['estado'] as String? ?? 'saludable',
       propietarioId: row['propietarioId'] as String,
       createdAt: DateTime.parse(row['createdAt'] as String),

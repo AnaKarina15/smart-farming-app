@@ -27,6 +27,7 @@ export class TipoSuelo {
   /**
    * Clase textural simplificada.
    * Valores: arenoso | franco_arenoso | franco | franco_arcilloso | arcilloso | limoso
+   * | aluvial | organico | vertisol
    */
   @Column({ type: 'varchar', length: 30 })
   clase!: string;

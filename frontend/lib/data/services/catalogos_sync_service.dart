@@ -10,7 +10,7 @@ class CatalogosSyncService {
 
   Future<void> sincronizarCatalogos() async {
     if (kDebugMode) print('Sincronizando catálogos...');
-    
+
     try {
       final results = await Future.wait([
         _api.getCultivos(),
@@ -20,12 +20,32 @@ class CatalogosSyncService {
         _api.getTiposSuelo(),
       ]);
 
-      await _db.upsertCatalogo(DatabaseHelper.tableCatCultivos, results[0]);
-      await _db.upsertCatalogo(DatabaseHelper.tableCatMunicipios, results[1]);
-      await _db.upsertCatalogo(DatabaseHelper.tableCatPlagas, results[2]);
-      await _db.upsertCatalogo(DatabaseHelper.tableCatFertilizantes, results[3]);
-      await _db.upsertCatalogo(DatabaseHelper.tableCatTiposSuelo, results[4]);
-      
+      await _db.upsertCatalogo(
+        DatabaseHelper.tableCatCultivos,
+        results[0],
+        replaceExisting: true,
+      );
+      await _db.upsertCatalogo(
+        DatabaseHelper.tableCatMunicipios,
+        results[1],
+        replaceExisting: true,
+      );
+      await _db.upsertCatalogo(
+        DatabaseHelper.tableCatPlagas,
+        results[2],
+        replaceExisting: true,
+      );
+      await _db.upsertCatalogo(
+        DatabaseHelper.tableCatFertilizantes,
+        results[3],
+        replaceExisting: true,
+      );
+      await _db.upsertCatalogo(
+        DatabaseHelper.tableCatTiposSuelo,
+        results[4],
+        replaceExisting: true,
+      );
+
       if (kDebugMode) print('Catálogos sincronizados exitosamente.');
     } catch (e) {
       if (kDebugMode) print('Error sincronizando catálogos: $e');

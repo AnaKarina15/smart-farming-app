@@ -8,6 +8,9 @@ export const CLASES_SUELO = [
   'franco_arcilloso',
   'arcilloso',
   'limoso',
+  'aluvial',
+  'organico',
+  'vertisol',
 ] as const;
 
 export const DRENAJES_SUELO = ['rapido', 'moderado', 'lento', 'nulo'] as const;

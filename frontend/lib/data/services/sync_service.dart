@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../../core/network/dio_client.dart';
 import '../../core/storage/database_helper.dart';
@@ -28,6 +29,13 @@ class SyncService {
   Future<bool> syncNow({LotesProvider? lotesProvider}) async {
     final conectado = await _checkConnectivity();
     if (!conectado) return false;
+
+    if (kIsWeb) {
+      if (lotesProvider != null) {
+        await lotesProvider.recargar();
+      }
+      return true;
+    }
 
     bool huboErrores = false;
 

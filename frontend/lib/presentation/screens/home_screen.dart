@@ -14,6 +14,7 @@ import 'terrain_status_screen.dart';
 import '../../data/services/sync_service.dart';
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:intl/intl.dart';
@@ -163,8 +164,21 @@ class _HeroSectionState extends State<_HeroSection> {
 
   Future<void> _fetchData() async {
     try {
-      final lotes =
-          await DatabaseHelper.instance.queryAllRows(DatabaseHelper.tableLotes);
+      late final List<Map<String, dynamic>> lotes;
+      if (kIsWeb) {
+        final provider = context.read<LotesProvider>();
+        lotes = provider.lotes
+            .map((lote) => {
+                  'nombre': lote.nombre,
+                  'latitud': lote.latitud,
+                  'longitud': lote.longitud,
+                  'createdAt': lote.createdAt.toIso8601String(),
+                })
+            .toList();
+      } else {
+        lotes = await DatabaseHelper.instance
+            .queryAllRows(DatabaseHelper.tableLotes);
+      }
       final latestLote = _latestRegisteredLote(lotes);
 
       if (latestLote == null) {

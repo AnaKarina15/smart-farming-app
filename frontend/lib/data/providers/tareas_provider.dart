@@ -86,6 +86,13 @@ class TareasProvider extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
 
+    if (kIsWeb) {
+      _tareas = [];
+      _isLoading = false;
+      notifyListeners();
+      return;
+    }
+
     try {
       final lotes = await _db.getLotes();
       if (lotes.isEmpty) {

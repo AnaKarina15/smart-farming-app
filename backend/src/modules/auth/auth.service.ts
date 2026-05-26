@@ -9,6 +9,7 @@ import { User } from '@/modules/users/entities/user.entity';
 import { UsersService } from '@/modules/users/users.service';
 
 import { AuthTokensDto } from './dto/auth-tokens.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 
@@ -56,6 +57,12 @@ export class AuthService {
     await this.usersService.registrarAcceso(user.id);
 
     return this.generateAuthResponse(user);
+  }
+
+  async forgotPassword(
+    dto: ForgotPasswordDto,
+  ): Promise<{ message: string; temporaryPassword: string }> {
+    return this.usersService.requestPasswordRecovery(dto.email);
   }
 
   /**

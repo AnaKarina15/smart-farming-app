@@ -41,6 +41,15 @@ export class UsersRepository {
       .getOne();
   }
 
+  async findByIdWithPassword(id: string): Promise<User | null> {
+    return this.repo
+      .createQueryBuilder('user')
+      .addSelect('user.password')
+      .where('user.id = :id', { id })
+      .andWhere('user.deletedAt IS NULL')
+      .getOne();
+  }
+
   async findByIdWithRefreshToken(id: string): Promise<User | null> {
     return this.repo
       .createQueryBuilder('user')

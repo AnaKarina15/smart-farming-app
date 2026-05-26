@@ -89,7 +89,8 @@ class AuthService {
       }
 
       throw ApiException(
-        message: response.data['message']?.toString() ?? 'Credenciales invalidas',
+        message:
+            response.data['message']?.toString() ?? 'Credenciales invalidas',
         statusCode: response.statusCode,
       );
     } on DioException catch (e) {
@@ -105,6 +106,61 @@ class AuthService {
       // Ignorar errores en logout, igual limpiamos local
     } finally {
       await _tokenStorage.clearTokens();
+    }
+  }
+
+  Future<Map<String, dynamic>> forgotPassword({
+    required String email,
+  }) async {
+    try {
+      final response = await _dioClient.dio.post(
+        ApiEndpoints.forgotPassword,
+        data: {'email': email},
+      );
+
+      if (response.statusCode == 200) {
+        return Map<String, dynamic>.from(response.data['data'] as Map);
+      }
+
+      throw ApiException(
+        message: response.data['message']?.toString() ??
+            'No se pudo recuperar la contraseña',
+        statusCode: response.statusCode,
+      );
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
+  Future<UserModel> changePassword({
+    String? currentPassword,
+    required String newPassword,
+    required String confirmPassword,
+  }) async {
+    try {
+      final response = await _dioClient.dio.patch(
+        ApiEndpoints.changePassword,
+        data: {
+          if (currentPassword != null && currentPassword.isNotEmpty)
+            'currentPassword': currentPassword,
+          'newPassword': newPassword,
+          'confirmPassword': confirmPassword,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final user = UserModel.fromJson(response.data['data']);
+        await _tokenStorage.saveOfflineProfile(user);
+        return user;
+      }
+
+      throw ApiException(
+        message: response.data['message']?.toString() ??
+            'No se pudo cambiar la contraseña',
+        statusCode: response.statusCode,
+      );
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
     }
   }
 

@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:dio/dio.dart';
 import 'package:provider/provider.dart';
-import '../../core/network/api_endpoints.dart';
-import '../../core/network/dio_client.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text.dart';
 import '../../data/providers/lotes_provider.dart';
@@ -18,7 +15,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Se muestra cuando el backend indica que el usuario debe cambiar
 /// su contraseña antes de acceder al sistema (mustChangePassword = true).
 class ChangePasswordScreen extends StatefulWidget {
-  const ChangePasswordScreen({super.key});
+  final bool requireCurrentPassword;
+
+  const ChangePasswordScreen({
+    super.key,
+    this.requireCurrentPassword = false,
+  });
 
   @override
   State<ChangePasswordScreen> createState() => _ChangePasswordScreenState();
@@ -26,8 +28,10 @@ class ChangePasswordScreen extends StatefulWidget {
 
 class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _currentPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  bool _obscureCurrent = true;
   bool _obscureNew = true;
   bool _obscureConfirm = true;
   bool _isLoading = false;
@@ -35,6 +39,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
   @override
   void dispose() {
+    _currentPasswordController.dispose();
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -49,20 +54,38 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     });
 
     try {
-      final dioClient = context.read<DioClient>();
-      await dioClient.dio.patch(
-        ApiEndpoints.changePassword,
-        data: {
-          'newPassword': _newPasswordController.text,
-          'confirmPassword': _confirmPasswordController.text,
-        },
+      final authProvider = context.read<AuthProvider>();
+      final success = await authProvider.changePassword(
+        currentPassword: widget.requireCurrentPassword
+            ? _currentPasswordController.text
+            : null,
+        newPassword: _newPasswordController.text,
+        confirmPassword: _confirmPasswordController.text,
       );
 
       if (!mounted) return;
+      if (!success) {
+        final msg =
+            authProvider.errorMessage ?? 'Error al cambiar la contraseña';
+        setState(() {
+          _errorMsg = msg;
+          _isLoading = false;
+        });
+        authProvider.clearError();
+        return;
+      }
+
+      if (widget.requireCurrentPassword) {
+        Navigator.pop(context, true);
+        return;
+      }
 
       // Navegar según si ya existen lotes tras cambio exitoso.
       final lotesProvider = context.read<LotesProvider>();
-      await lotesProvider.init();
+      await lotesProvider.init().timeout(
+            const Duration(seconds: 8),
+            onTimeout: () {},
+          );
 
       final prefs = await SharedPreferences.getInstance();
       final hasLotes = lotesProvider.hasLotes;
@@ -76,19 +99,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               hasLotes ? const HomeScreen() : const LotesListScreen(),
         ),
       );
-    } on DioException catch (e) {
-      String msg = 'Error al cambiar la contraseña';
-      if (e.response?.data is Map) {
-        final data = e.response!.data as Map;
-        if (data.containsKey('message')) {
-          final m = data['message'];
-          msg = m is List ? m.join('\n') : m.toString();
-        }
-      }
-      setState(() {
-        _errorMsg = msg;
-        _isLoading = false;
-      });
     } catch (_) {
       setState(() {
         _errorMsg = 'Error de conexión. Inténtalo de nuevo.';
@@ -125,13 +135,17 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               ),
               const SizedBox(height: 24),
               Text(
-                'Cambio de contraseña requerido',
+                widget.requireCurrentPassword
+                    ? 'Cambiar contraseña'
+                    : 'Cambio de contraseña requerido',
                 style: AppText.h2(color: AppColors.onSurface),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
               Text(
-                'Por seguridad, debes establecer una nueva contraseña antes de continuar.',
+                widget.requireCurrentPassword
+                    ? 'Ingresa tu contraseña actual y define una nueva.'
+                    : 'Por seguridad, debes establecer una nueva contraseña antes de continuar.',
                 style: AppText.bodyMd(color: AppColors.onSurfaceVariant),
                 textAlign: TextAlign.center,
               ),
@@ -142,7 +156,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   decoration: BoxDecoration(
                     color: AppColors.error.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+                    border: Border.all(
+                        color: AppColors.error.withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     children: [
@@ -165,6 +180,34 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    if (widget.requireCurrentPassword) ...[
+                      Text('CONTRASEÑA ACTUAL', style: AppText.labelCaps()),
+                      const SizedBox(height: 8),
+                      RuggedTextField(
+                        controller: _currentPasswordController,
+                        hintText: 'Tu contraseña actual',
+                        prefixIcon: Icons.lock_outline,
+                        obscureText: _obscureCurrent,
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscureCurrent
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                          onPressed: () => setState(
+                            () => _obscureCurrent = !_obscureCurrent,
+                          ),
+                        ),
+                        validator: (v) {
+                          if (v == null || v.isEmpty) {
+                            return 'Ingresa tu contraseña actual';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                    ],
                     Text('NUEVA CONTRASEÑA', style: AppText.labelCaps()),
                     const SizedBox(height: 8),
                     RuggedTextField(

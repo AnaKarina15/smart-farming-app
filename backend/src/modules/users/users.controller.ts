@@ -31,6 +31,7 @@ import { Roles } from '@/common/decorators/roles.decorator';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
 
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { BadRequestException } from '@nestjs/common';
 import { ListUsersQueryDto } from './dto/list-users-query.dto';
@@ -95,6 +96,23 @@ export class UsersController {
       throw new BadRequestException('Archivo no subido');
     }
     return this.usersService.updateAvatar(jwtUser.sub, file);
+  }
+
+  @Patch('me/change-password')
+  @ApiOperation({
+    summary: 'Cambiar contraseña del usuario autenticado',
+    description:
+      'Permite cambiar la contraseña desde perfil. Si mustChangePassword=true, permite completar el cambio forzado despues de iniciar sesion con contraseña temporal.',
+  })
+  @ApiBody({ type: ChangePasswordDto })
+  @ApiResponse({ status: 200, type: UserResponseDto })
+  @ApiResponse({ status: 400, description: 'Datos invalidos' })
+  @ApiResponse({ status: 401, description: 'Contraseña actual incorrecta' })
+  async changePassword(
+    @CurrentUser() jwtUser: JwtPayload,
+    @Body() dto: ChangePasswordDto,
+  ): Promise<UserResponseDto> {
+    return this.usersService.changeOwnPassword(jwtUser.sub, dto);
   }
 
   // ════════════════════════════════════════════════════════

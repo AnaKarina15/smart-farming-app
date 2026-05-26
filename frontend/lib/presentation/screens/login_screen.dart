@@ -1,11 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text.dart';
 import '../../data/providers/auth_provider.dart';
 import '../../data/providers/lotes_provider.dart';
+import '../../data/services/auth_service.dart';
 import '../widgets/rugged_button.dart';
 import '../widgets/rugged_text_field.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -52,6 +54,177 @@ class _LoginScreenState extends State<LoginScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _showForgotPasswordDialog() async {
+    final authService = context.read<AuthService>();
+    final emailController =
+        TextEditingController(text: _emailController.text.trim());
+    final formKey = GlobalKey<FormState>();
+    var isLoading = false;
+    String? error;
+    String? message;
+    String? temporaryPassword;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            Future<void> submit() async {
+              if (!formKey.currentState!.validate()) return;
+
+              setDialogState(() {
+                isLoading = true;
+                error = null;
+                message = null;
+                temporaryPassword = null;
+              });
+
+              try {
+                final result = await authService.forgotPassword(
+                  email: emailController.text.trim(),
+                );
+
+                if (!dialogContext.mounted) return;
+                setDialogState(() {
+                  message = result['message']?.toString() ??
+                      'Contraseña temporal generada.';
+                  temporaryPassword = result['temporaryPassword']?.toString();
+                  isLoading = false;
+                });
+              } catch (e) {
+                if (!dialogContext.mounted) return;
+                setDialogState(() {
+                  error = e.toString();
+                  isLoading = false;
+                });
+              }
+            }
+
+            final recovered = temporaryPassword != null;
+
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              title: Text(
+                recovered ? 'Contraseña temporal' : 'Recuperar contraseña',
+              ),
+              content: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (!recovered) ...[
+                      Text(
+                        'Ingresa el correo de tu cuenta. Generaremos una contraseña temporal para que puedas entrar.',
+                        style: AppText.bodyMd(
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: const InputDecoration(
+                          labelText: 'Correo electrónico',
+                          prefixIcon: Icon(Icons.email_outlined),
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Ingresa tu correo';
+                          }
+                          if (!RegExp(r'^[^@]+@[^@]+\.[^@]+$')
+                              .hasMatch(value.trim())) {
+                            return 'Formato de correo incorrecto';
+                          }
+                          return null;
+                        },
+                      ),
+                    ] else ...[
+                      Text(
+                        message ?? 'Usa esta contraseña para iniciar sesión.',
+                        style: AppText.bodyMd(
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryContainer,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: SelectableText(
+                          temporaryPassword!,
+                          textAlign: TextAlign.center,
+                          style: AppText.h3(
+                            color: AppColors.onPrimaryContainer,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Después de iniciar sesión, la app te pedirá cambiarla.',
+                        style: AppText.bodyMd(
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                    if (error != null) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        error!,
+                        style: AppText.bodyMd(color: AppColors.error),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed:
+                      isLoading ? null : () => Navigator.pop(dialogContext),
+                  child: Text(recovered ? 'Cerrar' : 'Cancelar'),
+                ),
+                if (recovered)
+                  TextButton.icon(
+                    onPressed: () {
+                      Clipboard.setData(
+                        ClipboardData(text: temporaryPassword!),
+                      );
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Contraseña copiada'),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.copy),
+                    label: const Text('Copiar'),
+                  )
+                else
+                  TextButton(
+                    onPressed: isLoading ? null : submit,
+                    child: isLoading
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('Generar'),
+                  ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    emailController.dispose();
   }
 
   void _handleLogin() async {
@@ -291,31 +464,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           minimumSize: Size.zero,
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
-                        onPressed: () {
-                          showDialog(
-                            context: context,
-                            builder: (ctx) => AlertDialog(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              title: const Text('Recuperar contraseña'),
-                              content: const Text(
-                                'Para recuperar tu contraseña, contacta al administrador del sistema. Él podrá restablecer tu acceso.',
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(ctx),
-                                  child: Text(
-                                    'Entendido',
-                                    style: TextStyle(
-                                        color: AppColors.primary,
-                                        fontWeight: FontWeight.w600),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
+                        onPressed: _showForgotPasswordDialog,
                         child: Text(
                           '¿Olvidaste tu contraseña?',
                           style: AppText.bodyMd(color: AppColors.primary)

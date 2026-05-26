@@ -7,6 +7,7 @@ import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 
 import { AuthService } from './auth.service';
 import { AuthTokensDto } from './dto/auth-tokens.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -46,6 +47,23 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Credenciales invalidas' })
   async login(@Body() dto: LoginDto): Promise<AuthTokensDto> {
     return this.authService.login(dto);
+  }
+
+  @Public()
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Recuperar contraseña',
+    description:
+      'Genera una contraseña temporal para el usuario y fuerza cambio de contraseña en el siguiente login.',
+  })
+  @ApiBody({ type: ForgotPasswordDto })
+  @ApiResponse({ status: 200, description: 'Contraseña temporal generada' })
+  @ApiResponse({ status: 404, description: 'Correo no registrado' })
+  async forgotPassword(
+    @Body() dto: ForgotPasswordDto,
+  ): Promise<{ message: string; temporaryPassword: string }> {
+    return this.authService.forgotPassword(dto);
   }
 
   @Public()

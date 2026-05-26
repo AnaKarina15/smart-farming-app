@@ -86,6 +86,7 @@ class DioClient {
   bool _isPublicEndpoint(String path) {
     return path == ApiEndpoints.register ||
         path == ApiEndpoints.login ||
+        path == ApiEndpoints.forgotPassword ||
         path == ApiEndpoints.refresh ||
         path == ApiEndpoints.health;
   }

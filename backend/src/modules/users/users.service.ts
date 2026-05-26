@@ -4,11 +4,14 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import * as argon2 from 'argon2';
+import { randomBytes } from 'crypto';
 
 import { AuditService } from '../audit/audit.service';
 
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { ListUsersQueryDto } from './dto/list-users-query.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
@@ -92,6 +95,79 @@ export class UsersService {
 
   async registrarAcceso(id: string): Promise<void> {
     await this.usersRepo.updateUltimoAcceso(id);
+  }
+
+  async requestPasswordRecovery(
+    email: string,
+  ): Promise<{ message: string; temporaryPassword: string }> {
+    const user = await this.usersRepo.findByEmail(email);
+    if (!user || !user.activo) {
+      throw new NotFoundException('No existe una cuenta activa con ese correo electronico');
+    }
+
+    const temporaryPassword = this.generateTemporaryPassword();
+    user.password = await this.hashPassword(temporaryPassword);
+    user.passwordChangedAt = new Date();
+    user.mustChangePassword = true;
+    user.refreshTokenHash = null;
+
+    await this.usersRepo.save(user);
+
+    await this.auditService.log({
+      actorId: user.id,
+      action: 'user.password_recovery',
+      targetType: 'user',
+      targetId: user.id,
+      details: { byUser: true },
+    });
+
+    return {
+      message: 'Contraseña temporal generada. Inicia sesion con ella y cambia tu contraseña.',
+      temporaryPassword,
+    };
+  }
+
+  async changeOwnPassword(userId: string, dto: ChangePasswordDto): Promise<UserResponseDto> {
+    if (dto.newPassword !== dto.confirmPassword) {
+      throw new BadRequestException('Las contraseñas no coinciden');
+    }
+
+    const user = await this.usersRepo.findByIdWithPassword(userId);
+    if (!user || !user.activo) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    if (!user.mustChangePassword) {
+      if (!dto.currentPassword) {
+        throw new BadRequestException('Debes ingresar tu contraseña actual');
+      }
+
+      const currentPasswordValid = await argon2.verify(user.password, dto.currentPassword);
+      if (!currentPasswordValid) {
+        throw new UnauthorizedException('La contraseña actual es incorrecta');
+      }
+    }
+
+    const samePassword = await argon2.verify(user.password, dto.newPassword);
+    if (samePassword) {
+      throw new BadRequestException('La nueva contraseña debe ser diferente a la actual');
+    }
+
+    user.password = await this.hashPassword(dto.newPassword);
+    user.passwordChangedAt = new Date();
+    user.mustChangePassword = false;
+
+    await this.usersRepo.save(user);
+
+    await this.auditService.log({
+      actorId: user.id,
+      action: 'user.password_change',
+      targetType: 'user',
+      targetId: user.id,
+      details: { byUser: true },
+    });
+
+    return UserResponseDto.fromEntity(user);
   }
 
   toResponseDto(user: User): UserResponseDto {
@@ -345,5 +421,9 @@ export class UsersService {
       timeCost: 2,
       parallelism: 1,
     });
+  }
+
+  private generateTemporaryPassword(): string {
+    return `Agro${randomBytes(4).toString('hex')}1`;
   }
 }

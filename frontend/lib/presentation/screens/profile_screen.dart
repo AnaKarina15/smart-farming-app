@@ -7,6 +7,7 @@ import '../../data/providers/auth_provider.dart';
 import '../../data/providers/profile_image_provider.dart';
 import '../common/agro_bottom_nav.dart';
 import '../widgets/custom_app_bar.dart';
+import 'change_password_screen.dart';
 import 'welcome_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -23,6 +24,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('La función "$action" estará disponible pronto'),
+        backgroundColor: AppColors.primary,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Future<void> _openChangePassword() async {
+    final changed = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const ChangePasswordScreen(
+          requireCurrentPassword: true,
+        ),
+      ),
+    );
+
+    if (!mounted || changed != true) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Contraseña actualizada correctamente',
+          style: AppText.bodyMd(color: AppColors.onPrimary),
+        ),
         backgroundColor: AppColors.primary,
         behavior: SnackBarBehavior.floating,
       ),
@@ -62,12 +86,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               image: FileImage(profileImage.imageFile!),
                               fit: BoxFit.cover,
                             )
-                          : user?.fotoPerfilUrl != null && user!.fotoPerfilUrl!.isNotEmpty
+                          : user?.fotoPerfilUrl != null &&
+                                  user!.fotoPerfilUrl!.isNotEmpty
                               ? DecorationImage(
                                   image: NetworkImage(
                                     user.fotoPerfilUrl!.startsWith('http')
                                         ? user.fotoPerfilUrl!
-                                        : user.fotoPerfilUrl!.startsWith('/public')
+                                        : user.fotoPerfilUrl!
+                                                .startsWith('/public')
                                             ? '${ApiEndpoints.baseUrl.replaceAll('/api/v1', '')}${user.fotoPerfilUrl}'
                                             : '${ApiEndpoints.baseUrl.replaceAll('/api/v1', '')}/public${user.fotoPerfilUrl}',
                                   ),
@@ -143,7 +169,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   '••••••••',
                   obscure: true,
                   actionText: 'Cambiar',
-                  onActionTap: () => _showActionDialog('Cambiar contraseña'),
+                  onActionTap: _openChangePassword,
                 ),
               ],
             ),

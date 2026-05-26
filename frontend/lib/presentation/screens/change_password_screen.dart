@@ -82,14 +82,28 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
       // Navegar según si ya existen lotes tras cambio exitoso.
       final lotesProvider = context.read<LotesProvider>();
-      await lotesProvider.init().timeout(
-            const Duration(seconds: 8),
-            onTimeout: () {},
-          );
-
       final prefs = await SharedPreferences.getInstance();
-      final hasLotes = lotesProvider.hasLotes;
+      final userId = authProvider.currentUser?.id;
+      final userHasLotesKey = userId != null ? 'has_lotes_$userId' : null;
+      final cachedHasLotes = lotesProvider.hasLotes ||
+          (userHasLotesKey != null
+              ? (prefs.getBool(userHasLotesKey) ??
+                  prefs.getBool('has_lotes') ??
+                  false)
+              : (prefs.getBool('has_lotes') ?? false));
+
+      bool hasLotes;
+      try {
+        await lotesProvider.init().timeout(const Duration(seconds: 15));
+        hasLotes = lotesProvider.hasLotes;
+      } catch (_) {
+        hasLotes = lotesProvider.hasLotes || cachedHasLotes;
+      }
+
       await prefs.setBool('has_lotes', hasLotes);
+      if (userHasLotesKey != null) {
+        await prefs.setBool(userHasLotesKey, hasLotes);
+      }
 
       if (!mounted) return;
       Navigator.pushReplacement(

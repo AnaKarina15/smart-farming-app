@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -39,28 +37,23 @@ class _LoginScreenState extends State<LoginScreen> {
   ) async {
     final prefs = await SharedPreferences.getInstance();
     final userHasLotesKey = 'has_lotes_$userId';
-    final hasLotes = lotesProvider.hasLotes ||
+    final cachedHasLotes = lotesProvider.hasLotes ||
         (prefs.getBool(userHasLotesKey) ?? prefs.getBool('has_lotes') ?? false);
 
-    unawaited(_refreshProducerLotes(lotesProvider, prefs, userHasLotesKey));
-
-    return hasLotes ? const HomeScreen() : const LotesListScreen();
-  }
-
-  Future<void> _refreshProducerLotes(
-    LotesProvider lotesProvider,
-    SharedPreferences prefs,
-    String userHasLotesKey,
-  ) async {
     try {
       await lotesProvider.init().timeout(const Duration(seconds: 15));
-      unawaited(prefs.setBool('has_lotes', lotesProvider.hasLotes));
-      unawaited(prefs.setBool(userHasLotesKey, lotesProvider.hasLotes));
+      final hasLotes = lotesProvider.hasLotes;
+      await prefs.setBool('has_lotes', hasLotes);
+      await prefs.setBool(userHasLotesKey, hasLotes);
+      return hasLotes ? const HomeScreen() : const LotesListScreen();
     } catch (_) {
       if (lotesProvider.hasLotes) {
-        unawaited(prefs.setBool('has_lotes', true));
-        unawaited(prefs.setBool(userHasLotesKey, true));
+        await prefs.setBool('has_lotes', true);
+        await prefs.setBool(userHasLotesKey, true);
+        return const HomeScreen();
       }
+
+      return cachedHasLotes ? const HomeScreen() : const LotesListScreen();
     }
   }
 

@@ -34,19 +34,34 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
 
   Future<Widget> _resolveProducerDestination(
-      LotesProvider lotesProvider) async {
+    LotesProvider lotesProvider,
+    String userId,
+  ) async {
     final prefs = await SharedPreferences.getInstance();
-    var hasLotes = prefs.getBool('has_lotes') ?? lotesProvider.hasLotes;
+    final userHasLotesKey = 'has_lotes_$userId';
+    final hasLotes = lotesProvider.hasLotes ||
+        (prefs.getBool(userHasLotesKey) ?? prefs.getBool('has_lotes') ?? false);
 
-    try {
-      await lotesProvider.init().timeout(const Duration(seconds: 8));
-      hasLotes = lotesProvider.hasLotes;
-      unawaited(prefs.setBool('has_lotes', hasLotes));
-    } catch (_) {
-      unawaited(prefs.setBool('has_lotes', hasLotes));
-    }
+    unawaited(_refreshProducerLotes(lotesProvider, prefs, userHasLotesKey));
 
     return hasLotes ? const HomeScreen() : const LotesListScreen();
+  }
+
+  Future<void> _refreshProducerLotes(
+    LotesProvider lotesProvider,
+    SharedPreferences prefs,
+    String userHasLotesKey,
+  ) async {
+    try {
+      await lotesProvider.init().timeout(const Duration(seconds: 15));
+      unawaited(prefs.setBool('has_lotes', lotesProvider.hasLotes));
+      unawaited(prefs.setBool(userHasLotesKey, lotesProvider.hasLotes));
+    } catch (_) {
+      if (lotesProvider.hasLotes) {
+        unawaited(prefs.setBool('has_lotes', true));
+        unawaited(prefs.setBool(userHasLotesKey, true));
+      }
+    }
   }
 
   @override
@@ -243,9 +258,16 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       if (success) {
         final user = authProvider.currentUser;
+        if (user == null) {
+          setState(() {
+            _generalAuthError =
+                'No se pudo leer la sesión. Intenta ingresar de nuevo.';
+          });
+          return;
+        }
 
         // Sprint 1: Manejo de mustChangePassword
-        if (user != null && user.mustChangePassword) {
+        if (user.mustChangePassword) {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
@@ -255,7 +277,7 @@ class _LoginScreenState extends State<LoginScreen> {
           return;
         }
 
-        if (user != null && user.role == 'administrador') {
+        if (user.role == 'administrador') {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
@@ -264,7 +286,8 @@ class _LoginScreenState extends State<LoginScreen> {
           );
         } else {
           final lotesProvider = context.read<LotesProvider>();
-          final destination = await _resolveProducerDestination(lotesProvider);
+          final destination =
+              await _resolveProducerDestination(lotesProvider, user.id);
 
           if (!mounted) return;
           Navigator.pushReplacement(

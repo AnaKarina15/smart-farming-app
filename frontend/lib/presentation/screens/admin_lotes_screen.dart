@@ -375,6 +375,9 @@ class _TarjetaLote extends StatelessWidget {
   Widget build(BuildContext context) {
     final estadoColor = _colorEstado(lote.estado);
     final estadoBg = _bgEstado(lote.estado);
+    final propietarioLabel = lote.propietarioNombre?.trim().isNotEmpty == true
+        ? lote.propietarioNombre!.trim()
+        : lote.propietarioId;
 
     return Container(
       decoration: BoxDecoration(
@@ -453,22 +456,30 @@ class _TarjetaLote extends StatelessWidget {
                     const Icon(Icons.more_vert, color: AK.subtext, size: 20),
                   ],
                 ),
-                if (lote.propietarioId != null)
+                if (propietarioLabel != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 2),
                     child: Text(
-                      'Propietario ID: ${lote.propietarioId}',
+                      'Propietario: $propietarioLabel',
                       style: const TextStyle(fontSize: 11, color: AK.subtext),
                     ),
                   ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    _PillInfo(label: 'CULTIVO', valor: lote.cultivo ?? 'N/A'),
+                    Expanded(
+                      child: _PillInfo(
+                        label: 'CULTIVO',
+                        valor: lote.cultivo ?? 'N/A',
+                      ),
+                    ),
                     const SizedBox(width: 12),
-                    _PillInfo(
+                    Expanded(
+                      child: _PillInfo(
                         label: 'SUPERFICIE',
-                        valor: '${lote.superficie.toStringAsFixed(1)} ha'),
+                        valor: '${lote.superficie.toStringAsFixed(1)} ha',
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -524,18 +535,23 @@ class _PillInfo extends StatelessWidget {
               letterSpacing: 0.6,
             )),
         Container(
+          width: double.infinity,
           margin: const EdgeInsets.only(top: 2),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
             color: AppColors.primary.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(20),
           ),
-          child: Text(valor,
-              style: TextStyle(
-                fontSize: 12,
-                color: AppColors.primary,
-                fontWeight: FontWeight.w600,
-              )),
+          child: Text(
+            valor,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 12,
+              color: AppColors.primary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ),
       ],
     );

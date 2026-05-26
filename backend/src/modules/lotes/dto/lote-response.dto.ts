@@ -105,6 +105,9 @@ export class LoteResponseDto {
   @ApiProperty({ format: 'uuid' })
   propietarioId!: string;
 
+  @ApiProperty({ required: false, nullable: true })
+  propietarioNombre!: string | null;
+
   @ApiProperty()
   createdAt!: Date;
 
@@ -128,6 +131,7 @@ export class LoteResponseDto {
     dto.siembraActualNombre =
       dto.ultimaSiembra?.cultivoNombre ?? dto.ultimaSiembra?.cultivoOtro ?? lote.cultivoActual;
     dto.propietarioId = lote.propietarioId;
+    dto.propietarioNombre = lote.propietario?.nombreCompleto ?? null;
     dto.createdAt = lote.createdAt;
     dto.updatedAt = lote.updatedAt;
     return dto;

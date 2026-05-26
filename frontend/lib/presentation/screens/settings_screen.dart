@@ -64,6 +64,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final isOnline = lotesProvider.isOnline;
     final lastSync = lotesProvider.lastSync;
     final syncExitosa = _mensajeSync?.startsWith('✓') ?? false;
+    final isAdmin = context.watch<AuthProvider>().currentUser?.esAdmin ?? false;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -219,18 +220,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 24),
 
             // Opciones de configuración
-            _SettingsTile(
-              icon: Icons.history,
-              title: 'HISTORIAL GLOBAL',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => const GlobalHistoryScreen()),
-                );
-              },
-            ),
-            const SizedBox(height: 16),
+            if (!isAdmin) ...[
+              _SettingsTile(
+                icon: Icons.history,
+                title: 'HISTORIAL GLOBAL',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const GlobalHistoryScreen()),
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
             _SettingsTile(
               icon: Icons.notifications_none,
               title: 'NOTIFICACIONES Y ALERTAS',

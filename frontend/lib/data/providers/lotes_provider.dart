@@ -81,7 +81,7 @@ class LotesProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final remoteLotes = await _lotesService.listarLotes();
+      final remoteLotes = await _lotesService.listarLotes().timeout(const Duration(seconds: 15));
       _lotes = remoteLotes;
       _lastSync = DateTime.now();
 

@@ -95,7 +95,7 @@ class AuthProvider extends ChangeNotifier {
         email: email,
         telefono: telefono,
         password: password,
-      );
+      ).timeout(const Duration(seconds: 15));
       _currentUser = tokens.user;
       await _tokenStorage.saveOfflineProfile(tokens.user);
       _status = AuthStatus.authenticated;
@@ -122,7 +122,7 @@ class AuthProvider extends ChangeNotifier {
       final tokens = await _authService.login(
         email: email,
         password: password,
-      );
+      ).timeout(const Duration(seconds: 15));
       _currentUser = tokens.user;
       await _tokenStorage.saveOfflineProfile(tokens.user);
       _status = AuthStatus.authenticated;

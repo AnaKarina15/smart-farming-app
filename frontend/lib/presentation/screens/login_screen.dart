@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
@@ -27,6 +29,22 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _emailAuthError;
   String? _passwordAuthError;
   bool _obscurePassword = true;
+
+  Future<Widget> _resolveProducerDestination(
+      LotesProvider lotesProvider) async {
+    final prefs = await SharedPreferences.getInstance();
+    var hasLotes = prefs.getBool('has_lotes') ?? lotesProvider.hasLotes;
+
+    try {
+      await lotesProvider.init().timeout(const Duration(seconds: 8));
+      hasLotes = lotesProvider.hasLotes;
+      unawaited(prefs.setBool('has_lotes', hasLotes));
+    } catch (_) {
+      unawaited(prefs.setBool('has_lotes', hasLotes));
+    }
+
+    return hasLotes ? const HomeScreen() : const LotesListScreen();
+  }
 
   @override
   void dispose() {
@@ -71,19 +89,12 @@ class _LoginScreenState extends State<LoginScreen> {
           );
         } else {
           final lotesProvider = context.read<LotesProvider>();
-          await lotesProvider.init();
-
-          final prefs = await SharedPreferences.getInstance();
-          final hasLotes = lotesProvider.hasLotes;
-          await prefs.setBool('has_lotes', hasLotes);
+          final destination = await _resolveProducerDestination(lotesProvider);
 
           if (!mounted) return;
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(
-              builder: (_) =>
-                  hasLotes ? const HomeScreen() : const LotesListScreen(),
-            ),
+            MaterialPageRoute(builder: (_) => destination),
           );
         }
       } else {

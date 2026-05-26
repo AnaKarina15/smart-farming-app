@@ -69,7 +69,10 @@ class LotesProvider extends ChangeNotifier {
 
   /// Intenta descargar los lotes del backend y actualiza SQLite.
   Future<void> _sincronizarConBackend() async {
-    final conectado = await _checkConnectivity();
+    final conectado = await _checkConnectivity().timeout(
+      const Duration(seconds: 3),
+      onTimeout: () => true,
+    );
     _isOnline = conectado;
 
     if (!conectado) {
@@ -81,7 +84,9 @@ class LotesProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final remoteLotes = await _lotesService.listarLotes().timeout(const Duration(seconds: 15));
+      final remoteLotes = await _lotesService
+          .listarLotes()
+          .timeout(const Duration(seconds: 15));
       _lotes = remoteLotes;
       _lastSync = DateTime.now();
 

@@ -28,6 +28,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   String? _emailAuthError;
   String? _passwordAuthError;
+  String? _generalAuthError;
   bool _obscurePassword = true;
 
   Future<Widget> _resolveProducerDestination(
@@ -57,6 +58,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() {
       _emailAuthError = null;
       _passwordAuthError = null;
+      _generalAuthError = null;
     });
 
     if (_formKey.currentState!.validate()) {
@@ -99,12 +101,15 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       } else {
         setState(() {
-          final errorStr = (authProvider.errorMessage ?? '').toLowerCase();
+          final rawError = authProvider.errorMessage?.trim();
+          final errorStr = (rawError ?? '').toLowerCase();
 
           if (errorStr.contains('conexi') ||
               errorStr.contains('internet') ||
               errorStr.contains('tiempo') ||
               errorStr.contains('timeout')) {
+            _generalAuthError =
+                'No se pudo conectar con el servidor. Intenta de nuevo en unos segundos.';
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(
@@ -125,8 +130,12 @@ class _LoginScreenState extends State<LoginScreen> {
               errorStr.contains('invalid') ||
               errorStr.contains('incorrect')) {
             _passwordAuthError = 'Contraseña incorrecta';
+            _generalAuthError = 'Correo o contraseña incorrectos.';
           } else {
             _passwordAuthError = 'Correo o contraseña incorrectos';
+            _generalAuthError = rawError == null || rawError.isEmpty
+                ? _passwordAuthError
+                : rawError;
           }
         });
         _formKey.currentState!.validate();
@@ -212,10 +221,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       keyboardType: TextInputType.emailAddress,
                       onChanged: (_) {
                         if (_emailAuthError != null ||
-                            _passwordAuthError != null) {
+                            _passwordAuthError != null ||
+                            _generalAuthError != null) {
                           setState(() {
                             _emailAuthError = null;
                             _passwordAuthError = null;
+                            _generalAuthError = null;
                           });
                           _formKey.currentState!.validate();
                         }
@@ -252,10 +263,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       onChanged: (_) {
                         if (_emailAuthError != null ||
-                            _passwordAuthError != null) {
+                            _passwordAuthError != null ||
+                            _generalAuthError != null) {
                           setState(() {
                             _emailAuthError = null;
                             _passwordAuthError = null;
+                            _generalAuthError = null;
                           });
                           _formKey.currentState!.validate();
                         }
@@ -311,6 +324,27 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 20),
+                    if (_generalAuthError != null) ...[
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.errorContainer,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.error),
+                        ),
+                        child: Text(
+                          _generalAuthError!,
+                          style: AppText.bodyMd(
+                            color: AppColors.onErrorContainer,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                     isLoading
                         ? const Center(
                             child: CircularProgressIndicator(

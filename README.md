@@ -11,6 +11,25 @@ El proyecto está dividido en dos grandes módulos:
 - **Backend (`/backend`)**: API REST robusta desarrollada con **NestJS**, PostgreSQL y TypeORM.
 - **Frontend (`/frontend`)**: Aplicación móvil multiplataforma desarrollada en **Flutter** con arquitectura basada en Providers.
 
+```text
+smart-farming-app/
+├── backend/                  # API REST, autenticación, módulos agrícolas y migraciones
+│   ├── src/
+│   │   ├── modules/          # Auth, usuarios, lotes, riego, siembras, tratamientos, etc.
+│   │   ├── database/         # Migraciones, seeds y configuración TypeORM
+│   │   └── common/           # Guards, filtros, interceptores y decoradores compartidos
+│   ├── docker-compose.yml    # PostgreSQL para desarrollo local
+│   └── .env.example          # Variables de entorno de referencia
+├── frontend/                 # App Flutter para web, Android, iOS y escritorio
+│   ├── lib/
+│   │   ├── core/             # Red, almacenamiento local, errores y tema visual
+│   │   ├── data/             # Modelos, providers y servicios HTTP/locales
+│   │   └── presentation/     # Pantallas y widgets reutilizables
+│   ├── web/                  # Configuración Flutter Web
+│   └── pubspec.yaml          # Dependencias Flutter
+└── README.md                 # Guía principal del proyecto
+```
+
 ---
 
 ## 📋 Requisitos Previos
@@ -56,7 +75,32 @@ Para evitar errores de conexión entre la app y el servidor, sigue este orden ex
 
 1.  Entra a la carpeta: `cd frontend`
 2.  Instala dependencias: `flutter pub get`
-3.  **Ejecutar**: `flutter run` (o presiona `F5` en VS Code)
+3.  **Ejecutar en modo desarrollo**:
+    ```bash
+    flutter run
+    ```
+    También puedes presionar `F5` en VS Code si ya tienes un dispositivo o navegador seleccionado.
+4.  **Ejecutar en navegador con backend local**:
+    ```bash
+    flutter run -d chrome --dart-define=API_BASE_URL=http://localhost:3000/api/v1
+    ```
+5.  **Construir versión web para despliegue**:
+    ```bash
+    flutter build web --dart-define=API_BASE_URL=https://smart-farming-app-ak9s.onrender.com/api/v1
+    ```
+    El resultado queda en `frontend/build/web`.
+
+### 4. Despliegue Web Manual (Vercel)
+
+Si se va a publicar el frontend en Vercel desde la CLI:
+
+```bash
+cd frontend
+flutter build web --dart-define=API_BASE_URL=https://smart-farming-app-ak9s.onrender.com/api/v1
+npx vercel deploy build/web --prod
+```
+
+> Asegúrate de iniciar sesión en la cuenta o equipo de Vercel donde existe el proyecto de producción antes de ejecutar el despliegue.
 
 ---
 

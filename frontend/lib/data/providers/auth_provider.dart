@@ -43,10 +43,11 @@ class AuthProvider extends ChangeNotifier {
         _status = AuthStatus.authenticated;
       } catch (e) {
         bool isUnauthorized = false;
-        if (e.toString().contains('401') || e.toString().contains('Unauthorized')) {
+        if (e.toString().contains('401') ||
+            e.toString().contains('Unauthorized')) {
           isUnauthorized = true;
         }
-        
+
         if (isUnauthorized) {
           // Sesion expirada o invalida
           await _tokenStorage.clearTokens();
@@ -56,7 +57,8 @@ class AuthProvider extends ChangeNotifier {
           final userId = await _tokenStorage.getUserId() ?? 'offline_user';
           final role = await _tokenStorage.getRole() ?? 'productor';
           final name = await _tokenStorage.getName() ?? 'Productor Offline';
-          final email = await _tokenStorage.getEmail() ?? 'offline@agrofield.com';
+          final email =
+              await _tokenStorage.getEmail() ?? 'offline@agrofield.com';
           final photo = await _tokenStorage.getPhoto();
 
           _currentUser = UserModel(
@@ -90,12 +92,14 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final tokens = await _authService.register(
-        nombreCompleto: nombreCompleto,
-        email: email,
-        telefono: telefono,
-        password: password,
-      ).timeout(const Duration(seconds: 15));
+      final tokens = await _authService
+          .register(
+            nombreCompleto: nombreCompleto,
+            email: email,
+            telefono: telefono,
+            password: password,
+          )
+          .timeout(const Duration(seconds: 60));
       _currentUser = tokens.user;
       await _tokenStorage.saveOfflineProfile(tokens.user);
       _status = AuthStatus.authenticated;
@@ -119,10 +123,12 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final tokens = await _authService.login(
-        email: email,
-        password: password,
-      ).timeout(const Duration(seconds: 15));
+      final tokens = await _authService
+          .login(
+            email: email,
+            password: password,
+          )
+          .timeout(const Duration(seconds: 60));
       _currentUser = tokens.user;
       await _tokenStorage.saveOfflineProfile(tokens.user);
       _status = AuthStatus.authenticated;
